@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity() {
     private val startForResult =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             if (result.resultCode == Activity.RESULT_OK) {
-                val str = result.data?.extras?.getString("result")
+                val str = result.data?.extras?.getString("result") ?: "Error"
                 Toast.makeText(this, str, Toast.LENGTH_SHORT).show()
             }
         }
