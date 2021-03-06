@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="EmojiView">
+        <attr name="ev_emojiCode" format="string" />
+        <attr name="ev_emojiCount" format="integer" />
+        <attr name="ev_selected" format="boolean" />
+        <attr name="ev_textSize" format="dimension" />
+        <attr name="ev_textColor" format="color" />
+    </declare-styleable>
+
+</resources>
