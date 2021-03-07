@@ -3,8 +3,10 @@ package ru.nordbird.tfsmessenger
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.core.view.children
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
 import ru.nordbird.tfsmessenger.extensions.spToPx
+import ru.nordbird.tfsmessenger.ui.custom.EmojiView
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,6 +25,12 @@ class MainActivity : AppCompatActivity() {
 
         binding.evSample.setOnClickListener {
             it.isSelected = !it.isSelected
+        }
+
+        binding.fblSecond.children.filter { it is EmojiView }.forEach { child ->
+            child.setOnClickListener {
+                it.isSelected = !it.isSelected
+            }
         }
     }
 }

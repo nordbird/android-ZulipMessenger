@@ -24,7 +24,7 @@ class EmojiView @JvmOverloads constructor(
         private const val ADDITIONAL_PADDING = 8F
     }
 
-    private val textPaint = Paint().apply {
+    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = DEFAULT_FONT_COLOR
         textAlign = Paint.Align.CENTER
     }
@@ -43,7 +43,7 @@ class EmojiView @JvmOverloads constructor(
         set(value) {
             if (textPaint.color != value) {
                 textPaint.color = value
-                requestLayout()
+                invalidate()
             }
         }
 

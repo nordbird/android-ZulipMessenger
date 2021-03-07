@@ -8,4 +8,11 @@
         <attr name="ev_textColor" format="color" />
     </declare-styleable>
 
+    <declare-styleable name="FlexBoxLayout">
+        <attr name="fbl_btnAddIcon" format="reference"/>
+        <attr name="fbl_btnAddIconSize" format="dimension" />
+        <attr name="fbl_btnAddBackground" format="reference"/>
+        <attr name="fbl_btnAddMargin" format="dimension"/>
+    </declare-styleable>
+
 </resources>
