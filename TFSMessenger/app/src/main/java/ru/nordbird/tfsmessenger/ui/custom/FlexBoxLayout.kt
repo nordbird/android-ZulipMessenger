@@ -3,18 +3,16 @@ package ru.nordbird.tfsmessenger.ui.custom
 import android.content.Context
 import android.graphics.Rect
 import android.util.AttributeSet
-import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.children
-import androidx.core.view.setMargins
 import androidx.core.view.setPadding
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.extensions.dpToPx
-
+import ru.nordbird.tfsmessenger.extensions.layout
 
 class FlexBoxLayout @JvmOverloads constructor(
     context: Context,
@@ -25,7 +23,6 @@ class FlexBoxLayout @JvmOverloads constructor(
 
     companion object {
         private const val DEFAULT_ICON_SIZE_DP = 16F
-        private const val DEFAULT_BTN_ADD_MARGIN_DP = 8F
         private const val ADDITIONAL_PADDING = 8F
     }
 
@@ -37,21 +34,13 @@ class FlexBoxLayout @JvmOverloads constructor(
             }
         }
 
-    private var btnAddMargin: Int = context.dpToPx(DEFAULT_BTN_ADD_MARGIN_DP)
-        set(value) {
-            if (field != value) {
-                field = value
-                requestLayout()
-            }
-        }
-
-    private var btnAddView: ImageView
+    private var btnAddView: ImageView = ImageView(context)
     private var iconId = 0
     private var backgroundId = 0
     private val emojiRect = Rect()
+    private val btnAddRect = Rect()
 
     init {
-        btnAddView = ImageView(context)
         setWillNotDraw(true)
 
         if (attrs != null) {
@@ -59,11 +48,6 @@ class FlexBoxLayout @JvmOverloads constructor(
                 iconSize = getDimensionPixelSize(
                     R.styleable.FlexBoxLayout_fbl_btnAddIconSize, context.dpToPx(
                         DEFAULT_ICON_SIZE_DP
-                    )
-                )
-                btnAddMargin = getDimensionPixelSize(
-                    R.styleable.FlexBoxLayout_fbl_btnAddMargin, context.dpToPx(
-                        DEFAULT_BTN_ADD_MARGIN_DP
                     )
                 )
 
@@ -100,7 +84,6 @@ class FlexBoxLayout @JvmOverloads constructor(
             val childHeight =
                 child.measuredHeight + layoutParams.topMargin + layoutParams.bottomMargin
 
-
             currentWidth += childWidth
             if (currentWidth > specSize) {
                 maxWidth = specSize
@@ -121,23 +104,43 @@ class FlexBoxLayout @JvmOverloads constructor(
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         var widthOffset = paddingStart
         var heightOffset = paddingTop
+        var leftMargin = 0
+        var topMargin = 0
+        var bottomMargin = 0
 
-        children.forEach { child ->
+        children.filter { it != btnAddView }.forEach { child ->
             val layoutParams = child.layoutParams as MarginLayoutParams
+            leftMargin = layoutParams.leftMargin
+            topMargin = layoutParams.topMargin
+            bottomMargin = layoutParams.bottomMargin
 
-            if (widthOffset + child.measuredWidth + layoutParams.leftMargin > width) {
+            if (widthOffset + child.measuredWidth + leftMargin > width) {
                 widthOffset = paddingStart
-                heightOffset += child.measuredHeight + layoutParams.topMargin + layoutParams.bottomMargin
+                heightOffset += child.measuredHeight + topMargin + bottomMargin
             }
 
-            emojiRect.left = widthOffset + layoutParams.leftMargin
-            emojiRect.top = heightOffset + layoutParams.topMargin
+            emojiRect.left = widthOffset + leftMargin
+            emojiRect.top = heightOffset + topMargin
             emojiRect.right = emojiRect.left + child.measuredWidth
             emojiRect.bottom = emojiRect.top + child.measuredHeight
             child.layout(emojiRect)
 
-            widthOffset += child.measuredWidth + layoutParams.leftMargin + layoutParams.rightMargin
+            widthOffset += child.measuredWidth + leftMargin + layoutParams.rightMargin
         }
+
+        // Сделаем кнопку "+" такого же размера как EmojiView если есть
+        val btnSize = if (childCount > 1) emojiRect.height() else btnAddView.measuredHeight
+
+        if (widthOffset + btnSize + leftMargin > width) {
+            widthOffset = paddingStart
+            heightOffset += btnSize + topMargin + bottomMargin
+        }
+
+        btnAddRect.left = widthOffset + leftMargin
+        btnAddRect.top = heightOffset + topMargin
+        btnAddRect.right = btnAddRect.left + btnSize
+        btnAddRect.bottom = btnAddRect.top + btnSize
+        btnAddView.layout(btnAddRect)
     }
 
     override fun generateDefaultLayoutParams(): LayoutParams =
@@ -147,19 +150,13 @@ class FlexBoxLayout @JvmOverloads constructor(
 
     override fun generateLayoutParams(p: LayoutParams?): LayoutParams = MarginLayoutParams(p)
 
-    private fun View.layout(rect: Rect) {
-        layout(rect.left, rect.top, rect.right, rect.bottom)
-    }
-
     private fun addButtonAddView() {
         btnAddView.setImageResource(iconId)
         val bitmap = btnAddView.drawable?.toBitmap(iconSize, iconSize)
         btnAddView.setImageBitmap(bitmap)
         btnAddView.setBackgroundResource(backgroundId)
-
         btnAddView.setPadding(context.dpToPx(ADDITIONAL_PADDING))
         val layoutParams = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
-        layoutParams.setMargins(btnAddMargin)
         btnAddView.layoutParams = layoutParams
 
         addView(btnAddView)

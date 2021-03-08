@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:parentTag="ru.nordbird.tfsmessenger.ui.custom.MessageViewGroup">
+
+    <ru.nordbird.tfsmessenger.ui.custom.CircleImageView
+        android:id="@+id/civ_avatar"
+        android:layout_width="@dimen/avatar_size"
+        android:layout_height="@dimen/avatar_size"
+        android:layout_marginLeft="12dp"
+        app:civ_foreground="@drawable/avatar"
+        app:civ_textSize="20sp" />
+
+    <LinearLayout
+        android:id="@+id/ll_messageBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:background="@drawable/message_bg"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_userName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginRight="8dp"
+            android:text="@string/message_user"
+            android:textColor="@color/teal_700"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tv_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginBottom="20dp"
+            android:text="@string/message_text"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout
+        android:id="@+id/fbl_emoji"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="62dp"
+        app:fbl_btnAddBackground="@drawable/emoji_view_bg"
+        app:fbl_btnAddIcon="@drawable/ic_baseline_add_24"
+        app:fbl_btnAddIconSize="16dp">
+
+        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
+            style="@style/EmojiStyle"
+            app:ev_emojiCode="0x1F3C6"
+            app:ev_emojiCount="11"
+            app:ev_selected="true" />
+
+        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
+            style="@style/EmojiStyle"
+            app:ev_emojiCode="0x1F44D"
+            app:ev_emojiCount="12"
+            app:ev_selected="false" />
+
+        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
+            style="@style/EmojiStyle"
+            app:ev_emojiCode="0x1F600"
+            app:ev_emojiCount="130"
+            app:ev_selected="true" />
+
+        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
+            style="@style/EmojiStyle"
+            app:ev_emojiCode="0x1F602"
+            app:ev_emojiCount="14"
+            app:ev_selected="true" />
+
+        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
+            style="@style/EmojiStyle"
+            app:ev_emojiCode="0x1F60E"
+            app:ev_emojiCount="15"
+            app:ev_selected="false" />
+
+        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
+            style="@style/EmojiStyle"
+            app:ev_emojiCode="0x1F37A"
+            app:ev_emojiCount="16"
+            app:ev_selected="true" />
+
+    </ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout>
+
+</merge>

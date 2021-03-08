@@ -4,7 +4,10 @@
     <style name="EmojiStyle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_margin">8dp</item>
+        <item name="android:layout_marginRight">10dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
         <item name="android:background">@drawable/emoji_view_bg</item>
+        <item name="ev_textColor">@color/black</item>
+        <item name="ev_textSize">16sp</item>
     </style>
 </resources>

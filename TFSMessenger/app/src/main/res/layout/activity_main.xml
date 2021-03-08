@@ -1,113 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-        android:id="@+id/ev_sample"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:background="@drawable/emoji_view_bg"
-        app:ev_emojiCode="0x1F3C6"
-        app:ev_emojiCount="10"
-        app:ev_selected="true"
-        app:ev_textColor="@color/black"
-        app:ev_textSize="20sp" />
-
-    <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-        android:id="@+id/ev_sample_second"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:background="@drawable/emoji_view_bg"
-        app:ev_emojiCode="0x1F3C6"
-        app:ev_emojiCount="100"
-        app:ev_selected="true"
-        app:ev_textColor="@color/black"
-        app:ev_textSize="28sp" />
-
-    <ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout
+    <ru.nordbird.tfsmessenger.ui.custom.MessageViewGroup
+        android:id="@+id/mvg_main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:fbl_btnAddBackground="@drawable/emoji_view_bg"
-        app:fbl_btnAddIcon="@drawable/ic_baseline_add_24"
-        app:fbl_btnAddIconSize="20dp">
+        android:layout_marginTop="8dp" />
 
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:background="@drawable/emoji_view_bg"
-            app:ev_emojiCode="0x1F3C6"
-            app:ev_emojiCount="11"
-            app:ev_selected="true"
-            app:ev_textColor="@color/black"
-            app:ev_textSize="20sp" />
-
-    </ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout>
-
-    <ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout
-        android:id="@+id/fbl_second"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:fbl_btnAddBackground="@drawable/emoji_view_bg"
-        app:fbl_btnAddIcon="@drawable/ic_baseline_add_24"
-        app:fbl_btnAddIconSize="20dp"
-        app:fbl_btnAddMargin="8dp">
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            app:ev_emojiCode="0x1F3C6"
-            app:ev_emojiCount="11"
-            app:ev_selected="true"
-            app:ev_textColor="@color/black"
-            app:ev_textSize="20sp"
-            style="@style/EmojiStyle" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            app:ev_emojiCode="0x1F44D"
-            app:ev_emojiCount="12"
-            app:ev_selected="false"
-            app:ev_textColor="@color/black"
-            app:ev_textSize="20sp"
-            style="@style/EmojiStyle" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            app:ev_emojiCode="0x1F600"
-            app:ev_emojiCount="130"
-            app:ev_selected="true"
-            app:ev_textColor="@color/black"
-            app:ev_textSize="20sp"
-            style="@style/EmojiStyle" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            app:ev_emojiCode="0x1F602"
-            app:ev_emojiCount="14"
-            app:ev_selected="true"
-            app:ev_textColor="@color/black"
-            app:ev_textSize="20sp"
-            style="@style/EmojiStyle" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            app:ev_emojiCode="0x1F60E"
-            app:ev_emojiCount="15"
-            app:ev_selected="false"
-            app:ev_textColor="@color/black"
-            app:ev_textSize="20sp"
-            style="@style/EmojiStyle" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            app:ev_emojiCode="0x1F37A"
-            app:ev_emojiCount="16"
-            app:ev_selected="true"
-            app:ev_textColor="@color/black"
-            app:ev_textSize="20sp"
-            style="@style/EmojiStyle" />
-
-    </ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout>
-
-</LinearLayout>
+</FrameLayout>
