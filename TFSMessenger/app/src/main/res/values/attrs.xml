@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="EmojiView">
+        <attr name="ev_emojiCode" format="string" />
+        <attr name="ev_emojiCount" format="integer" />
+        <attr name="ev_selected" format="boolean" />
+        <attr name="ev_textSize" format="dimension" />
+        <attr name="ev_textColor" format="color" />
+    </declare-styleable>
+
+    <declare-styleable name="FlexBoxLayout">
+        <attr name="fbl_btnAddIcon" format="reference"/>
+        <attr name="fbl_btnAddIconSize" format="dimension" />
+        <attr name="fbl_btnAddBackground" format="reference"/>
+    </declare-styleable>
+
+    <declare-styleable name="CircleImageView">
+        <attr name="civ_foreground" format="reference" />
+        <attr name="civ_textColor" format="color" />
+        <attr name="civ_text" format="string" />
+        <attr name="civ_textSize" format="dimension" />
+    </declare-styleable>
+
+</resources>
