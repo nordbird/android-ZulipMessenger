@@ -5,7 +5,6 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import ru.nordbird.tfsmessenger.R
-import ru.nordbird.tfsmessenger.extensions.dpToPx
 import ru.nordbird.tfsmessenger.extensions.spToPx
 
 class EmojiView @JvmOverloads constructor(
@@ -21,31 +20,7 @@ class EmojiView @JvmOverloads constructor(
         private const val EMOJI_DEFAULT_CODE = 0x1F60A
         private const val EMOJI_DEFAULT_COUNT = 0
         private val DRAWABLES_STATE = IntArray(1) { android.R.attr.state_selected }
-        private const val ADDITIONAL_PADDING = 8F
     }
-
-    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = DEFAULT_FONT_COLOR
-        textAlign = Paint.Align.CENTER
-    }
-
-    var textSize: Int
-        get() = textPaint.textSize.toInt()
-        set(value) {
-            if (textPaint.textSize.toInt() != value) {
-                textPaint.textSize = value.toFloat()
-                requestLayout()
-            }
-        }
-
-    var textColor: Int
-        get() = textPaint.color
-        set(value) {
-            if (textPaint.color != value) {
-                textPaint.color = value
-                invalidate()
-            }
-        }
 
     var emojiCode: Int = EMOJI_DEFAULT_CODE
         set(value) {
@@ -63,10 +38,32 @@ class EmojiView @JvmOverloads constructor(
             }
         }
 
+    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = DEFAULT_FONT_COLOR
+        textAlign = Paint.Align.CENTER
+    }
+
+    private var textSize: Int
+        get() = textPaint.textSize.toInt()
+        set(value) {
+            if (textPaint.textSize.toInt() != value) {
+                textPaint.textSize = value.toFloat()
+                requestLayout()
+            }
+        }
+
+    private var textColor: Int
+        get() = textPaint.color
+        set(value) {
+            if (textPaint.color != value) {
+                textPaint.color = value
+                invalidate()
+            }
+        }
+
     private var text = ""
     private val textPoint = PointF()
     private val textBounds = Rect()
-    private var additionalPadding = 0
 
     init {
         if (attrs != null) {
@@ -84,26 +81,22 @@ class EmojiView @JvmOverloads constructor(
                 recycle()
             }
         }
-        additionalPadding = context.dpToPx(ADDITIONAL_PADDING * 2)
         updateText()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         textPaint.getTextBounds(text, 0, text.length, textBounds)
-        val textWidth = textBounds.width()
-        val textHeight = textBounds.height()
-
-        val contentWidth = textWidth + paddingStart + paddingEnd + additionalPadding
-        val contentHeight = textHeight + paddingTop + paddingBottom + additionalPadding
-        val width = resolveSize(contentWidth, widthMeasureSpec)
-        val height = resolveSize(contentHeight, heightMeasureSpec)
+        val contentWidth = textBounds.width() + paddingStart + paddingEnd
+        val contentHeight = textBounds.height() + paddingTop + paddingBottom
+        val width = resolveContentSize(contentWidth, widthMeasureSpec)
+        val height = resolveContentSize(contentHeight, heightMeasureSpec)
 
         setMeasuredDimension(width, height)
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         val emptySpaceVertical = textPaint.descent() + textPaint.ascent()
-        textPoint.set(width / 2F, (height - emptySpaceVertical) / 2)
+        textPoint.set(measuredWidth / 2F, (measuredHeight - emptySpaceVertical) / 2)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -118,6 +111,16 @@ class EmojiView @JvmOverloads constructor(
             mergeDrawableStates(drawableState, DRAWABLES_STATE)
         }
         return drawableState
+    }
+
+    private fun resolveContentSize(contentSize: Int, measureSpec: Int): Int {
+        val specMode = MeasureSpec.getMode(measureSpec)
+        val specSize = MeasureSpec.getSize(measureSpec)
+
+        return when (specMode) {
+            MeasureSpec.EXACTLY -> maxOf(contentSize, specSize)
+            else -> contentSize
+        }
     }
 
     private fun getEmoji(unicode: Int): String {

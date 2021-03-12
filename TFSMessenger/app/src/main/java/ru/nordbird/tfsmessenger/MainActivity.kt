@@ -2,10 +2,9 @@ package ru.nordbird.tfsmessenger
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.core.view.children
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
+import ru.nordbird.tfsmessenger.databinding.EmojiViewBinding
 import ru.nordbird.tfsmessenger.databinding.MessageViewGroupBinding
-import ru.nordbird.tfsmessenger.ui.custom.EmojiView
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,10 +17,22 @@ class MainActivity : AppCompatActivity() {
         mvgBinding = MessageViewGroupBinding.bind(binding.mvgMain)
         setContentView(binding.root)
 
-        mvgBinding.fblEmoji.children.filter { it is EmojiView }.forEach { child ->
+        mvgBinding.fblEmoji.getChilds().forEach { child ->
             child.setOnClickListener {
                 it.isSelected = !it.isSelected
             }
         }
+
+        mvgBinding.fblEmoji.btnAddView.setOnClickListener {
+            EmojiViewBinding.inflate(layoutInflater, mvgBinding.fblEmoji, true).root.apply {
+                emojiCount = (20..29).random()
+                setOnClickListener { emojiView ->
+                    emojiView.isSelected = !emojiView.isSelected
+                    this.emojiCount += if (emojiView.isSelected) 1 else -1
+                    mvgBinding.fblEmoji.removeView(emojiView)
+                }
+            }
+        }
+
     }
 }

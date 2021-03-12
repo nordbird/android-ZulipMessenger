@@ -11,8 +11,7 @@
         android:layout_width="@dimen/avatar_size"
         android:layout_height="@dimen/avatar_size"
         android:layout_marginLeft="12dp"
-        app:civ_foreground="@drawable/avatar"
-        app:civ_textSize="20sp" />
+        app:civ_avatar="@drawable/avatar" />
 
     <LinearLayout
         android:id="@+id/ll_messageBox"
@@ -54,43 +53,12 @@
         android:layout_marginTop="8dp"
         android:layout_marginRight="62dp"
         app:fbl_btnAddBackground="@drawable/emoji_view_bg"
-        app:fbl_btnAddIcon="@drawable/ic_baseline_add_24"
-        app:fbl_btnAddIconSize="16dp">
+        app:fbl_btnAddIcon="@drawable/ic_baseline_add_24">
 
         <ru.nordbird.tfsmessenger.ui.custom.EmojiView
             style="@style/EmojiStyle"
             app:ev_emojiCode="0x1F3C6"
             app:ev_emojiCount="11"
-            app:ev_selected="true" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            style="@style/EmojiStyle"
-            app:ev_emojiCode="0x1F44D"
-            app:ev_emojiCount="12"
-            app:ev_selected="false" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            style="@style/EmojiStyle"
-            app:ev_emojiCode="0x1F600"
-            app:ev_emojiCount="130"
-            app:ev_selected="true" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            style="@style/EmojiStyle"
-            app:ev_emojiCode="0x1F602"
-            app:ev_emojiCount="14"
-            app:ev_selected="true" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            style="@style/EmojiStyle"
-            app:ev_emojiCode="0x1F60E"
-            app:ev_emojiCount="15"
-            app:ev_selected="false" />
-
-        <ru.nordbird.tfsmessenger.ui.custom.EmojiView
-            style="@style/EmojiStyle"
-            app:ev_emojiCode="0x1F37A"
-            app:ev_emojiCount="16"
             app:ev_selected="true" />
 
     </ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout>

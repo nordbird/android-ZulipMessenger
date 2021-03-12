@@ -10,15 +10,12 @@
 
     <declare-styleable name="FlexBoxLayout">
         <attr name="fbl_btnAddIcon" format="reference"/>
-        <attr name="fbl_btnAddIconSize" format="dimension" />
         <attr name="fbl_btnAddBackground" format="reference"/>
     </declare-styleable>
 
     <declare-styleable name="CircleImageView">
-        <attr name="civ_foreground" format="reference" />
-        <attr name="civ_textColor" format="color" />
+        <attr name="civ_avatar" format="reference" />
         <attr name="civ_text" format="string" />
-        <attr name="civ_textSize" format="dimension" />
     </declare-styleable>
 
 </resources>

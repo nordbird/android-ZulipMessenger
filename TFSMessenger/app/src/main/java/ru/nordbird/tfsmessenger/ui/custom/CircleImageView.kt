@@ -8,8 +8,7 @@ import android.view.View
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.toRectF
 import ru.nordbird.tfsmessenger.R
-import ru.nordbird.tfsmessenger.extensions.spToPx
-
+import ru.nordbird.tfsmessenger.extensions.dpToPx
 
 class CircleImageView @JvmOverloads constructor(
     context: Context,
@@ -18,40 +17,45 @@ class CircleImageView @JvmOverloads constructor(
     defStyleRes: Int = 0
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
 
-    private val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.CYAN
-        style = Paint.Style.FILL_AND_STROKE
+    companion object {
+        private const val DEFAULT_TEXT = "Hi"
+        private const val DEFAULT_SIZE_DP = 40F
+
+        private val bgColors = arrayOf(
+            Color.parseColor("#7BC862"),
+            Color.parseColor("#E17076"),
+            Color.parseColor("#FAA774"),
+            Color.parseColor("#6EC9CB"),
+            Color.parseColor("#65AADD"),
+            Color.parseColor("#A695E7"),
+            Color.parseColor("#EE7AAE"),
+            Color.parseColor("#2196F3")
+        )
     }
 
+    private var radius: Float = 0F
     private val viewRect = Rect()
     private lateinit var resultBm: Bitmap
     private lateinit var maskBm: Bitmap
     private lateinit var srcBm: Bitmap
 
+    private val avatarPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.CYAN
         style = Paint.Style.FILL_AND_STROKE
     }
     private val textPaint = Paint().apply {
-        color = Color.BLACK
+        color = Color.WHITE
         textAlign = Paint.Align.CENTER
     }
-    private var foregroundDrawable: Drawable? = null
+    private var avatarDrawable: Drawable? = null
         set(value) {
             if (field != value) {
                 field = value
                 invalidate()
             }
         }
-    private var textSize: Int
-        get() = textPaint.textSize.toInt()
-        set(value) {
-            if (textPaint.textSize.toInt() != value) {
-                textPaint.textSize = value.toFloat()
-                requestLayout()
-            }
-        }
-    private var text: String = TEXT
+
+    private var text: String = DEFAULT_TEXT
         set(value) {
             if (field != value) {
                 field = value
@@ -59,55 +63,30 @@ class CircleImageView @JvmOverloads constructor(
             }
         }
 
-    private val centerPoint = PointF()
-    private val textPoint = PointF()
-    private var radius: Float = 0F
-    private val textBounds = Rect()
-
     init {
         context.obtainStyledAttributes(attrs, R.styleable.CircleImageView).apply {
-            textSize = getDimensionPixelSize(
-                R.styleable.CircleImageView_civ_textSize, context.spToPx(
-                    DEFAULT_FONT_SIZE_PX
-                )
-            )
-            foregroundDrawable = getDrawable(R.styleable.CircleImageView_civ_foreground)
-            text = getText(R.styleable.CircleImageView_civ_text)?.toString() ?: TEXT
+            avatarDrawable = getDrawable(R.styleable.CircleImageView_civ_avatar)
+            text = getText(R.styleable.CircleImageView_civ_text)?.toString() ?: DEFAULT_TEXT
             recycle()
         }
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        textPaint.getTextBounds(text, 0, text.length, textBounds)
-        val textWidth = textBounds.width()
-        val textHeight = textBounds.height()
-        val contentWidth = textWidth + paddingStart + paddingEnd
-        val contentHeight = textHeight + paddingTop + paddingBottom
-
-        val width = resolveSize(contentWidth, widthMeasureSpec)
-        val height = resolveSize(contentHeight, heightMeasureSpec)
+        val defaultSize = context.dpToPx(DEFAULT_SIZE_DP)
+        val width = resolveSize(defaultSize, widthMeasureSpec)
+        val height = resolveSize(defaultSize, heightMeasureSpec)
 
         val size = maxOf(width, height)
         radius = size / 2F
         setMeasuredDimension(size, size)
     }
 
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        centerPoint.set(radius, radius)
-        val emptySpaceVertical = height - textBounds.height()
-        textPoint.set(
-            radius,
-            emptySpaceVertical / 2f + textBounds.height()
-        )
-    }
-
     override fun onDraw(canvas: Canvas) {
         val canvasCount = canvas.save()
-        if (foregroundDrawable == null) {
-            canvas.drawCircle(centerPoint.x, centerPoint.y, radius, circlePaint)
-            canvas.drawText(text, textPoint.x, textPoint.y, textPaint)
+        if (avatarDrawable == null) {
+            drawText(canvas)
         } else {
-            canvas.drawBitmap(resultBm, viewRect, viewRect, null)
+            drawAvatar(canvas)
         }
         canvas.restoreToCount(canvasCount)
     }
@@ -116,45 +95,42 @@ class CircleImageView @JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
 
         if (w == 0) return
-
-        with(viewRect) {
-            left = 0
-            top = 0
-            right = w
-            bottom = h
-        }
-
+        viewRect.set(0, 0, w, h)
         prepareBitmaps(w, h)
     }
 
-    override fun onCreateDrawableState(extraSpace: Int): IntArray {
-        val drawableState = super.onCreateDrawableState(extraSpace + 1)
-        if (isSelected) {
-            mergeDrawableStates(drawableState, DRAWABLES_STATE)
-        }
-        return drawableState
+    private fun drawText(canvas: Canvas) {
+        circlePaint.color = initialsToColor(text)
+        canvas.drawCircle(viewRect.exactCenterX(), viewRect.exactCenterY(), radius, circlePaint)
+
+        textPaint.textSize = measuredHeight * 0.33f
+        val offsetY = (textPaint.descent() + textPaint.ascent()) / 2
+        canvas.drawText(text, viewRect.exactCenterX(), viewRect.exactCenterY() - offsetY, textPaint)
+    }
+
+    private fun drawAvatar(canvas: Canvas) {
+        canvas.drawBitmap(resultBm, viewRect, viewRect, null)
+    }
+
+    private fun initialsToColor(letters: String): Int {
+        val index = if (letters.isEmpty()) 0 else letters[0].toByte() % bgColors.size
+        return bgColors[index]
     }
 
     private fun prepareBitmaps(w: Int, h: Int) {
-        if (foregroundDrawable == null) return
+        if (avatarDrawable == null) return
         maskBm = Bitmap.createBitmap(w, h, Bitmap.Config.ALPHA_8)
         resultBm = maskBm.copy(Bitmap.Config.ARGB_8888, true)
 
         val maskCanvas = Canvas(maskBm)
-        maskCanvas.drawOval(viewRect.toRectF(), maskPaint)
-        maskPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+        maskCanvas.drawOval(viewRect.toRectF(), avatarPaint)
+        avatarPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
 
-        srcBm = foregroundDrawable!!.toBitmap(w, h, Bitmap.Config.ARGB_8888)
+        srcBm = avatarDrawable!!.toBitmap(w, h, Bitmap.Config.ARGB_8888)
 
         val resultCanvas = Canvas(resultBm)
         resultCanvas.drawBitmap(maskBm, viewRect, viewRect, null)
-        resultCanvas.drawBitmap(srcBm, viewRect, viewRect, maskPaint)
-    }
-
-    companion object {
-        private const val TEXT = "Hi"
-        private const val DEFAULT_FONT_SIZE_PX = 14F
-        private val DRAWABLES_STATE = IntArray(1) { android.R.attr.state_selected }
+        resultCanvas.drawBitmap(srcBm, viewRect, viewRect, avatarPaint)
     }
 
 }
