@@ -3,16 +3,16 @@
     android:color="@color/white">
     <item android:id="@android:id/mask">
         <shape android:shape="rectangle">
-            <corners android:radius="@dimen/emoji_view_corner_radius" />
+            <corners android:radius="@dimen/reaction_view_corner_radius" />
             <solid android:color="#fff" />
         </shape>
     </item>
     <item>
         <selector>
             <item
-                android:drawable="@drawable/emoji_view_bg_selected"
+                android:drawable="@drawable/reaction_view_bg_selected"
                 android:state_selected="true" />
-            <item android:drawable="@drawable/emoji_view_bg_not_selected" />
+            <item android:drawable="@drawable/reaction_view_bg_not_selected" />
         </selector>
     </item>
 </ripple>

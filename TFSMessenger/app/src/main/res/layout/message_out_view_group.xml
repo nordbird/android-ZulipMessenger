@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:parentTag="ru.nordbird.tfsmessenger.ui.custom.MessageOutViewGroup">
+
+    <TextView
+        android:id="@+id/tv_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="62dp"
+        android:layout_marginEnd="12dp"
+        android:background="@drawable/message_bg"
+        android:paddingStart="10dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="10dp"
+        android:textSize="20sp"
+        tools:text="Привет" />
+
+    <ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout
+        android:id="@+id/fbl_reaction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="62dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="12dp"
+        android:gravity="end"
+        app:fbl_btnAddBackground="@drawable/reaction_view_bg"
+        app:fbl_btnAddIcon="@drawable/ic_baseline_add_24">
+
+    </ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout>
+
+</merge>

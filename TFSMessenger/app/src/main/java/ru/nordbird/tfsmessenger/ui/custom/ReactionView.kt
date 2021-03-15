@@ -7,7 +7,7 @@ import android.view.View
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.extensions.spToPx
 
-class EmojiView @JvmOverloads constructor(
+class ReactionView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -17,12 +17,12 @@ class EmojiView @JvmOverloads constructor(
     companion object {
         private const val DEFAULT_FONT_SIZE_SP = 14F
         private const val DEFAULT_FONT_COLOR = Color.BLACK
-        private const val EMOJI_DEFAULT_CODE = 0x1F60A
-        private const val EMOJI_DEFAULT_COUNT = 0
+        private const val REACTION_DEFAULT_CODE = 0x1F60A
+        private const val REACTION_DEFAULT_COUNT = 0
         private val DRAWABLES_STATE = IntArray(1) { android.R.attr.state_selected }
     }
 
-    var emojiCode: Int = EMOJI_DEFAULT_CODE
+    var reactionCode: Int = REACTION_DEFAULT_CODE
         set(value) {
             if (field != value) {
                 field = value
@@ -30,7 +30,7 @@ class EmojiView @JvmOverloads constructor(
             }
         }
 
-    var emojiCount: Int = EMOJI_DEFAULT_COUNT
+    var reactionCount: Int = REACTION_DEFAULT_COUNT
         set(value) {
             if (field != value) {
                 field = value
@@ -67,16 +67,16 @@ class EmojiView @JvmOverloads constructor(
 
     init {
         if (attrs != null) {
-            context.obtainStyledAttributes(attrs, R.styleable.EmojiView).apply {
+            context.obtainStyledAttributes(attrs, R.styleable.ReactionView).apply {
                 textSize = getDimensionPixelSize(
-                    R.styleable.EmojiView_ev_textSize, context.spToPx(
+                    R.styleable.ReactionView_rv_textSize, context.spToPx(
                         DEFAULT_FONT_SIZE_SP
                     )
                 )
-                textColor = getColor(R.styleable.EmojiView_ev_textColor, DEFAULT_FONT_COLOR)
-                emojiCode = getInt(R.styleable.EmojiView_ev_emojiCode, EMOJI_DEFAULT_CODE)
-                emojiCount = getInt(R.styleable.EmojiView_ev_emojiCount, EMOJI_DEFAULT_COUNT)
-                isSelected = getBoolean(R.styleable.EmojiView_ev_selected, false)
+                textColor = getColor(R.styleable.ReactionView_rv_textColor, DEFAULT_FONT_COLOR)
+                reactionCode = getInt(R.styleable.ReactionView_rv_reactionCode, REACTION_DEFAULT_CODE)
+                reactionCount = getInt(R.styleable.ReactionView_rv_reactionCount, REACTION_DEFAULT_COUNT)
+                isSelected = getBoolean(R.styleable.ReactionView_rv_selected, false)
 
                 recycle()
             }
@@ -123,13 +123,13 @@ class EmojiView @JvmOverloads constructor(
         }
     }
 
-    private fun getEmoji(unicode: Int): String {
+    private fun getReaction(unicode: Int): String {
         return String(Character.toChars(unicode))
     }
 
     private fun updateText() {
-        val emojiCodeText = getEmoji(emojiCode)
-        text = "$emojiCodeText $emojiCount"
+        val reactionCodeText = getReaction(reactionCode)
+        text = "$reactionCodeText $reactionCount"
         requestLayout()
     }
 }

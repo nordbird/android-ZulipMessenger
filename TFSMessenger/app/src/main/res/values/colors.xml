@@ -8,5 +8,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="default_round_bg">#DDDDDD</color>
-    <color name="emoji_bg_selected">#AED581</color>
+    <color name="reaction_bg_selected">#AED581</color>
 </resources>

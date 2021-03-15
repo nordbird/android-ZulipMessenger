@@ -12,7 +12,7 @@ import android.widget.LinearLayout
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.extensions.layout
 
-class MessageViewGroup @JvmOverloads constructor(
+class MessageInViewGroup @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -21,42 +21,42 @@ class MessageViewGroup @JvmOverloads constructor(
 
     private val avatarView: CircleImageView
     private val messageBox: LinearLayout
-    private val emojiBox: FlexBoxLayout
+    private val reactionBox: FlexBoxLayout
 
     private val avatarRect = Rect()
     private val messageBoxRect = Rect()
-    private val emojiBoxRect = Rect()
+    private val reactionBoxRect = Rect()
 
     init {
-        LayoutInflater.from(context).inflate(R.layout.message_view_group, this, true)
+        LayoutInflater.from(context).inflate(R.layout.message_in_view_group, this, true)
         avatarView = findViewById(R.id.civ_avatar)
         messageBox = findViewById(R.id.ll_messageBox)
-        emojiBox = findViewById(R.id.fbl_emoji)
+        reactionBox = findViewById(R.id.fbl_reaction)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        var emojiBoxHeight = 0
-        var emojiBoxWidth = 0
+        var reactionBoxHeight = 0
+        var reactionBoxWidth = 0
 
         val (avatarWidth, avatarHeight) =
             measureChilds(avatarView, widthMeasureSpec, 0, heightMeasureSpec, 0)
         val (messageBoxWidth, messageBoxHeight) =
             measureChilds(messageBox, widthMeasureSpec, avatarWidth, heightMeasureSpec, 0)
 
-        if (emojiBox.visibility != GONE) {
-            measureChilds(emojiBox, widthMeasureSpec, avatarWidth, heightMeasureSpec, messageBoxHeight).apply {
-                emojiBoxWidth = first
-                emojiBoxHeight = second
+        if (reactionBox.visibility != GONE) {
+            measureChilds(reactionBox, widthMeasureSpec, avatarWidth, heightMeasureSpec, messageBoxHeight).apply {
+                reactionBoxWidth = first
+                reactionBoxHeight = second
             }
         }
 
         setMeasuredDimension(
             resolveSize(
-                avatarWidth + maxOf(messageBoxWidth, emojiBoxWidth) + paddingStart + paddingEnd,
+                avatarWidth + maxOf(messageBoxWidth, reactionBoxWidth) + paddingStart + paddingEnd,
                 widthMeasureSpec
             ),
             resolveSize(
-                maxOf(avatarHeight, messageBoxHeight + emojiBoxHeight) + paddingTop + paddingBottom,
+                maxOf(avatarHeight, messageBoxHeight + reactionBoxHeight) + paddingTop + paddingBottom,
                 heightMeasureSpec
             )
         )
@@ -80,7 +80,7 @@ class MessageViewGroup @JvmOverloads constructor(
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         val avatarLayoutParams = avatarView.layoutParams as MarginLayoutParams
         val messageBoxLayoutParams = messageBox.layoutParams as MarginLayoutParams
-        val emojiBoxLayoutParams = emojiBox.layoutParams as MarginLayoutParams
+        val reactionBoxLayoutParams = reactionBox.layoutParams as MarginLayoutParams
 
         with(avatarRect) {
             left = paddingStart + avatarLayoutParams.leftMargin
@@ -98,14 +98,14 @@ class MessageViewGroup @JvmOverloads constructor(
         }
         messageBox.layout(messageBoxRect)
 
-        if (emojiBox.visibility != GONE) {
-            with(emojiBoxRect) {
-                left = emojiBoxLayoutParams.leftMargin + avatarRect.right + avatarLayoutParams.rightMargin
-                top = messageBoxRect.height() + emojiBoxLayoutParams.topMargin
-                right = emojiBoxRect.left + emojiBox.measuredWidth
-                bottom = emojiBoxRect.top + emojiBox.measuredHeight
+        if (reactionBox.visibility != GONE) {
+            with(reactionBoxRect) {
+                left = reactionBoxLayoutParams.leftMargin + avatarRect.right + avatarLayoutParams.rightMargin
+                top = messageBoxRect.height() + reactionBoxLayoutParams.topMargin
+                right = reactionBoxRect.left + reactionBox.measuredWidth
+                bottom = reactionBoxRect.top + reactionBox.measuredHeight
             }
-            emojiBox.layout(emojiBoxRect)
+            reactionBox.layout(reactionBoxRect)
         }
     }
 

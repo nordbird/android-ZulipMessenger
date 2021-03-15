@@ -2,4 +2,5 @@
     <string name="app_name">TFS Messenger</string>
     <string name="message_text">Привет! Это тестовое сообщение, отвечать на него не обязательно</string>
     <string name="message_user">Darrell Steward</string>
+    <string name="input_message_hint">Написать...</string>
 </resources>
