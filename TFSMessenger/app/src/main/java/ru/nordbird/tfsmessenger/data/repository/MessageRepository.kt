@@ -19,4 +19,8 @@ object MessageRepository {
         messages.add(0, message)
         messages.add(0, DataGenerator.getRandomIncomingMessage())
     }
+
+    fun addReaction(uid: String, code: Int) {
+        messages.filter { it.id == uid }
+    }
 }

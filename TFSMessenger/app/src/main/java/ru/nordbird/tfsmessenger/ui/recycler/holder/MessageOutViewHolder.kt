@@ -9,14 +9,18 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ClickedViewType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
 class MessageOutUi(
-    val text: String,
-    override val viewType: Int = R.layout.item_message_out
-) : ViewTyped
+        val id: String,
+        val text: String,
+        override val viewType: Int = R.layout.item_message_out
+) : ViewTyped {
+    override val uid: String
+        get() = id
+}
 
 class MessageOutViewHolder(
-    view: View,
-    private val clickListener: (ViewTyped, View, ClickedViewType) -> Unit,
-    private val longClickListener: (ViewTyped, View, ClickedViewType) -> Unit
+        view: View,
+        private val clickListener: (ViewTyped, View, ClickedViewType) -> Unit,
+        private val longClickListener: (ViewTyped, View, ClickedViewType) -> Unit
 ) : BaseViewHolder<MessageOutUi>(view) {
 
     private val messageView: TextView = view.findViewById(R.id.tv_message)
