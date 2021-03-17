@@ -6,4 +6,6 @@ interface ViewTyped {
 
     val uid: String
         get() = error("provide uid for viewType $this")
+
+    fun asString(): String
 }

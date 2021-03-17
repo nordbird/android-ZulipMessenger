@@ -10,16 +10,18 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import java.util.*
 
 class SeparatorDateUi(
-        val date: Date,
-        override val viewType: Int = R.layout.item_separator_date
+    val date: Date,
+    override val viewType: Int = R.layout.item_separator_date
 ) : ViewTyped {
 
     override val uid: String
-        get() = date.toZeroTime().toString()
+        get() = date.toZeroTime().format("dd.MM.yy")
+
+    override fun asString() = uid
 }
 
 class SeparatorDateViewHolder(
-        view: View
+    view: View
 ) : BaseViewHolder<SeparatorDateUi>(view) {
 
     private val dateView: TextView = view.findViewById(R.id.tv_separator_date)

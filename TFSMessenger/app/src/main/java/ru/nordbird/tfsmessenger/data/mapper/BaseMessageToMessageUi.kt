@@ -18,8 +18,11 @@ class BaseMessageToMessageUi : (List<BaseMessage>) -> List<ViewTyped> {
     private fun makeMessages(messages: List<BaseMessage>): List<ViewTyped> {
         return messages.map {
             when (it.type) {
-                MessageType.TEXT -> if (it.isIncoming) MessageInUi(it.id, it.author, it.data()) else MessageOutUi(it.id, it.data())
-                MessageType.IMAGE -> if (it.isIncoming) MessageInUi(it.id, it.author, it.data()) else MessageOutUi(it.id, it.data())
+                MessageType.TEXT, MessageType.IMAGE -> if (it.isIncoming) {
+                    MessageInUi(it.id, it.author, it.data(), it.reactions)
+                } else {
+                    MessageOutUi(it.id, it.author, it.data(), it.reactions)
+                }
             }
         }
     }

@@ -3,4 +3,5 @@
     <dimen name="reaction_view_corner_radius">10dp</dimen>
     <dimen name="message_bg_corner_radius">18dp</dimen>
     <dimen name="avatar_size">42dp</dimen>
+    <dimen name="message_text_size">18sp</dimen>
 </resources>
