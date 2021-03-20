@@ -4,8 +4,10 @@ import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 
 open class BaseViewHolder<T : ViewTyped>(
-    containerView: View
+        containerView: View
 ) : RecyclerView.ViewHolder(containerView) {
+
+    open var itemId: String = ""
 
     open fun bind(item: T) = Unit
 

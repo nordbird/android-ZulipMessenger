@@ -11,15 +11,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import ru.nordbird.tfsmessenger.data.DataGenerator
-import ru.nordbird.tfsmessenger.data.mapper.BaseMessageToMessageUi
+import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
-import ru.nordbird.tfsmessenger.ui.recycler.base.ClickedViewType
+import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
+import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
+import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
-import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageClickedViewType
+import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageVHClickType
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
 
 
@@ -28,17 +30,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private val messageRepository = MessageRepository
+    private val messageMapper = MessageToViewTypedMapper()
     private var isTextMode = false
     private val currentUser = DataGenerator.getCurrentUser()
 
-    private val clickListener = { viewTyped: ViewTyped, view: View, viewType: ClickedViewType ->
-        when (viewTyped.viewType) {
-            R.layout.item_message_in -> onMessageClick(viewTyped, view, viewType)
-            R.layout.item_message_out -> onMessageClick(viewTyped, view, viewType)
+    private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
+        override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType) {
+            onMessageClick(holder, view, clickType)
+        }
+
+        override fun onViewHolderLongClick(holder: BaseViewHolder<*>, view: View): Boolean {
+            return onMessageLongClick(holder)
         }
     }
 
-    private val holderFactory = TfsHolderFactory(currentUser, clickListener, clickListener)
+    private val holderFactory = TfsHolderFactory(currentUser, clickListener)
     private val adapter = Adapter<ViewTyped>(holderFactory)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +72,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.edMessage.doOnTextChanged { text, start, before, count ->
-            isTextMode = binding.edMessage.text.isNotEmpty()
+            isTextMode = !text.isNullOrBlank()
             updateUI()
         }
     }
@@ -80,10 +86,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateMessages() {
-        adapter.items = BaseMessageToMessageUi()(messageRepository.getMessages())
+        adapter.items = messageMapper.transform(messageRepository.getMessages())
     }
 
-    private fun showReactionChooser(viewTyped: ViewTyped) {
+    private fun showReactionChooser(messageId: String) {
         val bottomSheetDialog = BottomSheetDialog(this)
         val sheetBinding = BottomSheetReactionBinding.inflate(layoutInflater)
         val sheetView = sheetBinding.root
@@ -91,17 +97,17 @@ class MainActivity : AppCompatActivity() {
         table.isStretchAllColumns = true
         table.isShrinkAllColumns = true
 
-        var code = 0x1F600
-        (1..REACTION_SHEET_ROWS).forEach {
+        var code = REACTION_FIRST_CODE
+        repeat(REACTION_SHEET_ROWS) {
             val tableRow = TableRow(this)
             tableRow.gravity = Gravity.CENTER_HORIZONTAL
-            (1..REACTION_SHEET_COLS).forEach {
+            repeat(REACTION_SHEET_COLS) {
                 val reactionView = TextView(this, null, 0, R.style.BottomSheetReactionStyle)
                 reactionView.text = getReaction(code)
                 tableRow.addView(reactionView)
                 val localCode = code
                 reactionView.setOnClickListener {
-                    messageRepository.updateReaction(viewTyped.uid, currentUser.id, localCode)
+                    messageRepository.updateReaction(messageId, currentUser.id, localCode)
                     bottomSheetDialog.dismiss()
                     updateMessages()
                 }
@@ -119,20 +125,25 @@ class MainActivity : AppCompatActivity() {
         return String(Character.toChars(unicode))
     }
 
-    private fun onMessageClick(viewTyped: ViewTyped, view: View, viewType: ClickedViewType) {
-        when (viewType) {
-            MessageClickedViewType.REACTION -> {
+    private fun onMessageClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType) {
+        when (clickType) {
+            MessageVHClickType.UPDATE_REACTION_CLICK -> {
                 val reactionView = view as ReactionView
-                messageRepository.updateReaction(viewTyped.uid, currentUser.id, reactionView.reactionCode)
+                messageRepository.updateReaction(holder.itemId, currentUser.id, reactionView.reactionCode)
                 updateMessages()
             }
-            MessageClickedViewType.ADD_REACTION -> showReactionChooser(viewTyped)
-            MessageClickedViewType.LONG_MESSAGE -> showReactionChooser(viewTyped)
+            MessageVHClickType.ADD_REACTION_CLICK -> showReactionChooser(holder.itemId)
         }
+    }
+
+    private fun onMessageLongClick(holder: BaseViewHolder<*>): Boolean {
+        showReactionChooser(holder.itemId)
+        return true
     }
 
     companion object {
         private const val REACTION_SHEET_ROWS = 5
         private const val REACTION_SHEET_COLS = 10
+        private const val REACTION_FIRST_CODE = 0x1F600
     }
 }
