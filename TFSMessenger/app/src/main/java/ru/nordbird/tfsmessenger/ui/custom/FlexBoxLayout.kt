@@ -126,8 +126,6 @@ class FlexBoxLayout @JvmOverloads constructor(
             emptyList<View>()
         }
 
-        widthOffset = 0
-        heightOffset = 0
         children.forEach { child ->
             if (child != btnAddView) {
                 childWidth = child.measuredWidth
@@ -142,7 +140,7 @@ class FlexBoxLayout @JvmOverloads constructor(
                 childWidth = childHeight
             }
 
-            if (widthOffset + childWidth + leftMargin > measuredWidth) {
+            if (widthOffset + childWidth + leftMargin + rightMargin > measuredWidth) {
                 if (!lastRowList.contains(child)) {
                     widthOffset = paddingStart
                 } else {
