@@ -1,4 +1,7 @@
 <androidx.appcompat.widget.SearchView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:defaultQueryHint="@string/menu_search_title"
+    android:theme="@style/SearchViewStyle"
     android:id="@+id/search_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

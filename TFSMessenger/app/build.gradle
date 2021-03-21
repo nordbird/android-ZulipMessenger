@@ -42,5 +42,7 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:$androidXConstraintLayoutVersion"
     implementation "androidx.navigation:navigation-fragment-ktx:$androidXNavigationVersion"
     implementation "androidx.navigation:navigation-ui-ktx:$androidXNavigationVersion"
+    implementation "androidx.fragment:fragment-ktx:$androidXFragmentVersion"
+    implementation "androidx.viewpager2:viewpager2:$androidXViewPager2Version"
 
 }

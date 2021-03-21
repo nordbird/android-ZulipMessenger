@@ -17,7 +17,7 @@ class MessageOutUi(
 
 class MessageOutViewHolder(
         view: View,
-        currentUser: User,
+        currentUser: User?,
         private val clickListener: ViewHolderClickListener,
 ) : MessageViewHolder<MessageOutUi>(view, R.layout.right_reaction_view, currentUser, clickListener) {
 

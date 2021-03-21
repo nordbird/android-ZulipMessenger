@@ -24,4 +24,13 @@
         <item name="android:textSize">36sp</item>
     </style>
 
+    <style name="ChannelsTabStyle">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="SearchViewStyle" parent="Widget.AppCompat.Light.SearchView">
+        <item name="android:textSize">24sp</item>
+    </style>
+
 </resources>

@@ -35,7 +35,7 @@ class TestActivity : AppCompatActivity() {
     private val currentUser = DataGenerator.getCurrentUser()
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
-        override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType) {
+        override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
             onMessageClick(holder, view, clickType)
         }
 
@@ -125,7 +125,7 @@ class TestActivity : AppCompatActivity() {
         return String(Character.toChars(unicode))
     }
 
-    private fun onMessageClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType) {
+    private fun onMessageClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
         when (clickType) {
             MessageVHClickType.UPDATE_REACTION_CLICK -> {
                 val reactionView = view as ReactionView

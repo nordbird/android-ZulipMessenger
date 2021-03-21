@@ -18,7 +18,7 @@ class MessageInUi(
 
 class MessageInViewHolder(
         view: View,
-        currentUser: User,
+        currentUser: User?,
         private val clickListener: ViewHolderClickListener
 ) : MessageViewHolder<MessageInUi>(view, R.layout.left_reaction_view, currentUser, clickListener) {
 
