@@ -13,7 +13,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import ru.nordbird.tfsmessenger.data.DataGenerator
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
-import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
+import ru.nordbird.tfsmessenger.databinding.ActivityTestBinding
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
@@ -25,9 +25,9 @@ import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageVHClickType
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
 
 
-class MainActivity : AppCompatActivity() {
+class TestActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
+    private lateinit var binding: ActivityTestBinding
 
     private val messageRepository = MessageRepository
     private val messageMapper = MessageToViewTypedMapper()
@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityTestBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         initUI()
