@@ -15,4 +15,6 @@
     <color name="default_bg">#FFCECECE</color>
     <color name="color_green">#FF4FD149</color>
     <color name="color_indicator_stroke">#FFC4C4C4</color>
+    <color name="color_profile_status">#FF000000</color>
+    <color name="color_profile_online">#FF4AB54D</color>
 </resources>

@@ -7,4 +7,5 @@
     <color name="default_bg">#FF1C1C1C</color>
     <color name="color_green">#FF4FD149</color>
     <color name="color_indicator_stroke">#FFC4C4C4</color>
+    <color name="color_profile_status">#FFBCBCBC</color>
 </resources>
