@@ -6,6 +6,7 @@ import ru.nordbird.tfsmessenger.data.model.Topic
 import ru.nordbird.tfsmessenger.data.repository.StreamRepository
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.StreamUi
+import ru.nordbird.tfsmessenger.ui.recycler.holder.TopicUi
 
 object ChannelsInteractor {
 
@@ -13,8 +14,8 @@ object ChannelsInteractor {
     private val streamMapper = StreamToStreamUiMapper()
     private val topicMapper = TopicToTopicUiMapper()
 
-    private val allStreams = mutableListOf<StreamUi>()
-    private val subscribedStreams = mutableListOf<StreamUi>()
+    private val allStreams = mutableListOf<ViewTyped>()
+    private val subscribedStreams = mutableListOf<ViewTyped>()
 
     private val allTopics = mutableMapOf<String, List<Topic>>()
     private val subscribedTopics = mutableMapOf<String, List<Topic>>()
@@ -23,21 +24,23 @@ object ChannelsInteractor {
     private var filterQuerySubscribedStreams = ""
 
     fun getAllStreams(): List<ViewTyped> {
-        val newList = streamRepository.getAllStreams().filter {
+        val streamList = streamRepository.getAllStreams().filter {
             it.name.contains(filterQueryAllStreams, true)
         }
+        val streamAndTopicList = streamMapper.transform(streamList).flatMap { makeStreamWithTopics(it, allTopics) }
         allStreams.clear()
-        allStreams.addAll(streamMapper.transform(newList))
-        return allStreams.flatMap { makeStreamWithTopics(it, allTopics) }
+        allStreams.addAll(streamAndTopicList)
+        return allStreams
     }
 
     fun getSubscribedStreams(): List<ViewTyped> {
-        val newList = streamRepository.getSubscribedStreams().filter {
+        val streamList = streamRepository.getSubscribedStreams().filter {
             it.name.contains(filterQuerySubscribedStreams, true)
         }
+        val streamAndTopicList = streamMapper.transform(streamList).flatMap { makeStreamWithTopics(it, subscribedTopics) }
         subscribedStreams.clear()
-        subscribedStreams.addAll(streamMapper.transform(newList))
-        return subscribedStreams.flatMap { makeStreamWithTopics(it, subscribedTopics) }
+        subscribedStreams.addAll(streamAndTopicList)
+        return subscribedStreams
     }
 
     fun updateAllStreamTopics(streamId: String) {
@@ -56,12 +59,36 @@ object ChannelsInteractor {
         filterQuerySubscribedStreams = query
     }
 
+    fun getAllStreamsTopic(itemId: String): TopicUi? {
+        return getTopic(allStreams, itemId)
+    }
+
+    fun getSubscribedStreamsTopic(itemId: String): TopicUi? {
+        return getTopic(subscribedStreams, itemId)
+    }
+
+    fun getAllStream(streamId: String): StreamUi? {
+        return getStream(allStreams, streamId)
+    }
+
+    fun getSubscribedStream(streamId: String): StreamUi? {
+        return getStream(subscribedStreams, streamId)
+    }
+
+    private fun getStream(streamList: List<ViewTyped>, streamId: String): StreamUi? {
+        return streamList.filterIsInstance<StreamUi>().firstOrNull { it.id == streamId }
+    }
+
+    private fun getTopic(streamList: List<ViewTyped>, itemId: String): TopicUi? {
+        return streamList.filterIsInstance<TopicUi>().firstOrNull { it.uid == itemId }
+    }
+
     private fun updateStreamTopics(
-        streamList: List<StreamUi>,
+        streamList: List<ViewTyped>,
         topicMap: MutableMap<String, List<Topic>>,
         streamId: String
     ) {
-        val stream = streamList.firstOrNull { it.id == streamId } ?: return
+        val stream = streamList.filterIsInstance<StreamUi>().firstOrNull { it.id == streamId } ?: return
 
         if (!stream.topicExpanded) {
             val topicList = streamRepository.getStreamTopics(streamId)

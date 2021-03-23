@@ -5,11 +5,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.setFragmentResultListener
 import androidx.recyclerview.widget.DividerItemDecoration
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_ID
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
@@ -27,7 +34,10 @@ class ChannelsTabFragment : Fragment() {
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
-            onStreamClick(holder)
+            when (holder.itemViewType) {
+                R.layout.item_stream -> onStreamClick(holder)
+                R.layout.item_topic -> onTopicClick(holder)
+            }
         }
 
         override fun onViewHolderLongClick(holder: BaseViewHolder<*>, view: View): Boolean = true
@@ -44,7 +54,8 @@ class ChannelsTabFragment : Fragment() {
             ChannelsTabType.SUBSCRIBED.ordinal -> tabType = ChannelsTabType.SUBSCRIBED
         }
 
-        setFragmentResultListener(REQUEST_FILTER_QUERY + tabType) { _, bundle ->
+        val requestKey = REQUEST_FILTER_QUERY + tabType
+        setFragmentResultListener(requestKey) { _, bundle ->
             filterStreams(bundle.getString(REQUEST_FILTER_QUERY_KEY, ""))
         }
     }
@@ -80,6 +91,28 @@ class ChannelsTabFragment : Fragment() {
         }
 
         updateStreams()
+    }
+
+    private fun onTopicClick(holder: BaseViewHolder<*>) {
+        val topic = when (tabType) {
+            ChannelsTabType.ALL -> channelsInteractor.getAllStreamsTopic(holder.itemId)
+            ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStreamsTopic(holder.itemId)
+        } ?: return
+
+        val stream = when (tabType) {
+            ChannelsTabType.ALL -> channelsInteractor.getAllStream(topic.streamId)
+            ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStream(topic.streamId)
+        } ?: return
+
+        setFragmentResult(
+            REQUEST_OPEN_TOPIC,
+            bundleOf(
+                REQUEST_OPEN_TOPIC_STREAM_ID to stream.id,
+                REQUEST_OPEN_TOPIC_STREAM_NAME to stream.name,
+                REQUEST_OPEN_TOPIC_NAME to topic.name,
+                REQUEST_OPEN_TOPIC_COLOR to topic.color
+            )
+        )
     }
 
     private fun filterStreams(query: String) {

@@ -10,7 +10,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
 class TopicUi(
-    private val streamId: String,
+    val streamId: String,
     val name: String,
     val color: Int,
     val messageCount: Int,

@@ -4,4 +4,5 @@
     <color name="reaction_bg_selected">#AED581</color>
     <color name="tab_layout_color">#FF1E1E1E</color>
     <color name="divider_color">#FF282828</color>
+    <color name="default_bg">#FF1C1C1C</color>
 </resources>

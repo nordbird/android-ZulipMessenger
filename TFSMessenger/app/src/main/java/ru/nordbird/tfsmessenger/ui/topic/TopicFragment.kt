@@ -1,8 +1,8 @@
-package ru.nordbird.tfsmessenger
+package ru.nordbird.tfsmessenger.ui.topic
 
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
+import android.view.*
+import androidx.fragment.app.Fragment
 import android.widget.TableRow
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -10,11 +10,16 @@ import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.DataGenerator
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
-import ru.nordbird.tfsmessenger.databinding.ActivityTestBinding
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
+import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_ID
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
@@ -24,10 +29,15 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageVHClickType
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
 
+class TopicFragment : Fragment() {
 
-class TestActivity : AppCompatActivity() {
+    private var _binding: FragmentTopicBinding? = null
+    private val binding get() = _binding!!
 
-    private lateinit var binding: ActivityTestBinding
+    private var streamId: String? = null
+    private var streamName: String? = null
+    private var topicName: String? = null
+    private var topicColor: Int = 0
 
     private val messageRepository = MessageRepository
     private val messageMapper = MessageToViewTypedMapper()
@@ -49,16 +59,39 @@ class TestActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityTestBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setHasOptionsMenu(true)
+        arguments?.let {
+            streamId = it.getString(REQUEST_OPEN_TOPIC_STREAM_ID)
+            streamName = it.getString(REQUEST_OPEN_TOPIC_STREAM_NAME)
+            topicName = it.getString(REQUEST_OPEN_TOPIC_NAME)
+            topicColor = it.getInt(REQUEST_OPEN_TOPIC_COLOR)
+        }
+    }
 
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentTopicBinding.inflate(inflater, container, false)
         initUI()
-        updateUI()
+        initToolbar()
+        return binding.root
+    }
+
+    override fun onStart() {
+        super.onStart()
         updateMessages()
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return if (item.itemId == android.R.id.home) {
+            activity?.onBackPressed()
+            true
+        } else {
+            super.onOptionsItemSelected(item)
+        }
+    }
+
     private fun initUI() {
-        val linearLayoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, true)
+        binding.tvTopicTitle.text = topicName
+        val linearLayoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, true)
         binding.rvChat.adapter = adapter
         binding.rvChat.layoutManager = linearLayoutManager
 
@@ -77,6 +110,16 @@ class TestActivity : AppCompatActivity() {
         }
     }
 
+    private fun initToolbar() {
+        with(activity as AppCompatActivity) {
+            setSupportActionBar(binding.appbar.toolbar)
+            supportActionBar?.title = streamName
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        }
+        binding.appbar.toolbar.setBackgroundColor(topicColor)
+        activity?.window?.statusBarColor = topicColor
+    }
+
     private fun updateUI() {
         if (isTextMode) {
             binding.ibSend.setImageResource(R.drawable.ic_baseline_send_24)
@@ -90,7 +133,7 @@ class TestActivity : AppCompatActivity() {
     }
 
     private fun showReactionChooser(messageId: String) {
-        val bottomSheetDialog = BottomSheetDialog(this)
+        val bottomSheetDialog = BottomSheetDialog(requireContext())
         val sheetBinding = BottomSheetReactionBinding.inflate(layoutInflater)
         val sheetView = sheetBinding.root
         val table = sheetBinding.tlTable
@@ -99,10 +142,10 @@ class TestActivity : AppCompatActivity() {
 
         var code = REACTION_FIRST_CODE
         repeat(REACTION_SHEET_ROWS) {
-            val tableRow = TableRow(this)
+            val tableRow = TableRow(context)
             tableRow.gravity = Gravity.CENTER_HORIZONTAL
             repeat(REACTION_SHEET_COLS) {
-                val reactionView = TextView(this, null, 0, R.style.BottomSheetReactionStyle)
+                val reactionView = TextView(context, null, 0, R.style.BottomSheetReactionStyle)
                 reactionView.text = getReaction(code)
                 tableRow.addView(reactionView)
                 val localCode = code
@@ -145,5 +188,6 @@ class TestActivity : AppCompatActivity() {
         private const val REACTION_SHEET_ROWS = 5
         private const val REACTION_SHEET_COLS = 10
         private const val REACTION_FIRST_CODE = 0x1F600
+
     }
 }
