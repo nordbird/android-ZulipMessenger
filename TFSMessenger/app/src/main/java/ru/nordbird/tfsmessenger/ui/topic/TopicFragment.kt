@@ -104,7 +104,7 @@ class TopicFragment : Fragment() {
             }
         }
 
-        binding.edMessage.doOnTextChanged { text, start, before, count ->
+        binding.edMessage.doOnTextChanged { text, _, _, _ ->
             isTextMode = !text.isNullOrBlank()
             updateUI()
         }

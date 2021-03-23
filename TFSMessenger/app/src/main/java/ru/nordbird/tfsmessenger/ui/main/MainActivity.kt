@@ -9,8 +9,10 @@ import androidx.navigation.ui.setupWithNavController
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment
+import ru.nordbird.tfsmessenger.ui.people.PeopleFragment
+import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
-class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener {
+class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navHostFragment: NavHostFragment
@@ -46,5 +48,9 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
 
     override fun onOpenTopic(bundle: Bundle) {
         navController.navigate(R.id.navigation_topic, bundle)
+    }
+
+    override fun onOpenUserProfile(user: UserUi) {
+        //
     }
 }

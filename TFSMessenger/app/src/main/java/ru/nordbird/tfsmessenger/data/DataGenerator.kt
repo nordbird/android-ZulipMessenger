@@ -11,9 +11,9 @@ object DataGenerator {
     private var lastId = 0
 
     private val authors = listOf(
-        User("1", "Mike"),
-        User("2", "Ronald"),
-        User("3", "Alex")
+        User("1", "Mike", "mike@mail.ru", true),
+        User("2", "Ronald", "ron@bk.ru", false),
+        User("3", "Alex", "alexxxx@rambler.ru", true)
     )
 
     private val texts = listOf(
@@ -106,4 +106,6 @@ object DataGenerator {
             mutableListOf()
         )
     }
+
+    fun getUsers() = authors
 }
