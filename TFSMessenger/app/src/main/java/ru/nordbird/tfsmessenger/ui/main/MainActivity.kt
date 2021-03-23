@@ -3,6 +3,7 @@ package ru.nordbird.tfsmessenger.ui.main
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
@@ -10,6 +11,9 @@ import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment
 import ru.nordbird.tfsmessenger.ui.people.PeopleFragment
+import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ID
+import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_NAME
+import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ONLINE
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
 class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener {
@@ -38,7 +42,7 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
 
     private fun onDestinationChanged(fragmentId: Int) {
         when (fragmentId) {
-            R.id.navigation_topic -> binding.navView.visibility = View.GONE
+            R.id.navigation_topic, R.id.navigation_profile_another -> binding.navView.visibility = View.GONE
             else -> {
                 binding.navView.visibility = View.VISIBLE
                 window.statusBarColor = statusBarColor
@@ -51,6 +55,13 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
     }
 
     override fun onOpenUserProfile(user: UserUi) {
-        //
+        navController.navigate(
+            R.id.navigation_profile_another,
+            bundleOf(
+                PARAM_USER_ID to user.id,
+                PARAM_USER_NAME to user.name,
+                PARAM_USER_ONLINE to user.isOnline
+            )
+        )
     }
 }
