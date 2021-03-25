@@ -12,6 +12,7 @@ class TfsHolderFactory(
 
     override fun createViewHolder(view: View, viewType: Int): BaseViewHolder<*>? {
         return when (viewType) {
+            R.layout.item_error -> ErrorViewHolder(view, clickListener)
             R.layout.item_message_in -> MessageInViewHolder(view, currentUser, clickListener)
             R.layout.item_message_out -> MessageOutViewHolder(view, currentUser, clickListener)
             R.layout.item_separator_date -> SeparatorDateViewHolder(view)

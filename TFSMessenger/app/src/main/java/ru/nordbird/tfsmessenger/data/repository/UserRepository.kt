@@ -1,16 +1,11 @@
 package ru.nordbird.tfsmessenger.data.repository
 
 import ru.nordbird.tfsmessenger.data.DataGenerator
-import ru.nordbird.tfsmessenger.data.model.User
 
 object UserRepository {
 
-    private val users = mutableListOf<User>()
+    private val users = DataGenerator.getUsers()
 
-    init {
-        users.addAll(DataGenerator.getUsers())
-    }
-
-    fun getUsers() = users.toList()
+    fun getUsers() = users
 
 }

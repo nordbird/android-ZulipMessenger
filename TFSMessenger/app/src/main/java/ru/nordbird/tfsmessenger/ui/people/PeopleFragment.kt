@@ -6,15 +6,21 @@ import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
+import ru.nordbird.tfsmessenger.data.model.Resource
+import ru.nordbird.tfsmessenger.data.model.Status
 import ru.nordbird.tfsmessenger.databinding.FragmentPeopleBinding
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
+import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
+import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
 
 class PeopleFragment : Fragment() {
 
@@ -23,22 +29,18 @@ class PeopleFragment : Fragment() {
     private lateinit var activityListener: PeopleFragmentListener
 
     private val userInteractor = PeopleInteractor
+    private val compositeDisposable = CompositeDisposable()
+    private lateinit var searchObservable: Observable<String>
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
-            onUserClick(holder)
+            when (holder.itemViewType) {
+                R.layout.item_user -> onUserClick(holder)
+                R.layout.item_error -> onReloadClick()
+            }
         }
 
         override fun onViewHolderLongClick(holder: BaseViewHolder<*>, view: View): Boolean = true
-    }
-    private val searchListener = object : SearchView.OnQueryTextListener {
-        override fun onQueryTextSubmit(query: String?): Boolean {
-            return sendFilterQuery(query)
-        }
-
-        override fun onQueryTextChange(newText: String?): Boolean {
-            return sendFilterQuery(newText)
-        }
     }
 
     private val holderFactory = TfsHolderFactory(clickListener = clickListener)
@@ -65,7 +67,6 @@ class PeopleFragment : Fragment() {
     ): View {
         _binding = FragmentPeopleBinding.inflate(inflater, container, false)
         initUI()
-        updateUsers()
 
         return binding.root
     }
@@ -74,7 +75,10 @@ class PeopleFragment : Fragment() {
         inflater.inflate(R.menu.menu_search, menu)
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem?.actionView as SearchView
-        searchView.setOnQueryTextListener(searchListener)
+
+        searchObservable = RxSearchObservable.fromView(searchView)
+        val searchDisposable = userInteractor.filterUsers(searchObservable)
+        compositeDisposable.add(searchDisposable)
 
         super.onCreateOptionsMenu(menu, inflater)
     }
@@ -84,6 +88,11 @@ class PeopleFragment : Fragment() {
         initToolbar()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        compositeDisposable.clear()
+    }
+
     private fun initToolbar() {
         with(activity as AppCompatActivity) {
             setSupportActionBar(binding.appbar.toolbar)
@@ -91,25 +100,31 @@ class PeopleFragment : Fragment() {
         }
     }
 
-    private fun sendFilterQuery(query: String?): Boolean {
-        if (query != null) {
-            userInteractor.filterUsers(query)
-            updateUsers()
-        }
-        return true
-    }
-
-    private fun updateUsers() {
-        adapter.items = userInteractor.getUsers()
-    }
-
     private fun initUI() {
         binding.rvUsers.adapter = adapter
+
+        val usersDisposable = userInteractor.getUsers()
+            .subscribe { updateUsers(it) }
+        compositeDisposable.add(usersDisposable)
+    }
+
+    private fun updateUsers(resource: Resource<List<UserUi>>) {
+        when (resource.status) {
+            Status.ERROR -> adapter.items = listOf(ErrorUi())
+            else -> adapter.items = resource.data ?: emptyList()
+        }
     }
 
     private fun onUserClick(holder: BaseViewHolder<*>) {
-        val user = userInteractor.getUser(holder.itemId) ?: return
-        activityListener.onOpenUserProfile(user)
+        userInteractor.getUser(holder.itemId)
+            .subscribe {
+                activityListener.onOpenUserProfile(it)
+            }
+            .dispose()
+    }
+
+    private fun onReloadClick() {
+        userInteractor.loadUsers()
     }
 
     interface PeopleFragmentListener {

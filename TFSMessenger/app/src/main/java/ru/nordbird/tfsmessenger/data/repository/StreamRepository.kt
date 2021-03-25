@@ -1,22 +1,25 @@
 package ru.nordbird.tfsmessenger.data.repository
 
+import io.reactivex.Observable
+import io.reactivex.Single
+import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.DataGenerator
 import ru.nordbird.tfsmessenger.data.model.Stream
 
 object StreamRepository {
 
-    private val allStreams = mutableListOf<Stream>()
-    private val subscribedStreams = mutableListOf<Stream>()
+    private val allStreams = BehaviorSubject.create<List<Stream>>()
+    private val subscribedStreams = BehaviorSubject.create<List<Stream>>()
 
     init {
-        allStreams.addAll(DataGenerator.getAllStreams())
-        subscribedStreams.addAll(DataGenerator.getSubscribedStreams())
+        allStreams.onNext(DataGenerator.getAllStreams())
+        subscribedStreams.onNext(DataGenerator.getSubscribedStreams())
     }
 
-    fun getAllStreams() = allStreams.toList()
+    fun getAllStreams() = allStreams
 
-    fun getSubscribedStreams() = subscribedStreams.toList()
+    fun getSubscribedStreams() = subscribedStreams
 
-    fun getStreamTopics(streamId: String) = DataGenerator.getTopics(streamId)
+    fun getStreamTopics(streamId: String) = Observable.just(DataGenerator.getTopics(streamId))
 
 }

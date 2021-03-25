@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.data
 
+import io.reactivex.Observable
 import ru.nordbird.tfsmessenger.data.model.*
 import ru.nordbird.tfsmessenger.extensions.TimeUnits
 import ru.nordbird.tfsmessenger.extensions.add
@@ -107,5 +108,10 @@ object DataGenerator {
         )
     }
 
-    fun getUsers() = authors
+    fun getUsers() = Observable.fromCallable { getUsersWithError() }
+
+    private fun getUsersWithError(): Resource<List<User>> {
+        return if ((0..10).random() < 8) Resource.error() else Resource.success(authors)
+    }
+
 }

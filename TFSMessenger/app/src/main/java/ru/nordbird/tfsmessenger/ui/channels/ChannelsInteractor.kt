@@ -1,12 +1,19 @@
 package ru.nordbird.tfsmessenger.ui.channels
 
+import io.reactivex.Maybe
+import io.reactivex.Observable
+import io.reactivex.Single
+import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.mapper.StreamToStreamUiMapper
 import ru.nordbird.tfsmessenger.data.mapper.TopicToTopicUiMapper
+import ru.nordbird.tfsmessenger.data.model.Stream
 import ru.nordbird.tfsmessenger.data.model.Topic
 import ru.nordbird.tfsmessenger.data.repository.StreamRepository
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.StreamUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TopicUi
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 object ChannelsInteractor {
 
@@ -14,73 +21,71 @@ object ChannelsInteractor {
     private val streamMapper = StreamToStreamUiMapper()
     private val topicMapper = TopicToTopicUiMapper()
 
-    private val allStreams = mutableListOf<ViewTyped>()
-    private val subscribedStreams = mutableListOf<ViewTyped>()
+    private var allStreams: BehaviorSubject<List<ViewTyped>> = BehaviorSubject.create()
+    private val subscribedStreams: BehaviorSubject<List<ViewTyped>> = BehaviorSubject.create()
 
     private val allTopics = mutableMapOf<String, List<Topic>>()
     private val subscribedTopics = mutableMapOf<String, List<Topic>>()
 
-    private var filterQueryAllStreams = ""
-    private var filterQuerySubscribedStreams = ""
-
-    fun getAllStreams(): List<ViewTyped> {
-        val streamList = streamRepository.getAllStreams().filter {
-            it.name.contains(filterQueryAllStreams, true)
-        }
-        val streamAndTopicList = streamMapper.transform(streamList).flatMap { makeStreamWithTopics(it, allTopics) }
-        allStreams.clear()
-        allStreams.addAll(streamAndTopicList)
-        return allStreams
+    fun filterAllStreams(searchObservable: Observable<String>) {
+        searchObservable.filter { it.isNotBlank() }
+            .map { it.toLowerCase(Locale.getDefault()).trim() }
+            .distinctUntilChanged()
+            .debounce(500, TimeUnit.MILLISECONDS)
+            .subscribe { query -> updateAllStreams(query) }
     }
 
-    fun getSubscribedStreams(): List<ViewTyped> {
-        val streamList = streamRepository.getSubscribedStreams().filter {
-            it.name.contains(filterQuerySubscribedStreams, true)
-        }
-        val streamAndTopicList = streamMapper.transform(streamList).flatMap { makeStreamWithTopics(it, subscribedTopics) }
-        subscribedStreams.clear()
-        subscribedStreams.addAll(streamAndTopicList)
-        return subscribedStreams
+    private fun updateAllStreams(query: String) {
+        val streamList = streamRepository.getAllStreams().map { streams -> filterStreams(streams, query) }
+        streamList.flatMap { streamMapper.transform(it) }.flatMap { streams -> Observable.fromIterable(streams) }
+            .flatMap { makeStreamWithTopics(it, allTopics) }.subscribe { allStreams.onNext(it) }
+    }
+
+    fun getAllStreams() = allStreams
+    fun getSubscribedStreams() = subscribedStreams
+
+    private fun filterStreams(streams: List<Stream>, query: String): List<Stream> {
+        return streams.filter { it.name.contains(query, true) }
+    }
+
+    fun updateSubscribedStreams(query: String) {
+        val streamList = streamRepository.getAllStreams().map { streams -> filterStreams(streams, query) }
+        streamList.flatMap { streamMapper.transform(it) }.flatMap { streams -> Observable.fromIterable(streams) }
+            .flatMap { makeStreamWithTopics(it, allTopics) }.subscribe { allStreams.onNext(it) }
     }
 
     fun updateAllStreamTopics(streamId: String) {
-        updateStreamTopics(allStreams, allTopics, streamId)
+        allStreams.map { updateStreamTopics(it, allTopics, streamId) }
     }
 
     fun updateSubscribedStreamTopics(streamId: String) {
-        updateStreamTopics(subscribedStreams, subscribedTopics, streamId)
+        subscribedStreams.map { updateStreamTopics(it, subscribedTopics, streamId) }
     }
 
-    fun filterAllStreams(query: String) {
-        filterQueryAllStreams = query
+    fun getAllStreamsTopic(itemId: String): Observable<TopicUi> {
+        return allStreams.flatMapMaybe { getTopic(it, itemId) }
     }
 
-    fun filterSubscribedStreams(query: String) {
-        filterQuerySubscribedStreams = query
+    fun getSubscribedStreamsTopic(itemId: String): Observable<TopicUi> {
+        return subscribedStreams.flatMapMaybe { getTopic(it, itemId) }
     }
 
-    fun getAllStreamsTopic(itemId: String): TopicUi? {
-        return getTopic(allStreams, itemId)
+    fun getAllStream(streamId: String): Observable<StreamUi> {
+        return allStreams.flatMapMaybe { getStream(it, streamId) }
     }
 
-    fun getSubscribedStreamsTopic(itemId: String): TopicUi? {
-        return getTopic(subscribedStreams, itemId)
+    fun getSubscribedStream(streamId: String): Observable<StreamUi> {
+        return subscribedStreams.flatMapMaybe { getStream(it, streamId) }
     }
 
-    fun getAllStream(streamId: String): StreamUi? {
-        return getStream(allStreams, streamId)
+    private fun getStream(streamList: List<ViewTyped>, streamId: String): Maybe<StreamUi> {
+        val stream = streamList.filterIsInstance<StreamUi>().firstOrNull { it.id == streamId }
+        return Maybe.just(stream)
     }
 
-    fun getSubscribedStream(streamId: String): StreamUi? {
-        return getStream(subscribedStreams, streamId)
-    }
-
-    private fun getStream(streamList: List<ViewTyped>, streamId: String): StreamUi? {
-        return streamList.filterIsInstance<StreamUi>().firstOrNull { it.id == streamId }
-    }
-
-    private fun getTopic(streamList: List<ViewTyped>, itemId: String): TopicUi? {
-        return streamList.filterIsInstance<TopicUi>().firstOrNull { it.uid == itemId }
+    private fun getTopic(streamList: List<ViewTyped>, itemId: String): Maybe<TopicUi> {
+        val topic = streamList.filterIsInstance<TopicUi>().firstOrNull { it.uid == itemId }
+        return Maybe.just(topic)
     }
 
     private fun updateStreamTopics(
@@ -91,19 +96,20 @@ object ChannelsInteractor {
         val stream = streamList.filterIsInstance<StreamUi>().firstOrNull { it.id == streamId } ?: return
 
         if (!stream.topicExpanded) {
-            val topicList = streamRepository.getStreamTopics(streamId)
-            topicMap[streamId] = topicList
+            streamRepository.getStreamTopics(streamId).subscribe { topicMap[streamId] = it }
         } else {
             topicMap.remove(streamId)
         }
     }
 
-    private fun makeStreamWithTopics(stream: StreamUi, topicMap: Map<String, List<Topic>>): List<ViewTyped> {
-        return if (topicMap.containsKey(stream.id)) {
+    private fun makeStreamWithTopics(stream: StreamUi, topicMap: Map<String, List<Topic>>): Observable<List<ViewTyped>> {
+        val list = if (topicMap.containsKey(stream.id)) {
             stream.topicExpanded = true
             val topicList = topicMap[stream.id]!!
             listOf(stream) + topicMapper.transform(topicList)
         } else listOf(stream)
+
+        return Observable.just(list)
     }
 
 }
