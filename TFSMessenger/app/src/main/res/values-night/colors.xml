@@ -2,4 +2,10 @@
 <resources>
     <color name="default_round_bg">#DDDDDD</color>
     <color name="reaction_bg_selected">#AED581</color>
+    <color name="tab_layout_color">#FF1E1E1E</color>
+    <color name="divider_color">#FF282828</color>
+    <color name="default_bg">#FF1C1C1C</color>
+    <color name="color_green">#FF4FD149</color>
+    <color name="color_indicator_stroke">#FFC4C4C4</color>
+    <color name="color_profile_status">#FFBCBCBC</color>
 </resources>

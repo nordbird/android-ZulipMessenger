@@ -9,4 +9,12 @@
     <color name="white">#FFFFFFFF</color>
     <color name="default_round_bg">#DDDDDD</color>
     <color name="reaction_bg_selected">#AED581</color>
+    <color name="tab_indicator_color">#FF219653</color>
+    <color name="tab_layout_color">#FF6200EE</color>
+    <color name="divider_color">#FFDDDDDD</color>
+    <color name="default_bg">#FFCECECE</color>
+    <color name="color_green">#FF4FD149</color>
+    <color name="color_indicator_stroke">#FFC4C4C4</color>
+    <color name="color_profile_status">#FF000000</color>
+    <color name="color_profile_online">#FF4AB54D</color>
 </resources>

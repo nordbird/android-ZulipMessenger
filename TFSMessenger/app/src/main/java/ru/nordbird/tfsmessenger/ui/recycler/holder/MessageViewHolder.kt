@@ -32,7 +32,7 @@ open class MessageUi(
 open class MessageViewHolder<T : MessageUi>(
         view: View,
         private val reactionResId: Int,
-        private val currentUser: User,
+        private val currentUser: User?,
         private val clickListener: ViewHolderClickListener
 ) : BaseViewHolder<T>(view) {
 
@@ -49,7 +49,7 @@ open class MessageViewHolder<T : MessageUi>(
         item.reactions.forEach { reaction ->
             val reactionView = flexBox.inflate<ReactionView>(reactionResId)
 
-            reactionView.isSelected = reaction.userIdList.contains(currentUser.id)
+            reactionView.isSelected = reaction.userIdList.contains(currentUser?.id)
             reactionView.reactionCount = reaction.userIdList.size
             reactionView.reactionCode = reaction.code
             reactionView.setOnClickListener { v ->

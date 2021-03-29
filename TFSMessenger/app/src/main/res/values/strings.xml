@@ -8,4 +8,11 @@
     <string name="title_people">People</string>
     <string name="title_profile">Profile</string>
     <string name="menu_search_title">Search…</string>
+    <string name="tab_channels_subscribed">Subscribed</string>
+    <string name="tab_channels_all">All streams</string>
+    <string name="item_topic_count">%d mes</string>
+    <string name="profile_button_logout">Log out</string>
+    <string name="profile_online">online</string>
+    <string name="profile_offline">offline</string>
+    <string name="profile_status">In a meeting</string>
 </resources>

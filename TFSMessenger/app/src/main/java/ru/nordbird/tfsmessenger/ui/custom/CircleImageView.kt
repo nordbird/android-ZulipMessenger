@@ -55,10 +55,11 @@ class CircleImageView @JvmOverloads constructor(
             }
         }
 
-    private var text: String = DEFAULT_TEXT
+    var text: String = DEFAULT_TEXT
         set(value) {
-            if (field != value) {
-                field = value
+            val cut = value.substring(0, 2)
+            if (field != cut) {
+                field = cut
                 requestLayout()
             }
         }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ll_topicBox"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/tv_topic_name"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginStart="40dp"
+        android:gravity="center_vertical"
+        android:textSize="18sp"
+        tools:text="Testing" />
+
+    <TextView
+        android:id="@+id/tv_topic_count"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginStart="25dp"
+        android:gravity="center_vertical"
+        android:textSize="16sp"
+        tools:text="1240 mes" />
+
+</LinearLayout>

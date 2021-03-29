@@ -6,7 +6,7 @@ interface ViewHolderClickType
 
 interface ViewHolderClickListener {
 
-    fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType)
+    fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType? = null)
 
     fun onViewHolderLongClick(holder: BaseViewHolder<*>, view: View): Boolean
 }

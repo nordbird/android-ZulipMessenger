@@ -1,9 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingTop="?attr/actionBarSize"
+    android:orientation="vertical"
     tools:context=".ui.channels.ChannelsFragment">
 
-</FrameLayout>
+    <include android:id="@+id/appbar" layout="@layout/appbar_layout" />
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/tab_layout_color"
+        android:paddingBottom="27dp"
+        app:tabIndicatorColor="@color/tab_indicator_color"
+        app:tabIndicatorFullWidth="false"
+        app:tabTextAppearance="@style/ChannelsTabStyle"
+        app:tabTextColor="@color/white" />
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/view_pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+</LinearLayout>

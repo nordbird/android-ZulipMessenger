@@ -9,7 +9,11 @@
         android:id="@+id/navigation_channels"
         android:name="ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment"
         android:label="@string/title_channels"
-        tools:layout="@layout/fragment_channels" />
+        tools:layout="@layout/fragment_channels" >
+        <action
+            android:id="@+id/action_navigation_channels_to_topicFragment"
+            app:destination="@id/navigation_topic" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_people"
@@ -19,6 +23,18 @@
 
     <fragment
         android:id="@+id/navigation_profile"
+        android:name="ru.nordbird.tfsmessenger.ui.profile.ProfileFragment"
+        android:label="@string/title_profile"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_topic"
+        android:name="ru.nordbird.tfsmessenger.ui.topic.TopicFragment"
+        android:label="fragment_topic"
+        tools:layout="@layout/fragment_topic" />
+
+    <fragment
+        android:id="@+id/navigation_profile_another"
         android:name="ru.nordbird.tfsmessenger.ui.profile.ProfileFragment"
         android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile" />
