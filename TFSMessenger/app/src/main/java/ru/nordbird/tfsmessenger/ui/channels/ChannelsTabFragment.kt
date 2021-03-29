@@ -10,10 +10,11 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.setFragmentResultListener
 import androidx.recyclerview.widget.DividerItemDecoration
-import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.R
+import ru.nordbird.tfsmessenger.data.model.Resource
+import ru.nordbird.tfsmessenger.data.model.Status
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
@@ -25,10 +26,8 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
+import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
-import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
-import java.util.*
-import java.util.concurrent.TimeUnit
 
 class ChannelsTabFragment : Fragment() {
 
@@ -38,13 +37,14 @@ class ChannelsTabFragment : Fragment() {
     private var tabType: ChannelsTabType = ChannelsTabType.ALL
     private val channelsInteractor = ChannelsInteractor
     private val compositeDisposable = CompositeDisposable()
-    private val searchObservable: PublishSubject<String> = PublishSubject.create()
+    private val searchObservable: BehaviorSubject<String> = BehaviorSubject.create()
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
             when (holder.itemViewType) {
                 R.layout.item_stream -> onStreamClick(holder)
                 R.layout.item_topic -> onTopicClick(holder)
+                R.layout.item_error -> onReloadClick()
             }
         }
 
@@ -62,7 +62,11 @@ class ChannelsTabFragment : Fragment() {
             ChannelsTabType.SUBSCRIBED.ordinal -> tabType = ChannelsTabType.SUBSCRIBED
         }
 
-//        compositeDisposable.add(searchObservable)
+        val searchDisposable = when (tabType) {
+            ChannelsTabType.ALL -> channelsInteractor.filterAllStreams(searchObservable)
+            ChannelsTabType.SUBSCRIBED -> channelsInteractor.filterSubscribedStreams(searchObservable)
+        }
+        compositeDisposable.add(searchDisposable)
 
         val requestKey = REQUEST_FILTER_QUERY + tabType
         setFragmentResultListener(requestKey) { _, bundle ->
@@ -73,7 +77,7 @@ class ChannelsTabFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentChannelsTabBinding.inflate(inflater, container, false)
         initUI()
-        updateStreams()
+        initLoadStreams()
 
         return binding.root
     }
@@ -83,13 +87,20 @@ class ChannelsTabFragment : Fragment() {
         compositeDisposable.clear()
     }
 
-    private fun updateStreams() {
-        channelsInteractor.getAllStreams().subscribe { adapter.items = it }
+    private fun initLoadStreams() {
+        val streamDisposable = when (tabType) {
+            ChannelsTabType.ALL -> channelsInteractor.getAllStreams()
+            ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStreams()
+        }.subscribe { updateStreams(it) }
 
-//        when (tabType) {
-//            ChannelsTabType.ALL -> adapter.items = channelsInteractor.getAllStreams(query)
-//            ChannelsTabType.SUBSCRIBED -> adapter.items = channelsInteractor.getSubscribedStreams(query)
-//        }
+        compositeDisposable.add(streamDisposable)
+    }
+
+    private fun updateStreams(resource: Resource<List<ViewTyped>>) {
+        when (resource.status) {
+            Status.ERROR -> adapter.items = listOf(ErrorUi())
+            else -> adapter.items = resource.data ?: emptyList()
+        }
     }
 
     private fun initUI() {
@@ -106,37 +117,39 @@ class ChannelsTabFragment : Fragment() {
             ChannelsTabType.ALL -> channelsInteractor.updateAllStreamTopics(holder.itemId)
             ChannelsTabType.SUBSCRIBED -> channelsInteractor.updateSubscribedStreamTopics(holder.itemId)
         }
-
-        updateStreams()
     }
 
     private fun onTopicClick(holder: BaseViewHolder<*>) {
         val topic = when (tabType) {
             ChannelsTabType.ALL -> channelsInteractor.getAllStreamsTopic(holder.itemId)
             ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStreamsTopic(holder.itemId)
-        }.subscribe { topic ->
+        } ?: return
 
-            val stream = when (tabType) {
-                ChannelsTabType.ALL -> channelsInteractor.getAllStream(topic.streamId)
-                ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStream(topic.streamId)
-            }.subscribe { stream ->
-                setFragmentResult(
-                    REQUEST_OPEN_TOPIC,
-                    bundleOf(
-                        REQUEST_OPEN_TOPIC_STREAM_ID to stream.id,
-                        REQUEST_OPEN_TOPIC_STREAM_NAME to stream.name,
-                        REQUEST_OPEN_TOPIC_NAME to topic.name,
-                        REQUEST_OPEN_TOPIC_COLOR to topic.color
-                    )
-                )
-            }
-        }
+        val stream = when (tabType) {
+            ChannelsTabType.ALL -> channelsInteractor.getAllStream(topic.streamId)
+            ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStream(topic.streamId)
+        } ?: return
 
+        setFragmentResult(
+            REQUEST_OPEN_TOPIC,
+            bundleOf(
+                REQUEST_OPEN_TOPIC_STREAM_ID to stream.id,
+                REQUEST_OPEN_TOPIC_STREAM_NAME to stream.name,
+                REQUEST_OPEN_TOPIC_NAME to topic.name,
+                REQUEST_OPEN_TOPIC_COLOR to topic.color
+            )
+        )
     }
 
     private fun filterStreams(query: String) {
         searchObservable.onNext(query)
-        channelsInteractor.filterAllStreams(searchObservable)
+    }
+
+    private fun onReloadClick() {
+        when (tabType) {
+            ChannelsTabType.ALL -> channelsInteractor.loadAllStreams()
+            ChannelsTabType.SUBSCRIBED -> channelsInteractor.loadSubscribedStreams()
+        }
     }
 
     companion object {

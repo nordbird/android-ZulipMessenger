@@ -1,10 +1,11 @@
 package ru.nordbird.tfsmessenger.data.mapper
 
 import android.graphics.Color
+import io.reactivex.Observable
 import ru.nordbird.tfsmessenger.data.model.Topic
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TopicUi
 
-class TopicToTopicUiMapper : Mapper<List<Topic>, List<TopicUi>> {
+class TopicToTopicUiMapper : Mapper<List<Topic>, Observable<List<TopicUi>>> {
 
     private val topicColors = arrayOf(
         Color.parseColor("#7BC862"),
@@ -17,8 +18,8 @@ class TopicToTopicUiMapper : Mapper<List<Topic>, List<TopicUi>> {
         Color.parseColor("#2196F3")
     )
 
-    override fun transform(data: List<Topic>): List<TopicUi> {
-        return data.map { TopicUi(it.streamId, it.name, getColor(it), 0) }
+    override fun transform(data: List<Topic>): Observable<List<TopicUi>> {
+        return Observable.fromArray(data.map { TopicUi(it.streamId, it.name, getColor(it), 0) })
     }
 
     private fun getColor(it: Topic): Int {

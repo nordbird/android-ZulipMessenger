@@ -1,7 +1,6 @@
 package ru.nordbird.tfsmessenger.ui.recycler.holder
 
 import android.view.View
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import ru.nordbird.tfsmessenger.R

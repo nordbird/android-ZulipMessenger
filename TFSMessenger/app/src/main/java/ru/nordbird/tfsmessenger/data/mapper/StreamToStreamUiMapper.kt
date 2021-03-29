@@ -7,7 +7,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.holder.StreamUi
 class StreamToStreamUiMapper : Mapper<List<Stream>, Observable<List<StreamUi>>> {
 
     override fun transform(data: List<Stream>): Observable<List<StreamUi>> {
-        return Observable.just(data.map { StreamUi(it.id, it.name) })
+        return Observable.fromArray(data.map { StreamUi(it.id, it.name) })
     }
 
 }

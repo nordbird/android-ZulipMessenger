@@ -54,11 +54,19 @@ object DataGenerator {
         return list
     }
 
-    fun getAllStreams() = streams
+    fun getAllStreams() = Observable.fromCallable { getAllStreamsWithError() }
 
-    fun getSubscribedStreams() = streams.subList(3, 6)
+    private fun getAllStreamsWithError(): Resource<List<Stream>> {
+        return if ((0..10).random() < 7) Resource.error() else Resource.success(streams)
+    }
 
-    fun getTopics(streamId: String) = topics.filter { it.streamId == streamId }
+    fun getSubscribedStreams() = Observable.fromCallable { getSubscribedStreamsWithError() }
+
+    private fun getSubscribedStreamsWithError(): Resource<List<Stream>> {
+        return if ((0..10).random() < 7) Resource.error() else Resource.success(streams.subList(3, 6))
+    }
+
+    fun getTopics(streamId: String) = Observable.fromArray(topics.filter { it.streamId == streamId })
 
     fun getCurrentUser() = authors[0]
 

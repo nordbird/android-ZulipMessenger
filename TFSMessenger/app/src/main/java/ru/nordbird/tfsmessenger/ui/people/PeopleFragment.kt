@@ -30,7 +30,6 @@ class PeopleFragment : Fragment() {
 
     private val userInteractor = PeopleInteractor
     private val compositeDisposable = CompositeDisposable()
-    private lateinit var searchObservable: Observable<String>
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
@@ -76,7 +75,7 @@ class PeopleFragment : Fragment() {
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem?.actionView as SearchView
 
-        searchObservable = RxSearchObservable.fromView(searchView)
+        val searchObservable = RxSearchObservable.fromView(searchView)
         val searchDisposable = userInteractor.filterUsers(searchObservable)
         compositeDisposable.add(searchDisposable)
 
