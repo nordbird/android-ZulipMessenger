@@ -27,6 +27,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
+import ru.nordbird.tfsmessenger.ui.recycler.holder.StreamShimmerUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
 
 class ChannelsTabFragment : Fragment() {
@@ -85,9 +86,11 @@ class ChannelsTabFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.clear()
+        channelsInteractor.clearDisposable()
     }
 
     private fun initLoadStreams() {
+        showShimmer()
         val streamDisposable = when (tabType) {
             ChannelsTabType.ALL -> channelsInteractor.getAllStreams()
             ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStreams()
@@ -98,9 +101,14 @@ class ChannelsTabFragment : Fragment() {
 
     private fun updateStreams(resource: Resource<List<ViewTyped>>) {
         when (resource.status) {
+            Status.SUCCESS -> adapter.items = resource.data ?: emptyList()
             Status.ERROR -> adapter.items = listOf(ErrorUi())
-            else -> adapter.items = resource.data ?: emptyList()
+            Status.LOADING -> showShimmer()
         }
+    }
+
+    private fun showShimmer() {
+        adapter.items = listOf(StreamShimmerUi(), StreamShimmerUi(), StreamShimmerUi())
     }
 
     private fun initUI() {
@@ -146,10 +154,12 @@ class ChannelsTabFragment : Fragment() {
     }
 
     private fun onReloadClick() {
-        when (tabType) {
+        showShimmer()
+        val streamDisposable = when (tabType) {
             ChannelsTabType.ALL -> channelsInteractor.loadAllStreams()
             ChannelsTabType.SUBSCRIBED -> channelsInteractor.loadSubscribedStreams()
         }
+        compositeDisposable.add(streamDisposable)
     }
 
     companion object {

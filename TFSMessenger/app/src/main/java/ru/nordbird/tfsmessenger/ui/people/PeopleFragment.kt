@@ -16,9 +16,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
-import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
-import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
-import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
+import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
 
 class PeopleFragment : Fragment() {
@@ -89,6 +87,7 @@ class PeopleFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         compositeDisposable.clear()
+        userInteractor.clearDisposable()
     }
 
     private fun initToolbar() {
@@ -101,6 +100,7 @@ class PeopleFragment : Fragment() {
     private fun initUI() {
         binding.rvUsers.adapter = adapter
 
+        showShimmer()
         val usersDisposable = userInteractor.getUsers()
             .subscribe { updateUsers(it) }
         compositeDisposable.add(usersDisposable)
@@ -108,9 +108,14 @@ class PeopleFragment : Fragment() {
 
     private fun updateUsers(resource: Resource<List<UserUi>>) {
         when (resource.status) {
+            Status.SUCCESS -> adapter.items = resource.data ?: emptyList()
             Status.ERROR -> adapter.items = listOf(ErrorUi())
-            else -> adapter.items = resource.data ?: emptyList()
+            Status.LOADING -> showShimmer()
         }
+    }
+
+    private fun showShimmer() {
+        adapter.items = listOf(UserShimmerUi(), UserShimmerUi(), UserShimmerUi())
     }
 
     private fun onUserClick(holder: BaseViewHolder<*>) {
@@ -122,7 +127,8 @@ class PeopleFragment : Fragment() {
     }
 
     private fun onReloadClick() {
-        userInteractor.loadUsers()
+        showShimmer()
+        compositeDisposable.add(userInteractor.loadUsers())
     }
 
     interface PeopleFragmentListener {

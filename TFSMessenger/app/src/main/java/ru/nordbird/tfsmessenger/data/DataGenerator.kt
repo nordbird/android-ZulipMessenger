@@ -1,11 +1,13 @@
 package ru.nordbird.tfsmessenger.data
 
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.model.*
 import ru.nordbird.tfsmessenger.extensions.TimeUnits
 import ru.nordbird.tfsmessenger.extensions.add
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 object DataGenerator {
@@ -62,13 +64,15 @@ object DataGenerator {
         return list
     }
 
-    fun getAllStreams() = Observable.fromCallable { getAllStreamsWithError() }
+    fun getAllStreams(): Observable<Resource<List<Stream>>> =
+        Observable.fromCallable { getAllStreamsWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
 
     private fun getAllStreamsWithError(): Resource<List<Stream>> {
         return if ((0..10).random() < 7) Resource.error() else Resource.success(streams)
     }
 
-    fun getSubscribedStreams() = Observable.fromCallable { getSubscribedStreamsWithError() }
+    fun getSubscribedStreams(): Observable<Resource<List<Stream>>> =
+        Observable.fromCallable { getSubscribedStreamsWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
 
     private fun getSubscribedStreamsWithError(): Resource<List<Stream>> {
         return if ((0..10).random() < 7) Resource.error() else Resource.success(streams.subList(3, 6))
@@ -78,7 +82,7 @@ object DataGenerator {
 
     fun getCurrentUser() = authors[0]
 
-    fun getRandomMessages() = messagesSubject
+    fun getRandomMessages(): Observable<Resource<List<Message>>> = messagesSubject.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
 
     private fun getRandomMessagesWithError(): Resource<List<Message>> {
         val date = Date()
@@ -145,7 +149,8 @@ object DataGenerator {
         }
     }
 
-    fun getUsers() = Observable.fromCallable { getUsersWithError() }
+    fun getUsers(): Observable<Resource<List<User>>> =
+        Observable.fromCallable { getUsersWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
 
     private fun getUsersWithError(): Resource<List<User>> {
         return if ((0..10).random() < 8) Resource.error() else Resource.success(authors)
@@ -167,7 +172,7 @@ object DataGenerator {
             message.reactions = reactions
             return@flatMap Observable.just(Resource.success(message))
 
-        }.doOnNext { resource->
+        }.doOnNext { resource ->
             if (resource.data == null) {
                 throw RuntimeException("Error on server")
             } else {

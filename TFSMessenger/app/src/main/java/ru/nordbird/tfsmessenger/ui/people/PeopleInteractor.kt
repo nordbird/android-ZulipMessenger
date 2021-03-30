@@ -2,6 +2,7 @@ package ru.nordbird.tfsmessenger.ui.people
 
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
@@ -9,6 +10,7 @@ import ru.nordbird.tfsmessenger.data.mapper.UserToUserUiMapper
 import ru.nordbird.tfsmessenger.data.model.Resource
 import ru.nordbird.tfsmessenger.data.model.User
 import ru.nordbird.tfsmessenger.data.repository.UserRepository
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsInteractor
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -20,21 +22,27 @@ object PeopleInteractor {
 
     private val users: BehaviorSubject<Resource<List<UserUi>>> = BehaviorSubject.create()
     private val filterQuery: BehaviorSubject<String> = BehaviorSubject.create()
+    private val compositeDisposable = CompositeDisposable()
 
     init {
         filterQuery.onNext("")
-        loadUsers()
+        compositeDisposable.add(loadUsers())
+    }
+
+    fun clearDisposable() {
+        compositeDisposable.clear()
     }
 
     fun getUsers() = BehaviorSubject.combineLatest(users, filterQuery) { resource, query ->
         resource.copy(data = resource.data?.filter { it.name.contains(query, true) })
     }
 
-    fun loadUsers() {
-        userRepository.getUsers()
+    fun loadUsers(): Disposable {
+        return userRepository.getUsers()
             .flatMap { resource -> transformUsers(resource) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe { users.onNext(it) }
-            .dispose()
     }
 
     fun filterUsers(searchObservable: Observable<String>): Disposable {

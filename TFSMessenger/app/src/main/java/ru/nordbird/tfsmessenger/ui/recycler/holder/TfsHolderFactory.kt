@@ -19,6 +19,9 @@ class TfsHolderFactory(
             R.layout.item_stream -> StreamViewHolder(view, clickListener)
             R.layout.item_topic -> TopicViewHolder(view, clickListener)
             R.layout.item_user -> UserViewHolder(view, clickListener)
+            R.layout.item_stream_shimmer -> BaseViewHolder<StreamShimmerUi>(view)
+            R.layout.item_user_shimmer -> BaseViewHolder<UserShimmerUi>(view)
+            R.layout.item_topic_shimmer -> BaseViewHolder<TopicShimmerUi>(view)
             else -> null
         }
     }

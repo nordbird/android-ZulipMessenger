@@ -2,6 +2,7 @@ package ru.nordbird.tfsmessenger.ui.channels
 
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
@@ -37,29 +38,38 @@ object ChannelsInteractor {
     private var filterQueryAllStreams = ""
     private var filterQuerySubscribedStreams = ""
 
+    private val compositeDisposable = CompositeDisposable()
+
     init {
         allStreamsTopics.onNext(Resource.loading())
         subscribedStreamsTopics.onNext(Resource.loading())
-        loadAllStreams()
-        loadSubscribedStreams()
+        compositeDisposable.add(loadAllStreams())
+        compositeDisposable.add(loadSubscribedStreams())
     }
 
-    fun loadAllStreams() {
-        streamRepository.getAllStreams().flatMap { transformStreams(it) }
+    fun clearDisposable(){
+        compositeDisposable.clear()
+    }
+
+    fun loadAllStreams(): Disposable {
+        return streamRepository.getAllStreams().flatMap { transformStreams(it) }
             .doOnNext { allStreams = it }
             .flatMap { filterStreams(it, filterQueryAllStreams) }
             .flatMap { makeStreamWithTopics(it, allStreamIds, allTopics) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe { allStreamsTopics.onNext(it) }
-            .dispose()
     }
 
-    fun loadSubscribedStreams() {
-        streamRepository.getSubscribedStreams().flatMap { transformStreams(it) }
+    fun loadSubscribedStreams(): Disposable {
+        return streamRepository.getSubscribedStreams()
+            .flatMap { transformStreams(it) }
             .doOnNext { subscribedStreams = it }
             .flatMap { filterStreams(it, filterQuerySubscribedStreams) }
             .flatMap { makeStreamWithTopics(it, subscribedStreamIds, subscribedTopics) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe { subscribedStreamsTopics.onNext(it) }
-            .dispose()
     }
 
     fun filterAllStreams(searchObservable: Observable<String>): Disposable {

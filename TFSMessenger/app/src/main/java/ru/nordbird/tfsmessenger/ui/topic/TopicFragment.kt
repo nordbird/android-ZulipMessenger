@@ -28,9 +28,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
-import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
-import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageVHClickType
-import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
+import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 
 class TopicFragment : Fragment() {
 
@@ -94,6 +92,7 @@ class TopicFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         compositeDisposable.clear()
+        topicInteractor.clearDisposable()
     }
 
     private fun initUI() {
@@ -119,6 +118,7 @@ class TopicFragment : Fragment() {
             updateUI()
         }
 
+        showShimmer()
         val usersDisposable = topicInteractor.getMessages()
             .subscribe { updateMessages(it) }
         compositeDisposable.add(usersDisposable)
@@ -142,10 +142,15 @@ class TopicFragment : Fragment() {
         }
     }
 
+    private fun showShimmer() {
+        adapter.items = listOf(TopicShimmerUi(), TopicShimmerUi())
+    }
+
     private fun updateMessages(resource: Resource<List<ViewTyped>>) {
         when (resource.status) {
+            Status.SUCCESS -> adapter.items = resource.data ?: emptyList()
             Status.ERROR -> adapter.items = listOf(ErrorUi())
-            else -> adapter.items = resource.data ?: emptyList()
+            Status.LOADING -> showShimmer()
         }
     }
 
@@ -205,7 +210,8 @@ class TopicFragment : Fragment() {
     }
 
     private fun onReloadClick() {
-        topicInteractor.loadMessages()
+        showShimmer()
+        compositeDisposable.add(topicInteractor.loadMessages())
     }
 
     companion object {

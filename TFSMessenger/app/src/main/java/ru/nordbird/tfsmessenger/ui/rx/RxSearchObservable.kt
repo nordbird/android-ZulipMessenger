@@ -3,7 +3,6 @@ package ru.nordbird.tfsmessenger.ui.rx
 import androidx.appcompat.widget.SearchView
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
-import io.reactivex.subjects.PublishSubject
 
 object RxSearchObservable {
 

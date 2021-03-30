@@ -1,6 +1,10 @@
 package ru.nordbird.tfsmessenger.ui.topic
 
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
 import ru.nordbird.tfsmessenger.data.model.Message
@@ -15,18 +19,24 @@ object TopicInteractor {
     private val messageMapper = MessageToViewTypedMapper()
 
     private val messages: BehaviorSubject<Resource<List<ViewTyped>>> = BehaviorSubject.create()
+    private val compositeDisposable = CompositeDisposable()
 
     init {
-        loadMessages()
+        compositeDisposable.add(loadMessages())
+    }
+
+    fun clearDisposable() {
+        compositeDisposable.clear()
     }
 
     fun getMessages() = messages
 
-    fun loadMessages() {
-        messageRepository.getMessages()
+    fun loadMessages(): Disposable {
+        return messageRepository.getMessages()
             .flatMap { resource -> transformMessages(resource) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe { messages.onNext(it) }
-            .dispose()
     }
 
     fun addMessage(user: User, text: String): Observable<Resource<Message>> = messageRepository.addMessage(user, text).doAfterNext { loadMessages() }
