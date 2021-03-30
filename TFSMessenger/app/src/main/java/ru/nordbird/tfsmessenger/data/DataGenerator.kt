@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.data
 
 import io.reactivex.Observable
+import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.model.*
 import ru.nordbird.tfsmessenger.extensions.TimeUnits
 import ru.nordbird.tfsmessenger.extensions.add
@@ -45,6 +46,13 @@ object DataGenerator {
         Topic("6", "Mary")
     )
 
+    private val messages = mutableListOf<Message>()
+    private val messagesSubject: BehaviorSubject<Resource<List<Message>>> = BehaviorSubject.create()
+
+    init {
+        messagesSubject.onNext(getRandomMessagesWithError())
+    }
+
     private fun generateReactions(): List<Reaction> {
         val list = mutableListOf<Reaction>()
         val count = (1..5).random()
@@ -70,10 +78,11 @@ object DataGenerator {
 
     fun getCurrentUser() = authors[0]
 
-    fun getRandomMessages(count: Int): List<Message> {
-        val list = mutableListOf<Message>()
+    fun getRandomMessages() = messagesSubject
+
+    private fun getRandomMessagesWithError(): Resource<List<Message>> {
         val date = Date()
-        repeat(count) {
+        repeat(5) {
             lastId++
             date.add((-1..0).random(), TimeUnits.DAY)
             val message = Message(
@@ -85,9 +94,9 @@ object DataGenerator {
                 Random.nextBoolean(),
                 generateReactions()
             )
-            list.add(message)
+            messages.add(message)
         }
-        return list
+        return Resource.success(messages)
     }
 
     fun getRandomIncomingMessage(): Message {
@@ -103,17 +112,37 @@ object DataGenerator {
         )
     }
 
-    fun makeMessage(user: User, text: String): Message {
-        lastId++
-        return Message(
-            "$lastId",
-            user,
-            text,
-            false,
-            Date(),
-            false,
-            mutableListOf()
-        )
+    fun addMessage(user: User, text: String): Observable<Resource<Message>> {
+        return makeMessage(user, text).doOnNext {
+            if (it.data == null) {
+                throw RuntimeException("Error on server")
+            } else {
+                messages.add(0, it.data)
+                messages.add(0, getRandomIncomingMessage())
+                messagesSubject.onNext(Resource.success(messages))
+            }
+        }
+    }
+
+    private fun makeMessage(user: User, text: String) = Observable.fromCallable { makeMessageWithError(user, text) }
+
+    private fun makeMessageWithError(user: User, text: String): Resource<Message> {
+        return if (((0..10).random() < 4)) {
+            Resource.error()
+        } else {
+            lastId++
+            Resource.success(
+                Message(
+                    "$lastId",
+                    user,
+                    text,
+                    false,
+                    Date(),
+                    false,
+                    mutableListOf()
+                )
+            )
+        }
     }
 
     fun getUsers() = Observable.fromCallable { getUsersWithError() }
@@ -122,4 +151,30 @@ object DataGenerator {
         return if ((0..10).random() < 8) Resource.error() else Resource.success(authors)
     }
 
+    fun updateReaction(messageId: String, userId: String, reactionCode: Int): Observable<Resource<Message>> {
+        return Observable.fromArray(messages).flatMap { list ->
+            if ((0..10).random() < 8) return@flatMap Observable.just(Resource.error())
+
+            val message = list.firstOrNull { it.id == messageId } ?: return@flatMap Observable.just(Resource.error())
+            val reactions = message.reactions.toMutableList()
+
+            val reaction = reactions.firstOrNull { it.code == reactionCode && it.userId == userId }
+            if (reaction != null) {
+                reactions.remove(reaction)
+            } else {
+                reactions.add(Reaction(reactionCode, userId))
+            }
+            message.reactions = reactions
+            return@flatMap Observable.just(Resource.success(message))
+
+        }.doOnNext { resource->
+            if (resource.data == null) {
+                throw RuntimeException("Error on server")
+            } else {
+                messagesSubject.onNext(Resource.success(messages))
+            }
+        }
+
+
+    }
 }

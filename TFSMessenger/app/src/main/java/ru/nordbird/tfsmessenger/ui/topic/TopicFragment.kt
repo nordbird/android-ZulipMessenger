@@ -5,15 +5,17 @@ import android.view.*
 import androidx.fragment.app.Fragment
 import android.widget.TableRow
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.DataGenerator
-import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
-import ru.nordbird.tfsmessenger.data.repository.MessageRepository
+import ru.nordbird.tfsmessenger.data.model.Resource
+import ru.nordbird.tfsmessenger.data.model.Status
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
@@ -26,6 +28,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
+import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageVHClickType
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
 
@@ -39,14 +42,18 @@ class TopicFragment : Fragment() {
     private var topicName: String? = null
     private var topicColor: Int = 0
 
-    private val messageRepository = MessageRepository
-    private val messageMapper = MessageToViewTypedMapper()
+    private val topicInteractor = TopicInteractor
+    private val compositeDisposable = CompositeDisposable()
+
     private var isTextMode = false
     private val currentUser = DataGenerator.getCurrentUser()
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
-            onMessageClick(holder, view, clickType)
+            when (holder.itemViewType) {
+                R.layout.item_message_in, R.layout.item_message_out -> onMessageClick(holder, view, clickType)
+                R.layout.item_error -> onReloadClick()
+            }
         }
 
         override fun onViewHolderLongClick(holder: BaseViewHolder<*>, view: View): Boolean {
@@ -75,11 +82,6 @@ class TopicFragment : Fragment() {
         return binding.root
     }
 
-    override fun onStart() {
-        super.onStart()
-        updateMessages()
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return if (item.itemId == android.R.id.home) {
             activity?.onBackPressed()
@@ -87,6 +89,11 @@ class TopicFragment : Fragment() {
         } else {
             super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        compositeDisposable.clear()
     }
 
     private fun initUI() {
@@ -97,10 +104,13 @@ class TopicFragment : Fragment() {
 
         binding.ibSend.setOnClickListener {
             if (isTextMode) {
-                messageRepository.addMessage(currentUser, binding.edMessage.text.toString())
-                binding.edMessage.text.clear()
-                updateMessages()
-                linearLayoutManager.scrollToPosition(0)
+                topicInteractor.addMessage(currentUser, binding.edMessage.text.toString()).subscribe(
+                    {
+                        binding.edMessage.text.clear()
+                        linearLayoutManager.scrollToPosition(0)
+                    },
+                    { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
+                )
             }
         }
 
@@ -108,6 +118,10 @@ class TopicFragment : Fragment() {
             isTextMode = !text.isNullOrBlank()
             updateUI()
         }
+
+        val usersDisposable = topicInteractor.getMessages()
+            .subscribe { updateMessages(it) }
+        compositeDisposable.add(usersDisposable)
     }
 
     private fun initToolbar() {
@@ -128,8 +142,11 @@ class TopicFragment : Fragment() {
         }
     }
 
-    private fun updateMessages() {
-        adapter.items = messageMapper.transform(messageRepository.getMessages())
+    private fun updateMessages(resource: Resource<List<ViewTyped>>) {
+        when (resource.status) {
+            Status.ERROR -> adapter.items = listOf(ErrorUi())
+            else -> adapter.items = resource.data ?: emptyList()
+        }
     }
 
     private fun showReactionChooser(messageId: String) {
@@ -150,9 +167,10 @@ class TopicFragment : Fragment() {
                 tableRow.addView(reactionView)
                 val localCode = code
                 reactionView.setOnClickListener {
-                    messageRepository.updateReaction(messageId, currentUser.id, localCode)
-                    bottomSheetDialog.dismiss()
-                    updateMessages()
+                    topicInteractor.updateReaction(messageId, currentUser.id, localCode).subscribe(
+                        { bottomSheetDialog.dismiss() },
+                        { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
+                    )
                 }
                 code++
             }
@@ -172,8 +190,10 @@ class TopicFragment : Fragment() {
         when (clickType) {
             MessageVHClickType.UPDATE_REACTION_CLICK -> {
                 val reactionView = view as ReactionView
-                messageRepository.updateReaction(holder.itemId, currentUser.id, reactionView.reactionCode)
-                updateMessages()
+                topicInteractor.updateReaction(holder.itemId, currentUser.id, reactionView.reactionCode).subscribe(
+                    {},
+                    { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
+                )
             }
             MessageVHClickType.ADD_REACTION_CLICK -> showReactionChooser(holder.itemId)
         }
@@ -182,6 +202,10 @@ class TopicFragment : Fragment() {
     private fun onMessageLongClick(holder: BaseViewHolder<*>): Boolean {
         showReactionChooser(holder.itemId)
         return true
+    }
+
+    private fun onReloadClick() {
+        topicInteractor.loadMessages()
     }
 
     companion object {
