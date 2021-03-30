@@ -22,7 +22,7 @@ class TfsHolderFactory(
             R.layout.item_stream_shimmer -> BaseViewHolder<StreamShimmerUi>(view)
             R.layout.item_user_shimmer -> BaseViewHolder<UserShimmerUi>(view)
             R.layout.item_topic_shimmer -> BaseViewHolder<TopicShimmerUi>(view)
-            else -> null
+            else -> throw RuntimeException("unknown viewType=" + view.resources.getResourceName(viewType))
         }
     }
 
