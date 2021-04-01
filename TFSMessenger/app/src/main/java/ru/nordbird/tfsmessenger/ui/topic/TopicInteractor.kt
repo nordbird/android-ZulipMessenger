@@ -43,7 +43,7 @@ object TopicInteractor {
     fun updateReaction(messageId: String, userId: String, reactionCode: String): Observable<Message> =
         messageRepository.updateReaction(messageId, userId, reactionCode).doAfterNext { loadMessages() }
 
-    private fun transformMessages(resource: List<Message>): List<ViewTyped> {
+    private fun transformMessages(resource: List<Message>): Observable<List<ViewTyped>> {
         return messageMapper.transform(resource)
 
     }

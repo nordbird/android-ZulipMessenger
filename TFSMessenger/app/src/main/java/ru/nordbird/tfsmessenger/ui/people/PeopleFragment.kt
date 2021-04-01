@@ -6,6 +6,8 @@ import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
+import com.google.android.material.snackbar.Snackbar
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentPeopleBinding
@@ -72,6 +74,11 @@ class PeopleFragment : Fragment() {
 
         val searchObservable = RxSearchObservable.fromView(searchView)
         val searchDisposable = userInteractor.filterUsers(searchObservable)
+            .subscribe {
+                adapter.items = it
+                binding.rvUsers.layoutManager?.scrollToPosition(0)
+            }
+        compositeDisposable.add(searchDisposable)
 
         super.onCreateOptionsMenu(menu, inflater)
     }
@@ -96,14 +103,23 @@ class PeopleFragment : Fragment() {
     private fun initUI() {
         binding.rvUsers.adapter = adapter
 
+        updateUsers()
+    }
+
+    private fun updateUsers() {
         showShimmer()
         val usersDisposable = userInteractor.getUsers()
-            .subscribe({ updateUsers(it) }, { updateUsers(listOf(ErrorUi())) })
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { adapter.items = it },
+                { showError(it) }
+            )
         compositeDisposable.add(usersDisposable)
     }
 
-    private fun updateUsers(resource: List<ViewTyped>) {
-        adapter.items = resource
+    private fun showError(throwable: Throwable) {
+        adapter.items = listOf(ErrorUi())
+        Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
     private fun showShimmer() {
@@ -111,19 +127,15 @@ class PeopleFragment : Fragment() {
     }
 
     private fun onUserClick(holder: BaseViewHolder<*>) {
-        userInteractor.getUser(holder.itemId)
-            .subscribe { user->
-                if (user != null) activityListener.onOpenUserProfile(user)
-            }
-            .dispose()
+        activityListener.onOpenUserProfile(adapter.items[holder.absoluteAdapterPosition].uid)
     }
 
     private fun onReloadClick() {
-        showShimmer()
+        updateUsers()
     }
 
     interface PeopleFragmentListener {
-        fun onOpenUserProfile(user: UserUi)
+        fun onOpenUserProfile(userId: String)
     }
 
 }

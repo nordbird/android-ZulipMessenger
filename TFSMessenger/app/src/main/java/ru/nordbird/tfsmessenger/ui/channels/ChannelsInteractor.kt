@@ -52,7 +52,7 @@ object ChannelsInteractor {
 
     fun loadAllStreams(): Disposable {
         return streamRepository.getAllStreams()
-            .map { streamMapper.transform(it) }
+            .flatMap { streamMapper.transform(it) }
             .doOnNext { allStreams = it }
             .map { filterStreams(it, filterQueryAllStreams) }
             .flatMap { makeStreamWithTopics(it, allStreamIds, allTopics) }
@@ -64,7 +64,7 @@ object ChannelsInteractor {
     fun loadSubscribedStreams(): Disposable {
         return streamRepository.getSubscribedStreams()
 
-            .map { streamMapper.transform(it) }
+            .flatMap { streamMapper.transform(it) }
             .doOnNext { subscribedStreams = it }
             .map { filterStreams(it, filterQuerySubscribedStreams) }
             .flatMap { makeStreamWithTopics(it, subscribedStreamIds, subscribedTopics) }

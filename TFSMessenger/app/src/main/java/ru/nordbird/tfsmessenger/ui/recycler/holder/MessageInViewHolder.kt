@@ -13,19 +13,19 @@ import ru.nordbird.tfsmessenger.ui.custom.CircleImageView
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 
 class MessageInUi(
-    id: String,
+        id: String,
     authorId: Int,
     val authorName: String,
     val avatar: String,
-    text: String,
-    reactions: List<ReactionGroup>,
-    override val viewType: Int = R.layout.item_message_in
+        text: String,
+        reactions: List<ReactionGroup>,
+        override val viewType: Int = R.layout.item_message_in
 ) : MessageUi(id, authorId, text, reactions)
 
 class MessageInViewHolder(
-    view: View,
+        view: View,
     currentUserId: String,
-    private val clickListener: ViewHolderClickListener
+        private val clickListener: ViewHolderClickListener
 ) : MessageViewHolder<MessageInUi>(view, R.layout.left_reaction_view, currentUserId, clickListener) {
 
     private val messageBox: LinearLayout = view.findViewById(R.id.ll_messageBox)
@@ -55,7 +55,7 @@ class MessageInViewHolder(
 
     override fun bind(item: MessageInUi) {
         itemId = item.id
-        authorView.text = item.authorName
+        authorView.text = item.author.full_name
         messageView.text = item.text
 
         if (item.avatar.isBlank()) {
