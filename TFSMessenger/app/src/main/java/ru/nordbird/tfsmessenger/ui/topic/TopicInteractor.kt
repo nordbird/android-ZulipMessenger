@@ -8,7 +8,6 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
 import ru.nordbird.tfsmessenger.data.model.Message
-import ru.nordbird.tfsmessenger.data.model.Resource
 import ru.nordbird.tfsmessenger.data.model.User
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
@@ -18,7 +17,7 @@ object TopicInteractor {
     private val messageRepository = MessageRepository
     private val messageMapper = MessageToViewTypedMapper()
 
-    private val messages: BehaviorSubject<Resource<List<ViewTyped>>> = BehaviorSubject.create()
+    private val messages: BehaviorSubject<List<ViewTyped>> = BehaviorSubject.create()
     private val compositeDisposable = CompositeDisposable()
 
     init {
@@ -39,15 +38,13 @@ object TopicInteractor {
             .subscribe { messages.onNext(it) }
     }
 
-    fun addMessage(user: User, text: String): Observable<Resource<Message>> = messageRepository.addMessage(user, text).doAfterNext { loadMessages() }
+    fun addMessage(user: User, text: String): Observable<Message> = messageRepository.addMessage(user, text).doAfterNext { loadMessages() }
 
-    fun updateReaction(messageId: String, userId: String, reactionCode: Int): Observable<Resource<Message>> =
+    fun updateReaction(messageId: String, userId: String, reactionCode: Int): Observable<Message> =
         messageRepository.updateReaction(messageId, userId, reactionCode).doAfterNext { loadMessages() }
 
-    private fun transformMessages(resource: Resource<List<Message>>): Observable<Resource<List<ViewTyped>>> {
-        return Observable.zip(
-            Observable.just(resource.status),
-            messageMapper.transform(resource.data ?: emptyList())
-        ) { status, data -> Resource(status, data) }
+    private fun transformMessages(resource: List<Message>): Observable<List<ViewTyped>> {
+        return messageMapper.transform(resource)
+
     }
 }

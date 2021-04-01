@@ -8,7 +8,6 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.mapper.StreamToStreamUiMapper
 import ru.nordbird.tfsmessenger.data.mapper.TopicToTopicUiMapper
-import ru.nordbird.tfsmessenger.data.model.Resource
 import ru.nordbird.tfsmessenger.data.model.Stream
 import ru.nordbird.tfsmessenger.data.repository.StreamRepository
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
@@ -23,11 +22,11 @@ object ChannelsInteractor {
     private val streamMapper = StreamToStreamUiMapper()
     private val topicMapper = TopicToTopicUiMapper()
 
-    private var allStreamsTopics: BehaviorSubject<Resource<List<ViewTyped>>> = BehaviorSubject.create()
-    private var subscribedStreamsTopics: BehaviorSubject<Resource<List<ViewTyped>>> = BehaviorSubject.create()
+    private var allStreamsTopics: BehaviorSubject<List<ViewTyped>> = BehaviorSubject.create()
+    private var subscribedStreamsTopics: BehaviorSubject<List<ViewTyped>> = BehaviorSubject.create()
 
-    private var allStreams = Resource.loading<List<StreamUi>>()
-    private var subscribedStreams = Resource.loading<List<StreamUi>>()
+    private var allStreams = emptyList<StreamUi>()
+    private var subscribedStreams = emptyList<StreamUi>()
 
     private val allTopics = mutableMapOf<String, List<TopicUi>>()
     private val subscribedTopics = mutableMapOf<String, List<TopicUi>>()
@@ -41,20 +40,21 @@ object ChannelsInteractor {
     private val compositeDisposable = CompositeDisposable()
 
     init {
-        allStreamsTopics.onNext(Resource.loading())
-        subscribedStreamsTopics.onNext(Resource.loading())
-        compositeDisposable.add(loadAllStreams())
-        compositeDisposable.add(loadSubscribedStreams())
+        allStreamsTopics.onNext(emptyList())
+        subscribedStreamsTopics.onNext(emptyList())
+//        compositeDisposable.add(loadAllStreams())
+//        compositeDisposable.add(loadSubscribedStreams())
     }
 
-    fun clearDisposable(){
+    fun clearDisposable() {
         compositeDisposable.clear()
     }
 
     fun loadAllStreams(): Disposable {
-        return streamRepository.getAllStreams().flatMap { transformStreams(it) }
+        return streamRepository.getAllStreams()
+            .flatMap { streamMapper.transform(it) }
             .doOnNext { allStreams = it }
-            .flatMap { filterStreams(it, filterQueryAllStreams) }
+            .map { filterStreams(it, filterQueryAllStreams) }
             .flatMap { makeStreamWithTopics(it, allStreamIds, allTopics) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -63,9 +63,10 @@ object ChannelsInteractor {
 
     fun loadSubscribedStreams(): Disposable {
         return streamRepository.getSubscribedStreams()
-            .flatMap { transformStreams(it) }
+
+            .flatMap { streamMapper.transform(it) }
             .doOnNext { subscribedStreams = it }
-            .flatMap { filterStreams(it, filterQuerySubscribedStreams) }
+            .map { filterStreams(it, filterQuerySubscribedStreams) }
             .flatMap { makeStreamWithTopics(it, subscribedStreamIds, subscribedTopics) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -98,8 +99,8 @@ object ChannelsInteractor {
     fun getAllStreamsTopic(itemId: String): TopicUi? = getTopic(allTopics, itemId)
     fun getSubscribedStreamsTopic(itemId: String): TopicUi? = getTopic(subscribedTopics, itemId)
 
-    fun getAllStream(streamId: String): StreamUi? = getStream(allStreams.data, streamId)
-    fun getSubscribedStream(streamId: String): StreamUi? = getStream(subscribedStreams.data, streamId)
+    fun getAllStream(streamId: String): StreamUi? = getStream(allStreams, streamId)
+    fun getSubscribedStream(streamId: String): StreamUi? = getStream(subscribedStreams, streamId)
 
     private fun getStream(streamList: List<StreamUi>?, streamId: String): StreamUi? {
         return streamList?.firstOrNull { it.id == streamId }
@@ -109,19 +110,12 @@ object ChannelsInteractor {
         return topics.flatMap { it.value }.firstOrNull { it.uid == itemId }
     }
 
-    private fun transformStreams(resource: Resource<List<Stream>>): Observable<Resource<List<StreamUi>>> {
-        return Observable.zip(
-            Observable.just(resource.status),
-            streamMapper.transform(resource.data ?: emptyList())
-        ) { status, data -> Resource(status, data) }
-    }
-
     private fun filterStreams(
         searchObservable: Observable<String>,
-        streams: Resource<List<StreamUi>>,
+        streams: List<StreamUi>,
         streamIds: MutableList<String>,
         topics: MutableMap<String, List<TopicUi>>,
-        streamsTopics: BehaviorSubject<Resource<List<ViewTyped>>>
+        streamsTopics: BehaviorSubject<List<ViewTyped>>
     ): Pair<Disposable, String> {
         var filterQuery = ""
         return searchObservable
@@ -132,46 +126,39 @@ object ChannelsInteractor {
             .observeOn(AndroidSchedulers.mainThread())
             .switchMap { query -> Observable.just(query) }
             .doOnNext { filterQuery = it }
-            .flatMap { filterStreams(streams, it) }
+            .map { filterStreams(streams, it) }
             .flatMap { makeStreamWithTopics(it, streamIds, topics) }
             .subscribe { streamsTopics.onNext(it) } to filterQuery
     }
 
-    private fun filterStreams(resource: Resource<List<StreamUi>>, query: String): Observable<Resource<List<StreamUi>>> {
-        return Observable.just(resource.copy(data = resource.data?.filter { it.name.contains(query, true) }))
+    private fun filterStreams(resource: List<StreamUi>, query: String): List<StreamUi> {
+        return resource.filter { it.name.contains(query, true) }
     }
 
     private fun updateStreamTopics(
         streamId: String,
-        streams: Resource<List<StreamUi>>,
+        streams: List<StreamUi>,
         streamIds: MutableList<String>,
         topics: MutableMap<String, List<TopicUi>>,
         query: String,
-        streamsTopics: BehaviorSubject<Resource<List<ViewTyped>>>
+        streamsTopics: BehaviorSubject<List<ViewTyped>>
     ) {
         if (streamIds.contains(streamId)) streamIds.remove(streamId)
         else streamIds.add(streamId)
 
         Observable.fromArray(streams)
-            .flatMap { filterStreams(it, query) }
+            .map { filterStreams(it, query) }
             .flatMap { makeStreamWithTopics(it, streamIds, topics) }
             .subscribe { streamsTopics.onNext(it) }.dispose()
     }
 
     private fun makeStreamWithTopics(
-        resource: Resource<List<StreamUi>>,
+        resource: List<StreamUi>,
         streamIds: MutableList<String>,
         topics: MutableMap<String, List<TopicUi>>
-    ): Observable<Resource<List<ViewTyped>>> {
+    ): Observable<List<ViewTyped>> {
         val newList = mutableListOf<ViewTyped>()
-        return Observable.zip(
-            Observable.just(resource.status),
-            Observable.fromIterable(resource.data ?: emptyList()).concatMap { transformTopics(it, streamIds, topics) }
-                .collectInto(
-                    newList,
-                    { totalList, streamList -> totalList.addAll(streamList) }
-                ).toObservable()
-        ) { status, data -> Resource(status, data) }
+        return Observable.fromIterable(resource).concatMap { transformTopics(it, streamIds, topics) }
     }
 
     private fun transformTopics(stream: StreamUi, streamIds: MutableList<String>, topics: MutableMap<String, List<TopicUi>>): Observable<List<ViewTyped>> {

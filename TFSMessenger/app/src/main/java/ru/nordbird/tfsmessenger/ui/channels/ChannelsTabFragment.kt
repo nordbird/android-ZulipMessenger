@@ -13,8 +13,6 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.R
-import ru.nordbird.tfsmessenger.data.model.Resource
-import ru.nordbird.tfsmessenger.data.model.Status
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
@@ -94,17 +92,13 @@ class ChannelsTabFragment : Fragment() {
         val streamDisposable = when (tabType) {
             ChannelsTabType.ALL -> channelsInteractor.getAllStreams()
             ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStreams()
-        }.subscribe { updateStreams(it) }
+        }.subscribe ( {updateStreams(it)}, {updateStreams(listOf(ErrorUi()))} )
 
         compositeDisposable.add(streamDisposable)
     }
 
-    private fun updateStreams(resource: Resource<List<ViewTyped>>) {
-        when (resource.status) {
-            Status.SUCCESS -> adapter.items = resource.data ?: emptyList()
-            Status.ERROR -> adapter.items = listOf(ErrorUi())
-            Status.LOADING -> showShimmer()
-        }
+    private fun updateStreams(resource: List<ViewTyped>) {
+        adapter.items = resource
     }
 
     private fun showShimmer() {

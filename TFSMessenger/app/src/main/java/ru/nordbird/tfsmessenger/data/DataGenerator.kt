@@ -49,7 +49,7 @@ object DataGenerator {
     )
 
     private val messages = mutableListOf<Message>()
-    private val messagesSubject: BehaviorSubject<Resource<List<Message>>> = BehaviorSubject.create()
+    private val messagesSubject: BehaviorSubject<List<Message>> = BehaviorSubject.create()
 
     init {
         messagesSubject.onNext(getRandomMessagesWithError())
@@ -64,27 +64,27 @@ object DataGenerator {
         return list
     }
 
-    fun getAllStreams(): Observable<Resource<List<Stream>>> =
+    fun getAllStreams(): Observable<List<Stream>> =
         Observable.fromCallable { getAllStreamsWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
 
-    private fun getAllStreamsWithError(): Resource<List<Stream>> {
-        return if ((0..10).random() < 7) Resource.error() else Resource.success(streams)
+    private fun getAllStreamsWithError(): List<Stream> {
+        return if ((0..10).random() < 7) throw RuntimeException("all streams error") else streams
     }
 
-    fun getSubscribedStreams(): Observable<Resource<List<Stream>>> =
+    fun getSubscribedStreams(): Observable<List<Stream>> =
         Observable.fromCallable { getSubscribedStreamsWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
 
-    private fun getSubscribedStreamsWithError(): Resource<List<Stream>> {
-        return if ((0..10).random() < 7) Resource.error() else Resource.success(streams.subList(3, 6))
+    private fun getSubscribedStreamsWithError(): List<Stream> {
+        return if ((0..10).random() < 7) throw RuntimeException("subscribed streams error") else streams.subList(3, 6)
     }
 
     fun getTopics(streamId: String) = Observable.fromArray(topics.filter { it.streamId == streamId })
 
     fun getCurrentUser() = authors[0]
 
-    fun getRandomMessages(): Observable<Resource<List<Message>>> = messagesSubject.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
+    fun getRandomMessages(): Observable<List<Message>> = messagesSubject.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
 
-    private fun getRandomMessagesWithError(): Resource<List<Message>> {
+    private fun getRandomMessagesWithError(): List<Message> {
         val date = Date()
         repeat(5) {
             lastId++
@@ -100,7 +100,7 @@ object DataGenerator {
             )
             messages.add(message)
         }
-        return Resource.success(messages)
+        return messages
     }
 
     fun getRandomIncomingMessage(): Message {
@@ -116,51 +116,45 @@ object DataGenerator {
         )
     }
 
-    fun addMessage(user: User, text: String): Observable<Resource<Message>> {
+    fun addMessage(user: User, text: String): Observable<Message> {
         return makeMessage(user, text).doOnNext {
-            if (it.data == null) {
-                throw RuntimeException("Error on server")
-            } else {
-                messages.add(0, it.data)
-                messages.add(0, getRandomIncomingMessage())
-                messagesSubject.onNext(Resource.success(messages))
-            }
+            messages.add(0, it)
+            messages.add(0, getRandomIncomingMessage())
+            messagesSubject.onNext(messages)
         }
     }
 
     private fun makeMessage(user: User, text: String) = Observable.fromCallable { makeMessageWithError(user, text) }
 
-    private fun makeMessageWithError(user: User, text: String): Resource<Message> {
+    private fun makeMessageWithError(user: User, text: String): Message {
         return if (((0..10).random() < 4)) {
-            Resource.error()
+            throw RuntimeException("add message error")
         } else {
             lastId++
-            Resource.success(
-                Message(
-                    "$lastId",
-                    user,
-                    text,
-                    false,
-                    Date(),
-                    false,
-                    mutableListOf()
-                )
+            Message(
+                "$lastId",
+                user,
+                text,
+                false,
+                Date(),
+                false,
+                mutableListOf()
             )
         }
     }
 
-    fun getUsers(): Observable<Resource<List<User>>> =
+    fun getUsers(): Observable<List<User>> =
         Observable.fromCallable { getUsersWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
 
-    private fun getUsersWithError(): Resource<List<User>> {
-        return if ((0..10).random() < 8) Resource.error() else Resource.success(authors)
+    private fun getUsersWithError(): List<User> {
+        return if ((0..10).random() < 8) throw RuntimeException("users error") else authors
     }
 
-    fun updateReaction(messageId: String, userId: String, reactionCode: Int): Observable<Resource<Message>> {
+    fun updateReaction(messageId: String, userId: String, reactionCode: Int): Observable<Message> {
         return Observable.fromArray(messages).flatMap { list ->
-            if ((0..10).random() < 8) return@flatMap Observable.just(Resource.error())
+//            if ((0..10).random() < 8) return@flatMap Observable.just(Resource.error())
 
-            val message = list.firstOrNull { it.id == messageId } ?: return@flatMap Observable.just(Resource.error())
+            val message = list.firstOrNull { it.id == messageId } ?: throw RuntimeException("Error on server")
             val reactions = message.reactions.toMutableList()
 
             val reaction = reactions.firstOrNull { it.code == reactionCode && it.userId == userId }
@@ -170,14 +164,10 @@ object DataGenerator {
                 reactions.add(Reaction(reactionCode, userId))
             }
             message.reactions = reactions
-            return@flatMap Observable.just(Resource.success(message))
+            return@flatMap Observable.just(message)
 
-        }.doOnNext { resource ->
-            if (resource.data == null) {
-                throw RuntimeException("Error on server")
-            } else {
-                messagesSubject.onNext(Resource.success(messages))
-            }
+        }.doOnNext { message ->
+            messagesSubject.onNext(messages)
         }
 
 

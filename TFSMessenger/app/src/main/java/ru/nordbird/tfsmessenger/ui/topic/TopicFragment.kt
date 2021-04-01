@@ -14,8 +14,6 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.DataGenerator
-import ru.nordbird.tfsmessenger.data.model.Resource
-import ru.nordbird.tfsmessenger.data.model.Status
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
@@ -146,12 +144,8 @@ class TopicFragment : Fragment() {
         adapter.items = listOf(TopicShimmerUi(), TopicShimmerUi())
     }
 
-    private fun updateMessages(resource: Resource<List<ViewTyped>>) {
-        when (resource.status) {
-            Status.SUCCESS -> adapter.items = resource.data ?: emptyList()
-            Status.ERROR -> adapter.items = listOf(ErrorUi())
-            Status.LOADING -> showShimmer()
-        }
+    private fun updateMessages(resource: List<ViewTyped>) {
+        adapter.items = resource
     }
 
     private fun showReactionChooser(messageId: String) {

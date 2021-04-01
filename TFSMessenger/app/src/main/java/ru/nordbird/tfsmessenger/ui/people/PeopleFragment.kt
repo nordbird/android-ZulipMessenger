@@ -8,8 +8,6 @@ import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
-import ru.nordbird.tfsmessenger.data.model.Resource
-import ru.nordbird.tfsmessenger.data.model.Status
 import ru.nordbird.tfsmessenger.databinding.FragmentPeopleBinding
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
@@ -102,16 +100,12 @@ class PeopleFragment : Fragment() {
 
         showShimmer()
         val usersDisposable = userInteractor.getUsers()
-            .subscribe { updateUsers(it) }
+            .subscribe({ updateUsers(it) }, { updateUsers(listOf(ErrorUi())) })
         compositeDisposable.add(usersDisposable)
     }
 
-    private fun updateUsers(resource: Resource<List<UserUi>>) {
-        when (resource.status) {
-            Status.SUCCESS -> adapter.items = resource.data ?: emptyList()
-            Status.ERROR -> adapter.items = listOf(ErrorUi())
-            Status.LOADING -> showShimmer()
-        }
+    private fun updateUsers(resource: List<ViewTyped>) {
+        adapter.items = resource
     }
 
     private fun showShimmer() {
@@ -128,7 +122,7 @@ class PeopleFragment : Fragment() {
 
     private fun onReloadClick() {
         showShimmer()
-        compositeDisposable.add(userInteractor.loadUsers())
+        userInteractor.loadUsers()
     }
 
     interface PeopleFragmentListener {
