@@ -39,7 +39,6 @@ class CircleImageView @JvmOverloads constructor(
     private lateinit var maskBm: Bitmap
     private lateinit var srcBm: Bitmap
 
-    private val avatarPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL_AND_STROKE
     }
@@ -47,10 +46,12 @@ class CircleImageView @JvmOverloads constructor(
         color = Color.WHITE
         textAlign = Paint.Align.CENTER
     }
-    private var avatarDrawable: Drawable? = null
+
+    var avatarDrawable: Drawable? = null
         set(value) {
             if (field != value) {
                 field = value
+                prepareBitmaps(width, height)
                 invalidate()
             }
         }
@@ -119,11 +120,12 @@ class CircleImageView @JvmOverloads constructor(
     }
 
     private fun prepareBitmaps(w: Int, h: Int) {
-        if (avatarDrawable == null) return
+        if (avatarDrawable == null || w == 0 || h == 0) return
         maskBm = Bitmap.createBitmap(w, h, Bitmap.Config.ALPHA_8)
         resultBm = maskBm.copy(Bitmap.Config.ARGB_8888, true)
 
         val maskCanvas = Canvas(maskBm)
+        val avatarPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         maskCanvas.drawOval(viewRect.toRectF(), avatarPaint)
         avatarPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
 
