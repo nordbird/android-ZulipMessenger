@@ -3,9 +3,7 @@ package ru.nordbird.tfsmessenger.data.api
 import io.reactivex.Single
 import retrofit2.http.GET
 import retrofit2.http.Path
-import ru.nordbird.tfsmessenger.data.model.PresenceResponse
-import ru.nordbird.tfsmessenger.data.model.UserResponse
-import ru.nordbird.tfsmessenger.data.model.UsersResponse
+import ru.nordbird.tfsmessenger.data.model.*
 
 interface ZulipService {
 
@@ -17,4 +15,14 @@ interface ZulipService {
 
     @GET("users/{id}/presence")
     fun getUserPresence(@Path("id") id: String): Single<PresenceResponse>
+
+    @GET("streams")
+    fun getStreams(): Single<StreamsResponse>
+
+    @GET("users/me/subscriptions")
+    fun getSubscriptions(): Single<SubscriptionsResponse>
+
+    @GET("users/me/{id}/topics")
+    fun getStreamTopics(@Path("id") id: String): Single<TopicsResponse>
+
 }

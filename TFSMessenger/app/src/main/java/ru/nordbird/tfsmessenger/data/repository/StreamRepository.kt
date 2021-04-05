@@ -1,16 +1,16 @@
 package ru.nordbird.tfsmessenger.data.repository
 
-import ru.nordbird.tfsmessenger.data.DataGenerator
+import io.reactivex.Single
+import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
+import ru.nordbird.tfsmessenger.data.model.Stream
+import ru.nordbird.tfsmessenger.data.model.Topic
 
 object StreamRepository {
 
-    private val allStreams = DataGenerator.getAllStreams()
-    private val subscribedStreams = DataGenerator.getSubscribedStreams()
+    fun getStreams(): Single<List<Stream>> = ZulipServiceImpl.getApi().getStreams().map { it.streams }
 
-    fun getAllStreams() = allStreams
+    fun getSubscriptions(): Single<List<Stream>> = ZulipServiceImpl.getApi().getSubscriptions().map { it.subscriptions }
 
-    fun getSubscribedStreams() = subscribedStreams
-
-    fun getStreamTopics(streamId: String) = DataGenerator.getTopics(streamId)
+    fun getStreamTopics(streamId: String): Single<List<Topic>> = ZulipServiceImpl.getApi().getStreamTopics(streamId).map { it.topics }
 
 }
