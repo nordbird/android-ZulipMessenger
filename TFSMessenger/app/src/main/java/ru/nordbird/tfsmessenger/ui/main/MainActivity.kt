@@ -11,9 +11,7 @@ import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment
 import ru.nordbird.tfsmessenger.ui.people.PeopleFragment
-import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ID
-import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_NAME
-import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ONLINE
+import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
 class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener {
@@ -58,9 +56,7 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
         navController.navigate(
             R.id.navigation_profile_another,
             bundleOf(
-                PARAM_USER_ID to user.id,
-                PARAM_USER_NAME to user.name,
-                PARAM_USER_ONLINE to user.isOnline
+                PARAM_USER to user
             )
         )
     }

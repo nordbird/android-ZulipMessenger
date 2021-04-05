@@ -166,7 +166,7 @@ class TopicFragment : Fragment() {
                 tableRow.addView(reactionView)
                 val localCode = code
                 reactionView.setOnClickListener {
-                    topicInteractor.updateReaction(messageId, currentUser.id, localCode).subscribe(
+                    topicInteractor.updateReaction(messageId, currentUser.id.toString(), localCode).subscribe(
                         { bottomSheetDialog.dismiss() },
                         { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
                     )
@@ -189,7 +189,7 @@ class TopicFragment : Fragment() {
         when (clickType) {
             MessageVHClickType.UPDATE_REACTION_CLICK -> {
                 val reactionView = view as ReactionView
-                topicInteractor.updateReaction(holder.itemId, currentUser.id, reactionView.reactionCode).subscribe(
+                topicInteractor.updateReaction(holder.itemId, currentUser.id.toString(), reactionView.reactionCode).subscribe(
                     {},
                     { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
                 )

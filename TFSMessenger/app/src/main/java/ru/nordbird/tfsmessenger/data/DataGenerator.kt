@@ -15,9 +15,9 @@ object DataGenerator {
     private var lastId = 0
 
     private val authors = listOf(
-        User("1", "Mike", "mike@mail.ru", true),
-        User("2", "Ronald", "ron@bk.ru", false),
-        User("3", "Alex", "alexxxx@rambler.ru", true)
+        User(1, "Mike", "mike@mail.ru", ""),
+        User(2, "Ronald", "ron@bk.ru", ""),
+        User(3, "Alex", "alexxxx@rambler.ru", "")
     )
 
     private val texts = listOf(
@@ -59,7 +59,7 @@ object DataGenerator {
         val list = mutableListOf<Reaction>()
         val count = (1..5).random()
         (1..count).forEach {
-            list.add(Reaction((0x1F600 + it), authors.random().id))
+            list.add(Reaction((0x1F600 + it), authors.random().id.toString()))
         }
         return list
     }

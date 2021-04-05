@@ -34,7 +34,7 @@ class MessageInViewHolder(
 
     override fun bind(item: MessageInUi) {
         itemId = item.id
-        authorView.text = item.author.name
+        authorView.text = item.author.full_name
         messageView.text = item.text
         super.bind(item)
     }

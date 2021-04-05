@@ -9,17 +9,24 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
+enum class UserPresence {
+    ACTIVE,
+    IDLE,
+    OFFLINE
+}
+
 class UserUi(
     val id: String,
     val name: String,
     val email: String,
-    val isOnline: Boolean,
+    val avatar: String,
+    val presence: UserPresence,
     override val viewType: Int = R.layout.item_user
 ) : ViewTyped {
 
     override val uid = id
 
-    override fun asString() = "$name $email"
+    override fun asString() = "$name $email ${presence.ordinal}"
 
 }
 
@@ -44,8 +51,13 @@ class UserViewHolder(
         itemId = item.id
         nameView.text = item.name
         emailView.text = item.email
-        onlineView.visibility = if (item.isOnline) View.VISIBLE else View.GONE
+
+        val indicatorBg = if (item.presence == UserPresence.ACTIVE) R.drawable.bg_indicator_active else R.drawable.bg_indicator_idle
+        onlineView.setBackgroundResource(indicatorBg)
+        onlineView.visibility = if (item.presence != UserPresence.OFFLINE) View.VISIBLE else View.GONE
+
         avatarView.text = item.name
+
         super.bind(item)
     }
 
