@@ -20,5 +20,5 @@ data class User(
     val avatar_url: String,
 
     @Transient
-    var presence: Presence = Presence(0, "idle")
+    var presence: Presence = Presence(0, "")
 )

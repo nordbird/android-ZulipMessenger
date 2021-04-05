@@ -27,25 +27,25 @@ object DataGenerator {
     )
 
     private val streams = listOf(
-        Stream("1", "#general"),
-        Stream("2", "#Development"),
-        Stream("3", "#Design"),
-        Stream("4", "#PR"),
-        Stream("5", "#general second"),
-        Stream("6", "#Development second"),
-        Stream("7", "#Design second"),
-        Stream("8", "#PR second")
+        Stream(1, "#general"),
+        Stream(2, "#Development"),
+        Stream(3, "#Design"),
+        Stream(4, "#PR"),
+        Stream(5, "#general second"),
+        Stream(6, "#Development second"),
+        Stream(7, "#Design second"),
+        Stream(8, "#PR second")
     )
 
     private val topics = listOf(
-        Topic("1", "Testing"),
-        Topic("1", "Dev"),
-        Topic("2", "Holidays"),
-        Topic("2", "Boss"),
-        Topic("2", "NewYear"),
-        Topic("4", "Monday"),
-        Topic("6", "Bob"),
-        Topic("6", "Mary")
+        Topic("Testing"),
+        Topic("Dev"),
+        Topic("Holidays"),
+        Topic("Boss"),
+        Topic("NewYear"),
+        Topic("Monday"),
+        Topic("Bob"),
+        Topic("Mary")
     )
 
     private val messages = mutableListOf<Message>()
@@ -77,8 +77,6 @@ object DataGenerator {
     private fun getSubscribedStreamsWithError(): List<Stream> {
         return if ((0..10).random() < 7) throw RuntimeException("subscribed streams error") else streams.subList(3, 6)
     }
-
-    fun getTopics(streamId: String) = Observable.fromArray(topics.filter { it.streamId == streamId })
 
     fun getCurrentUser() = authors[0]
 

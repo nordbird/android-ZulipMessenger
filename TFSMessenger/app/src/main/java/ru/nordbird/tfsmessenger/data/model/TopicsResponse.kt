@@ -4,8 +4,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Topic(
+data class TopicsResponse(
 
-    @SerialName("name")
-    val name: String
+    @SerialName("topics")
+    val topics: List<Topic>
 )
