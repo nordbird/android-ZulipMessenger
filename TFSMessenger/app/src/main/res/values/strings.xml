@@ -15,4 +15,6 @@
     <string name="profile_online">online</string>
     <string name="profile_offline">offline</string>
     <string name="profile_status">In a meeting</string>
+    <string name="error_button_reload">Reload</string>
+    <string name="default_error_tilte">Something went wrong</string>
 </resources>

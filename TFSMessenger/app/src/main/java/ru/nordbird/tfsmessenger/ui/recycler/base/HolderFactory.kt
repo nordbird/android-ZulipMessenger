@@ -11,11 +11,7 @@ abstract class HolderFactory : (ViewGroup, Int) -> BaseViewHolder<ViewTyped> {
     final override fun invoke(viewGroup: ViewGroup, viewType: Int): BaseViewHolder<ViewTyped> {
         val view: View = viewGroup.inflate(viewType)
 
-        return when (viewType) {
-            else -> checkNotNull(createViewHolder(view, viewType)) {
-                "unknown viewType=" + viewGroup.resources.getResourceName(viewType)
-            }
-        } as BaseViewHolder<ViewTyped>
+        return createViewHolder(view, viewType) as BaseViewHolder<ViewTyped>
     }
 
 }

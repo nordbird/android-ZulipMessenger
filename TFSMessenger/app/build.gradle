@@ -44,5 +44,8 @@ dependencies {
     implementation "androidx.navigation:navigation-ui-ktx:$androidXNavigationVersion"
     implementation "androidx.fragment:fragment-ktx:$androidXFragmentVersion"
     implementation "androidx.viewpager2:viewpager2:$androidXViewPager2Version"
+    implementation "io.reactivex.rxjava2:rxandroid:$RxAndroid2Version"
+    implementation "io.reactivex.rxjava2:rxjava:$RxJava2Version"
+    implementation "com.facebook.shimmer:shimmer:$shimmerVersion"
 
 }
