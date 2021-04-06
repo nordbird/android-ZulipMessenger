@@ -1,6 +1,5 @@
 package ru.nordbird.tfsmessenger.ui.people
 
-import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -21,7 +20,7 @@ object PeopleInteractor {
     private val users: SingleSubject<List<UserUi>> = SingleSubject.create()
 
     fun getUsers(): Single<List<UserUi>> = userRepository.getUsers()
-        .flatMap { users -> transformUsers(users) }
+        .map { users -> transformUsers(users) }
         .map { users -> users.sortedBy { it.name } }
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
@@ -42,16 +41,12 @@ object PeopleInteractor {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    fun getUser(userId: String): Maybe<UserUi?> = Single
-        .concat(
-            users.map { list -> list.firstOrNull { it.id == userId } },
-            userRepository.getUser(userId).flatMap { user -> transformUsers(listOf(user)) }.map { it.firstOrNull() }
-        )
-        .firstElement()
-        .subscribeOn(Schedulers.io())
-        .observeOn(AndroidSchedulers.mainThread())
+    fun getUser(userId: String): Single<UserUi?> =
+        users.map { list -> list.firstOrNull { it.id == userId } }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
 
-    private fun transformUsers(users: List<User>): Single<List<UserUi>> {
+    private fun transformUsers(users: List<User>): List<UserUi> {
         return userMapper.transform(users)
     }
 }

@@ -57,7 +57,7 @@ class TopicFragment : Fragment() {
         }
     }
 
-    private val holderFactory = TfsHolderFactory(currentUser, clickListener)
+    private val holderFactory = TfsHolderFactory(currentUser.id.toString(), clickListener)
     private val adapter = Adapter<ViewTyped>(holderFactory)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -164,7 +164,7 @@ class TopicFragment : Fragment() {
                 val reactionView = TextView(context, null, 0, R.style.BottomSheetReactionStyle)
                 reactionView.text = getReaction(code)
                 tableRow.addView(reactionView)
-                val localCode = code
+                val localCode = getReaction(code)
                 reactionView.setOnClickListener {
                     topicInteractor.updateReaction(messageId, currentUser.id.toString(), localCode).subscribe(
                         { bottomSheetDialog.dismiss() },

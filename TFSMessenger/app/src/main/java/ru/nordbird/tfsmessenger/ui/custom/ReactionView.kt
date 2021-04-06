@@ -17,12 +17,12 @@ class ReactionView @JvmOverloads constructor(
     companion object {
         private const val DEFAULT_FONT_SIZE_SP = 14F
         private const val DEFAULT_FONT_COLOR = Color.BLACK
-        private const val REACTION_DEFAULT_CODE = 0x1F60A
+        private const val REACTION_DEFAULT_CODE = ""
         private const val REACTION_DEFAULT_COUNT = 0
         private val DRAWABLES_STATE = IntArray(1) { android.R.attr.state_selected }
     }
 
-    var reactionCode: Int = REACTION_DEFAULT_CODE
+    var reactionCode: String = REACTION_DEFAULT_CODE
         set(value) {
             if (field != value) {
                 field = value
@@ -74,7 +74,7 @@ class ReactionView @JvmOverloads constructor(
                     )
                 )
                 textColor = getColor(R.styleable.ReactionView_rv_textColor, DEFAULT_FONT_COLOR)
-                reactionCode = getInt(R.styleable.ReactionView_rv_reactionCode, REACTION_DEFAULT_CODE)
+                reactionCode = getString(R.styleable.ReactionView_rv_reactionCode) ?: REACTION_DEFAULT_CODE
                 reactionCount = getInt(R.styleable.ReactionView_rv_reactionCount, REACTION_DEFAULT_COUNT)
                 isSelected = getBoolean(R.styleable.ReactionView_rv_selected, false)
 
@@ -123,13 +123,8 @@ class ReactionView @JvmOverloads constructor(
         }
     }
 
-    private fun getReaction(unicode: Int): String {
-        return String(Character.toChars(unicode))
-    }
-
     private fun updateText() {
-        val reactionCodeText = getReaction(reactionCode)
-        text = "$reactionCodeText $reactionCount"
+        text = "$reactionCode $reactionCount"
         requestLayout()
     }
 }

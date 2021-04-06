@@ -32,7 +32,7 @@ object TopicInteractor {
 
     fun loadMessages(): Disposable {
         return messageRepository.getMessages()
-            .flatMap { resource -> transformMessages(resource) }
+            .map { resource -> transformMessages(resource) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe { messages.onNext(it) }
@@ -40,10 +40,10 @@ object TopicInteractor {
 
     fun addMessage(user: User, text: String): Observable<Message> = messageRepository.addMessage(user, text).doAfterNext { loadMessages() }
 
-    fun updateReaction(messageId: String, userId: String, reactionCode: Int): Observable<Message> =
+    fun updateReaction(messageId: String, userId: String, reactionCode: String): Observable<Message> =
         messageRepository.updateReaction(messageId, userId, reactionCode).doAfterNext { loadMessages() }
 
-    private fun transformMessages(resource: List<Message>): Observable<List<ViewTyped>> {
+    private fun transformMessages(resource: List<Message>): List<ViewTyped> {
         return messageMapper.transform(resource)
 
     }

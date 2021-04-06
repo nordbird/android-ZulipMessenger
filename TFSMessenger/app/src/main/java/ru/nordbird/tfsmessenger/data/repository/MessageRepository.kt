@@ -11,6 +11,6 @@ object MessageRepository {
 
     fun addMessage(user: User, text: String) = DataGenerator.addMessage(user, text)
 
-    fun updateReaction(messageId: String, userId: String, reactionCode: Int) = DataGenerator.updateReaction(messageId, userId, reactionCode)
+    fun updateReaction(messageId: String, userId: String, reactionCode: String) = DataGenerator.updateReaction(messageId, userId, reactionCode)
 
 }

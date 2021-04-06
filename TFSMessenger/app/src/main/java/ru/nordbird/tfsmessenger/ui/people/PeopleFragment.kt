@@ -72,7 +72,6 @@ class PeopleFragment : Fragment() {
 
         val searchObservable = RxSearchObservable.fromView(searchView)
         val searchDisposable = userInteractor.filterUsers(searchObservable)
-        compositeDisposable.add(searchDisposable)
 
         super.onCreateOptionsMenu(menu, inflater)
     }
@@ -85,7 +84,6 @@ class PeopleFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         compositeDisposable.clear()
-        userInteractor.clearDisposable()
     }
 
     private fun initToolbar() {
@@ -114,15 +112,14 @@ class PeopleFragment : Fragment() {
 
     private fun onUserClick(holder: BaseViewHolder<*>) {
         userInteractor.getUser(holder.itemId)
-            .subscribe {
-                activityListener.onOpenUserProfile(it)
+            .subscribe { user->
+                if (user != null) activityListener.onOpenUserProfile(user)
             }
             .dispose()
     }
 
     private fun onReloadClick() {
         showShimmer()
-        userInteractor.loadUsers()
     }
 
     interface PeopleFragmentListener {

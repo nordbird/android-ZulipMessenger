@@ -52,7 +52,7 @@ object ChannelsInteractor {
 
     fun loadAllStreams(): Disposable {
         return streamRepository.getAllStreams()
-            .flatMap { streamMapper.transform(it) }
+            .map { streamMapper.transform(it) }
             .doOnNext { allStreams = it }
             .map { filterStreams(it, filterQueryAllStreams) }
             .flatMap { makeStreamWithTopics(it, allStreamIds, allTopics) }
@@ -64,7 +64,7 @@ object ChannelsInteractor {
     fun loadSubscribedStreams(): Disposable {
         return streamRepository.getSubscribedStreams()
 
-            .flatMap { streamMapper.transform(it) }
+            .map { streamMapper.transform(it) }
             .doOnNext { subscribedStreams = it }
             .map { filterStreams(it, filterQuerySubscribedStreams) }
             .flatMap { makeStreamWithTopics(it, subscribedStreamIds, subscribedTopics) }
@@ -170,7 +170,7 @@ object ChannelsInteractor {
 
     private fun getStreamTopics(streamId: String, streamIds: MutableList<String>, topics: MutableMap<String, List<TopicUi>>): Observable<List<TopicUi>> {
         return if (streamIds.contains(streamId)) {
-            streamRepository.getStreamTopics(streamId).flatMap { topicMapper.transform(it) }.doOnNext { topics[streamId] = it }
+            streamRepository.getStreamTopics(streamId).map { topicMapper.transform(it) }.doOnNext { topics[streamId] = it }
         } else {
             Observable.just(emptyList())
         }

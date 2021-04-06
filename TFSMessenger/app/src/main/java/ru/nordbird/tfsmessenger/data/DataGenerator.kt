@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.data
 
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.model.*
@@ -59,20 +60,24 @@ object DataGenerator {
         val list = mutableListOf<Reaction>()
         val count = (1..5).random()
         (1..count).forEach {
-            list.add(Reaction((0x1F600 + it), authors.random().id.toString()))
+            list.add(Reaction(getReaction(0x1F600 + it), authors.random().id))
         }
         return list
     }
 
+    private fun getReaction(unicode: Int): String {
+        return String(Character.toChars(unicode))
+    }
+
     fun getAllStreams(): Observable<List<Stream>> =
-        Observable.fromCallable { getAllStreamsWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
+        Observable.fromCallable { getAllStreamsWithError() }
 
     private fun getAllStreamsWithError(): List<Stream> {
         return if ((0..10).random() < 7) throw RuntimeException("all streams error") else streams
     }
 
     fun getSubscribedStreams(): Observable<List<Stream>> =
-        Observable.fromCallable { getSubscribedStreamsWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
+        Observable.fromCallable { getSubscribedStreamsWithError() }
 
     private fun getSubscribedStreamsWithError(): List<Stream> {
         return if ((0..10).random() < 7) throw RuntimeException("subscribed streams error") else streams.subList(3, 6)
@@ -80,21 +85,23 @@ object DataGenerator {
 
     fun getCurrentUser() = authors[0]
 
-    fun getRandomMessages(): Observable<List<Message>> = messagesSubject.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
+    fun getRandomMessages(): Observable<List<Message>> = messagesSubject
 
     private fun getRandomMessagesWithError(): List<Message> {
         val date = Date()
         repeat(5) {
             lastId++
             date.add((-1..0).random(), TimeUnits.DAY)
+            val author = authors.random()
             val message = Message(
-                "$lastId",
-                authors.random(),
+                lastId,
+                author.id,
+                author.full_name,
+                author.avatar_url,
                 texts.random(),
-                Random.nextBoolean(),
-                Date(date.time),
-                Random.nextBoolean(),
-                generateReactions()
+                date.time,
+                generateReactions(),
+                Random.nextBoolean()
             )
             messages.add(message)
         }
@@ -103,14 +110,16 @@ object DataGenerator {
 
     fun getRandomIncomingMessage(): Message {
         lastId++
+        val author = authors.random()
         return Message(
-            "$lastId",
-            authors.random(),
+            lastId,
+            author.id,
+            author.full_name,
+            author.avatar_url,
             texts.random(),
-            true,
-            Date(),
-            false,
-            mutableListOf()
+            Date().time,
+            mutableListOf(),
+            true
         )
     }
 
@@ -130,36 +139,39 @@ object DataGenerator {
         } else {
             lastId++
             Message(
-                "$lastId",
-                user,
+                lastId,
+                user.id,
+                user.full_name,
+                user.avatar_url,
                 text,
-                false,
-                Date(),
-                false,
-                mutableListOf()
+                Date().time,
+                mutableListOf(),
+                false
             )
         }
     }
 
-    fun getUsers(): Observable<List<User>> =
-        Observable.fromCallable { getUsersWithError() }.delay(2, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
+    fun getTopics(streamId: String) = Observable.fromArray(topics)
+
+    fun getUsers(): Single<List<User>> =
+        Single.fromCallable { getUsersWithError() }
 
     private fun getUsersWithError(): List<User> {
         return if ((0..10).random() < 8) throw RuntimeException("users error") else authors
     }
 
-    fun updateReaction(messageId: String, userId: String, reactionCode: Int): Observable<Message> {
+    fun updateReaction(messageId: String, userId: String, reactionCode: String): Observable<Message> {
         return Observable.fromArray(messages).flatMap { list ->
 //            if ((0..10).random() < 8) return@flatMap Observable.just(Resource.error())
 
-            val message = list.firstOrNull { it.id == messageId } ?: throw RuntimeException("Error on server")
+            val message = list.firstOrNull { it.id.toString() == messageId } ?: throw RuntimeException("Error on server")
             val reactions = message.reactions.toMutableList()
 
-            val reaction = reactions.firstOrNull { it.code == reactionCode && it.userId == userId }
+            val reaction = reactions.firstOrNull { it.code == reactionCode && it.userId.toString() == userId }
             if (reaction != null) {
                 reactions.remove(reaction)
             } else {
-                reactions.add(Reaction(reactionCode, userId))
+                reactions.add(Reaction(reactionCode, userId.toInt()))
             }
             message.reactions = reactions
             return@flatMap Observable.just(message)
@@ -170,4 +182,5 @@ object DataGenerator {
 
 
     }
+
 }

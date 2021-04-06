@@ -60,8 +60,8 @@ class ProfileFragment : Fragment() {
         binding.ivProfileAvatar.clipToOutline = true
 
         if (isCurrentUser) {
-            val disposable = PeopleInteractor.getUser("").subscribe {
-                user = it
+            val disposable = PeopleInteractor.getUser("").subscribe { u ->
+                user = u
                 setupUser()
             }
             compositeDisposable.add(disposable)
