@@ -1,13 +1,33 @@
 package ru.nordbird.tfsmessenger.data.model
 
-import java.util.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
+@Serializable
 data class Message(
-        val id: String,
-        val author: User,
-        val content: String,
-        val isIncoming: Boolean = true,
-        val date: Date = Date(),
-        var isReaded: Boolean = false,
-        var reactions: List<Reaction> = listOf()
+
+    @SerialName("id")
+    val id: Int,
+
+    @SerialName("sender_id")
+    val authorId: Int,
+
+    @SerialName("sender_full_name")
+    val authorName: String,
+
+    @SerialName("avatar_url")
+    val avatar_url: String,
+
+    @SerialName("content")
+    val content: String,
+
+    @SerialName("timestamp")
+    val date: Long,
+
+    @SerialName("reactions")
+    var reactions: List<Reaction> = listOf(),
+
+    @Transient
+    var isIncoming: Boolean = false
 )

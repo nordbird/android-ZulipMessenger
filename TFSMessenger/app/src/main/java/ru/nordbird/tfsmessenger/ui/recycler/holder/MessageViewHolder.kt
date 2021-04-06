@@ -2,9 +2,7 @@ package ru.nordbird.tfsmessenger.ui.recycler.holder
 
 import android.view.View
 import ru.nordbird.tfsmessenger.R
-import ru.nordbird.tfsmessenger.data.model.Reaction
 import ru.nordbird.tfsmessenger.data.model.ReactionGroup
-import ru.nordbird.tfsmessenger.data.model.User
 import ru.nordbird.tfsmessenger.extensions.inflate
 import ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
@@ -14,10 +12,10 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
 open class MessageUi(
-        val id: String,
-        val author: User,
-        val text: String,
-        val reactions: List<ReactionGroup>
+    val id: String,
+    private val authorId: Int,
+    val text: String,
+    val reactions: List<ReactionGroup>
 ) : ViewTyped {
 
     override val uid: String
@@ -25,14 +23,14 @@ open class MessageUi(
 
     override fun asString(): String {
         val reactionStr = reactions.map { it.toString() }.reduceOrNull { acc, s -> "$acc $s" }
-        return "$author $text $reactionStr"
+        return "$authorId $text $reactionStr"
     }
 }
 
 open class MessageViewHolder<T : MessageUi>(
         view: View,
         private val reactionResId: Int,
-        private val currentUser: User?,
+        private val currentUserId: String,
         private val clickListener: ViewHolderClickListener
 ) : BaseViewHolder<T>(view) {
 
@@ -49,7 +47,7 @@ open class MessageViewHolder<T : MessageUi>(
         item.reactions.forEach { reaction ->
             val reactionView = flexBox.inflate<ReactionView>(reactionResId)
 
-            reactionView.isSelected = reaction.userIdList.contains(currentUser?.id)
+            reactionView.isSelected = reaction.userIdList.contains(currentUserId)
             reactionView.reactionCount = reaction.userIdList.size
             reactionView.reactionCode = reaction.code
             reactionView.setOnClickListener { v ->
