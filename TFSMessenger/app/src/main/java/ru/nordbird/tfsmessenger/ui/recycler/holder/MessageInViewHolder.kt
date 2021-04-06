@@ -4,6 +4,7 @@ import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.text.HtmlCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomViewTarget
 import com.bumptech.glide.request.transition.Transition
@@ -55,8 +56,8 @@ class MessageInViewHolder(
 
     override fun bind(item: MessageInUi) {
         itemId = item.id
-        authorView.text = item.author.full_name
-        messageView.text = item.text
+        authorView.text = item.authorName
+        messageView.text = HtmlCompat.fromHtml(item.text, HtmlCompat.FROM_HTML_MODE_LEGACY)
 
         if (item.avatar.isBlank()) {
             Glide.with(itemView)

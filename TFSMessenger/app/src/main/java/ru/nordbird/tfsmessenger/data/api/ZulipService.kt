@@ -1,8 +1,7 @@
 package ru.nordbird.tfsmessenger.data.api
 
 import io.reactivex.Single
-import retrofit2.http.GET
-import retrofit2.http.Path
+import retrofit2.http.*
 import ru.nordbird.tfsmessenger.data.model.*
 
 interface ZulipService {
@@ -25,4 +24,15 @@ interface ZulipService {
     @GET("users/me/{id}/topics")
     fun getStreamTopics(@Path("id") id: String): Single<TopicsResponse>
 
+    @GET("messages")
+    fun getMessages(@QueryMap queryMap: Map<String, String>): Single<MessagesResponse>
+
+    @POST("messages")
+    fun sendMessage(@QueryMap queryMap: Map<String, String>): Single<BaseResponse>
+
+    @POST("messages/{id}/reactions")
+    fun addMessageReaction(@Path("id") id: String, @Query("emoji_name") reactionName: String): Single<BaseResponse>
+
+    @DELETE("messages/{id}/reactions")
+    fun removeMessageReaction(@Path("id") id: String, @Query("emoji_name") reactionName: String): Single<BaseResponse>
 }

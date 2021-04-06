@@ -7,11 +7,14 @@ class ReactionToReactionGroupMapper : Mapper<List<Reaction>, List<ReactionGroup>
 
     override fun transform(data: List<Reaction>): List<ReactionGroup> {
         val reactionByCode = data.groupBy { it.code }
-        return reactionByCode.map { (code, reactions) -> ReactionGroup(code, parseReaction(reactions)) }
+        return reactionByCode.map { (code, reactions) -> ReactionGroup(getReaction(code.toInt(16)), reactions.first().name, parseReaction(reactions)) }
     }
 
-    private fun parseReaction(reactions: List<Reaction>): List<Int> {
-        return reactions.map { it.userId }
+    private fun parseReaction(reactions: List<Reaction>): List<String> {
+        return reactions.map { it.userId.toString() }
     }
 
+    private fun getReaction(unicode: Int): String {
+        return String(Character.toChars(unicode))
+    }
 }

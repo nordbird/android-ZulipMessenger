@@ -2,6 +2,7 @@ package ru.nordbird.tfsmessenger.ui.recycler.holder
 
 import android.view.View
 import android.widget.TextView
+import androidx.core.text.HtmlCompat
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.model.ReactionGroup
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
@@ -30,7 +31,7 @@ class MessageOutViewHolder(
 
     override fun bind(item: MessageOutUi) {
         itemId = item.id
-        messageView.text = item.text
+        messageView.text = HtmlCompat.fromHtml(item.text, HtmlCompat.FROM_HTML_MODE_LEGACY)
         super.bind(item)
     }
 
