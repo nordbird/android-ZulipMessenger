@@ -2,13 +2,11 @@ package ru.nordbird.tfsmessenger.data
 
 import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.data.model.*
 import ru.nordbird.tfsmessenger.extensions.TimeUnits
 import ru.nordbird.tfsmessenger.extensions.add
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 object DataGenerator {
@@ -60,13 +58,9 @@ object DataGenerator {
         val list = mutableListOf<Reaction>()
         val count = (1..5).random()
         (1..count).forEach {
-            list.add(Reaction(getReaction(0x1F600 + it), "", authors.random().id))
+            list.add(Reaction((0x1F600 + it).toString(16), "", authors.random().id))
         }
         return list
-    }
-
-    private fun getReaction(unicode: Int): String {
-        return String(Character.toChars(unicode))
     }
 
     fun getAllStreams(): Observable<List<Stream>> =

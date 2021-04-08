@@ -9,11 +9,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.databinding.FragmentProfileBinding
 import ru.nordbird.tfsmessenger.ui.people.PeopleInteractor
+import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserPresence
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
@@ -66,9 +68,9 @@ class ProfileFragment : Fragment() {
         binding.ivProfileAvatar.clipToOutline = true
 
         val disposable = PeopleInteractor.getUser(userId)
-            .subscribe { user ->
-                setupUser(user)
-            }
+            .subscribe(
+                { setupUser(it) },
+                { showError(it) })
         compositeDisposable.add(disposable)
     }
 
@@ -105,6 +107,10 @@ class ProfileFragment : Fragment() {
                 supportActionBar?.setDisplayHomeAsUpEnabled(true)
             }
         }
+    }
+
+    private fun showError(throwable: Throwable) {
+        Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
     companion object {

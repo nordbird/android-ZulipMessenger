@@ -15,6 +15,7 @@ import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
+import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
@@ -76,7 +77,7 @@ class TopicFragment : Fragment() {
         _binding = FragmentTopicBinding.inflate(inflater, container, false)
         initUI()
         initToolbar()
-        updateMessages()
+        updateMessages(true, true)
         return binding.root
     }
 
@@ -119,8 +120,7 @@ class TopicFragment : Fragment() {
                 { response ->
                     if (response.result == "success") {
                         binding.edMessage.text.clear()
-                        updateMessages()
-                        binding.rvChat.layoutManager?.scrollToPosition(0)
+                        updateMessages(false, true)
                     } else {
                         Toast.makeText(context, response.msg, Toast.LENGTH_SHORT).show()
                     }
@@ -157,11 +157,15 @@ class TopicFragment : Fragment() {
         Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
-    private fun updateMessages() {
-        showShimmer()
+    private fun updateMessages(needShimmer: Boolean, needScroll: Boolean) {
+        if (needShimmer) showShimmer()
+
         val usersDisposable = topicInteractor.getMessages(streamName, topicName)
             .subscribe(
-                { adapter.items = it },
+                {
+                    adapter.items = it
+                    if (needScroll) binding.rvChat.layoutManager?.scrollToPosition(0)
+                },
                 { showError(it) }
             )
         compositeDisposable.add(usersDisposable)
@@ -175,22 +179,19 @@ class TopicFragment : Fragment() {
         table.isStretchAllColumns = true
         table.isShrinkAllColumns = true
 
-        var code = REACTION_FIRST_CODE
-        repeat(REACTION_SHEET_ROWS) {
+        repeat(REACTION_SHEET_ROWS) { row ->
             val tableRow = TableRow(context)
             tableRow.gravity = Gravity.CENTER_HORIZONTAL
-            repeat(REACTION_SHEET_COLS) {
+            repeat(REACTION_SHEET_COLS) { col ->
                 val reactionView = TextView(context, null, 0, R.style.BottomSheetReactionStyle)
-                reactionView.text = getReaction(code)
+                val code = EMOJI_SET[row * REACTION_SHEET_COLS + col].getCodeString()
+                reactionView.text = code
                 tableRow.addView(reactionView)
-                val localCode = getReaction(code)
                 reactionView.setOnClickListener {
-                    updateReaction(message, localCode)
+                    updateReaction(message, code)
                     bottomSheetDialog.dismiss()
                 }
-                code++
             }
-
             table.addView(tableRow)
         }
 
@@ -202,7 +203,7 @@ class TopicFragment : Fragment() {
         val disposable = topicInteractor.updateReaction(message, currentUserId, reactionCode).subscribe(
             { response ->
                 if (response.result == "success") {
-                    updateMessages()
+                    updateMessages(false, false)
                 } else {
                     Toast.makeText(context, response.msg, Toast.LENGTH_SHORT).show()
                 }
@@ -211,10 +212,6 @@ class TopicFragment : Fragment() {
             { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
         )
         compositeDisposable.add(disposable)
-    }
-
-    private fun getReaction(unicode: Int): String {
-        return String(Character.toChars(unicode))
     }
 
     private fun onMessageClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
@@ -236,13 +233,11 @@ class TopicFragment : Fragment() {
     }
 
     private fun onReloadClick() {
-        updateMessages()
+        updateMessages(true, true)
     }
 
     companion object {
         private const val REACTION_SHEET_ROWS = 5
         private const val REACTION_SHEET_COLS = 10
-        private const val REACTION_FIRST_CODE = 0x1F600
-
     }
 }

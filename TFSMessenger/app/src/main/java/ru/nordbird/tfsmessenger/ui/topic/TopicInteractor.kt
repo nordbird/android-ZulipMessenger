@@ -4,6 +4,7 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
+import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
 import ru.nordbird.tfsmessenger.data.model.BaseResponse
 import ru.nordbird.tfsmessenger.data.model.Message
@@ -26,12 +27,19 @@ object TopicInteractor {
         .observeOn(AndroidSchedulers.mainThread())
 
     fun updateReaction(message: MessageUi, currentUserId: String, reactionCode: String): Single<BaseResponse> {
-        val reaction = message.reactions.firstOrNull { it.code == reactionCode && it.userIdList.contains(currentUserId) }
+        val reactionName = EMOJI_SET.firstOrNull { it.getCodeString() == reactionCode }?.name ?: ""
+        val reaction = message.reactions.firstOrNull { it.userIdList.contains(currentUserId) }
 
         return if (reaction != null) {
-            messageRepository.removeReaction(message.id, reactionCode)
+            if (reaction.name != reactionName) {
+                Single.concat(
+                    messageRepository.removeReaction(message.id, reaction.name),
+                    messageRepository.addReaction(message.id, reactionName)
+                ).lastOrError()
+            } else
+                messageRepository.removeReaction(message.id, reaction.name)
         } else {
-            messageRepository.addReaction(message.id, reactionCode)
+            messageRepository.addReaction(message.id, reactionName)
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
