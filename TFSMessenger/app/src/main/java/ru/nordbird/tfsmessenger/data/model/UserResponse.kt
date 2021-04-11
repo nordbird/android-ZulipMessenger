@@ -7,5 +7,5 @@ import kotlinx.serialization.Serializable
 data class UserResponse(
 
     @SerialName("user")
-    val user: User
+    val user: UserNw
 )

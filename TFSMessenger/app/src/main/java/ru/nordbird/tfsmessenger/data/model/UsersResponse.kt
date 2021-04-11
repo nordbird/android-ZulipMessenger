@@ -7,5 +7,5 @@ import kotlinx.serialization.Serializable
 data class UsersResponse(
 
     @SerialName("members")
-    val members: List<User>
+    val members: List<UserNw>
 )

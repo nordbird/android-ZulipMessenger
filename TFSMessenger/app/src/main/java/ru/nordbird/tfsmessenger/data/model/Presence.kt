@@ -13,5 +13,3 @@ data class Presence(
     val status: String
 )
 
-const val PRESENCE_STATUS_ACTIVE = "active"
-const val PRESENCE_STATUS_IDLE = "idle"

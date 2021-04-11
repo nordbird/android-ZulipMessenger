@@ -8,5 +8,3 @@ data class PresenceResponse(
     @SerialName("presence")
     val presence: Map<String, Presence> = emptyMap()
 )
-
-const val DEFAULT_PRESENCE_KEY = "aggregated"
