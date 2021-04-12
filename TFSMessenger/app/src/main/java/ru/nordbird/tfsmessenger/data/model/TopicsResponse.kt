@@ -7,5 +7,5 @@ import kotlinx.serialization.Serializable
 data class TopicsResponse(
 
     @SerialName("topics")
-    val topics: List<Topic>
+    val topics: List<TopicNw>
 )

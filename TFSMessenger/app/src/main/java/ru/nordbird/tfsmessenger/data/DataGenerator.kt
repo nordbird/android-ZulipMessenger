@@ -37,14 +37,14 @@ object DataGenerator {
     )
 
     private val topics = listOf(
-        Topic("Testing"),
-        Topic("Dev"),
-        Topic("Holidays"),
-        Topic("Boss"),
-        Topic("NewYear"),
-        Topic("Monday"),
-        Topic("Bob"),
-        Topic("Mary")
+        Topic("Testing", "1"),
+        Topic("Dev", "1"),
+        Topic("Holidays", "2"),
+        Topic("Boss", "2"),
+        Topic("NewYear", "2"),
+        Topic("Monday", "3"),
+        Topic("Bob", "4"),
+        Topic("Mary", "4")
     )
 
     private val messages = mutableListOf<Message>()

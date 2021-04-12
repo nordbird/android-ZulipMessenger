@@ -7,5 +7,5 @@ import kotlinx.serialization.Serializable
 data class SubscriptionsResponse(
 
     @SerialName("subscriptions")
-    val subscriptions: List<Stream>
+    val subscriptions: List<StreamNw>
 )

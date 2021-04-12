@@ -4,8 +4,11 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class StreamsResponse(
+data class StreamNw(
 
-    @SerialName("streams")
-    val streams: List<StreamNw>
+    @SerialName("stream_id")
+    val id: Int,
+
+    @SerialName("name")
+    val name: String
 )
