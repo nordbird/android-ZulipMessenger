@@ -16,36 +16,42 @@ object UserRepository {
     private val nwUserMapper = UserNwToUserDbMapper()
     private val dbUserMapper = UserDbToUserMapper()
 
-    fun getUsers(query: String = ""): Flowable<List<User>> = Single.concat(
-        getDatabaseUsers(query),
-        getNetworkUsers()
-            .map { list -> list.filter { it.full_name.contains(query, true) } }
-    )
-        .map { dbUserMapper.transform(it) }
-
-    fun getUser(id: String): Flowable<User?> = Single.concat(
-        getDatabaseUser(id),
-        getNetworkUser(id)
-    )
-        .map { dbUserMapper.transform(listOf(it)).firstOrNull() }
-
-    private fun getNetworkUsers(): Single<List<UserDb>> = ZulipServiceImpl.getApi().getUsers()
-        .flatMapObservable { Observable.fromIterable(it.members) }
-        .map { nwUserMapper.transform(it) }
-        .flatMap(
-            { user ->
-                ZulipServiceImpl.getApi()
-                    .getUserPresence(user.id.toString())
-                    .onErrorReturnItem(PresenceResponse())
-                    .toObservable()
-            },
-            { user, presence -> addPresence(user, presence) }
+    fun getUsers(query: String = ""): Flowable<List<User>> {
+        return Single.concat(
+            getDatabaseUsers(query),
+            getNetworkUsers(query)
         )
-        .toList()
-        .doOnSuccess { saveToDatabase(it) }
+            .map { dbUserMapper.transform(it) }
+    }
 
-    private fun getNetworkUser(id: String): Single<UserDb> = Single
-        .zip(
+    fun getUser(id: String): Flowable<User?> {
+        return Single.concat(
+            getDatabaseUser(id),
+            getNetworkUser(id)
+        )
+            .map { dbUserMapper.transform(listOf(it)).firstOrNull() }
+    }
+
+    private fun getNetworkUsers(query: String = ""): Single<List<UserDb>> {
+        return ZulipServiceImpl.getApi().getUsers()
+            .flatMapObservable { Observable.fromIterable(it.members) }
+            .map { nwUserMapper.transform(it) }
+            .flatMap(
+                { user ->
+                    ZulipServiceImpl.getApi()
+                        .getUserPresence(user.id.toString())
+                        .onErrorReturnItem(PresenceResponse())
+                        .toObservable()
+                },
+                { user, presence -> addPresence(user, presence) }
+            )
+            .toList()
+            .doOnSuccess { saveToDatabase(it) }
+            .map { list -> list.filter { it.full_name.contains(query, true) } }
+    }
+
+    private fun getNetworkUser(id: String): Single<UserDb> {
+        return Single.zip(
             ZulipServiceImpl.getApi().getUser(id)
                 .map { nwUserMapper.transform(it.user) },
             ZulipServiceImpl.getApi()
@@ -53,10 +59,15 @@ object UserRepository {
                 .onErrorReturnItem(PresenceResponse()),
             { user, presence -> addPresence(user, presence) }
         )
+    }
 
-    private fun getDatabaseUsers(query: String = ""): Single<List<UserDb>> = AppDatabaseImpl.userDao().getAll(query)
+    private fun getDatabaseUsers(query: String = ""): Single<List<UserDb>> {
+        return AppDatabaseImpl.userDao().getAll(query)
+    }
 
-    private fun getDatabaseUser(id: String): Single<UserDb> = AppDatabaseImpl.userDao().getById(id.toIntOrNull() ?: 0)
+    private fun getDatabaseUser(id: String): Single<UserDb> {
+        return AppDatabaseImpl.userDao().getById(id.toIntOrNull() ?: 0)
+    }
 
     private fun addPresence(user: UserDb, presenceResponse: PresenceResponse): UserDb {
         user.timestamp = presenceResponse.presence.maxOfOrNull { it.value.timestamp } ?: 0

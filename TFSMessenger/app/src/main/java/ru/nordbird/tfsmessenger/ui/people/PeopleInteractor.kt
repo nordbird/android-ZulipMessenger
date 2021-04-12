@@ -15,10 +15,12 @@ object PeopleInteractor {
     private val userRepository = UserRepository
     private val userMapper = UserToUserUiMapper()
 
-    fun getUsers(query: String = ""): Flowable<List<UserUi>> = userRepository.getUsers(query)
-        .map { users -> userMapper.transform(users) }
-        .map { users -> users.sortedBy { it.name } }
-        .subscribeOn(Schedulers.io())
+    fun getUsers(query: String = ""): Flowable<List<UserUi>> {
+        return userRepository.getUsers(query)
+            .map { users -> userMapper.transform(users) }
+            .map { users -> users.sortedBy { it.name } }
+            .subscribeOn(Schedulers.io())
+    }
 
     fun filterUsers(searchObservable: Observable<String>): Observable<List<UserUi>> {
         return searchObservable
@@ -31,10 +33,11 @@ object PeopleInteractor {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    fun getUser(userId: String): Flowable<UserUi?> =
-        userRepository.getUser(userId)
+    fun getUser(userId: String): Flowable<UserUi?> {
+        return userRepository.getUser(userId)
             .map { user -> userMapper.transform(listOf(user)).firstOrNull() }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
+    }
 
 }
