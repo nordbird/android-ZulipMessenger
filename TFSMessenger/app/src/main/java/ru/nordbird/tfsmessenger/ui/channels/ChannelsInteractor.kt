@@ -1,7 +1,7 @@
 package ru.nordbird.tfsmessenger.ui.channels
 
+import io.reactivex.Flowable
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.mapper.StreamToStreamUiMapper
@@ -22,30 +22,27 @@ class ChannelsInteractor(private val tabType: ChannelsTabType) {
 
     private val streamIds = mutableListOf<String>()
 
-    fun getStreams(): Single<List<ViewTyped>> =
-        getStreamsFun()
-            .map { streams -> streamMapper.transform(streams) }
+    fun getStreams(query: String = ""): Flowable<List<ViewTyped>> {
+        return getStreamsFun(query)
+            .observeOn(Schedulers.computation())
+            .map { streamMapper.transform(it) }
+            .map { streams -> streams.sortedBy { it.name } }
             .flatMap { makeStreamWithTopics(it) }
             .subscribeOn(Schedulers.io())
+    }
 
     fun filterStreams(searchObservable: Observable<String>): Observable<List<ViewTyped>> {
         return searchObservable
             .map { query -> query.toLowerCase(Locale.getDefault()).trim() }
             .distinctUntilChanged()
             .debounce(500, TimeUnit.MILLISECONDS)
-            .switchMap { query ->
-                getStreamsFun()
-                    .map { streams -> streamMapper.transform(streams) }
-                    .map { list -> list.filter { it.name.toLowerCase(Locale.getDefault()).contains(query) } }
-                    .flatMap { makeStreamWithTopics(it) }
-                    .toObservable()
-            }
+            .switchMap { query -> getStreams(query).toObservable() }
             .onErrorReturnItem(emptyList())
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    fun updateStreamTopics(streamId: String): Single<List<ViewTyped>> {
+    fun updateStreamTopics(streamId: String): Flowable<List<ViewTyped>> {
         if (streamIds.contains(streamId)) {
             streamIds.remove(streamId)
         } else {
@@ -55,29 +52,31 @@ class ChannelsInteractor(private val tabType: ChannelsTabType) {
         return getStreams()
     }
 
-    private fun makeStreamWithTopics(streams: List<StreamUi>): Single<List<ViewTyped>> {
-        return Observable.fromIterable(streams)
+    private fun makeStreamWithTopics(streams: List<StreamUi>): Flowable<List<ViewTyped>> {
+        return Flowable.fromIterable(streams)
             .flatMap(
                 { stream ->
                     if (streamIds.contains(stream.id))
                         streamRepository.getStreamTopics(stream.id)
                             .map { topicMapper.transform(it) }
-                            .toObservable()
                     else
-                        Observable.fromArray(emptyList())
+                        Flowable.fromArray(emptyList())
                 },
                 { stream, topics -> transformTopics(stream, topics) }
-            ).reduce { listA, listB -> listA + listB }.toSingle()
+            )
+            .distinct { it.firstOrNull()?.uid }
+            .reduce { listA, listB -> listA + listB }
+            .toFlowable()
     }
 
     private fun transformTopics(stream: StreamUi, topics: List<TopicUi>): List<ViewTyped> {
-        return listOf(stream) + topics.onEach { it.streamId = stream.id }
+        return listOf(stream) + topics
     }
 
-    private fun getStreamsFun(): Single<List<Stream>> {
+    private fun getStreamsFun(query: String = ""): Flowable<List<Stream>> {
         return when (tabType) {
-            ChannelsTabType.ALL -> streamRepository.getStreams()
-            ChannelsTabType.SUBSCRIBED -> streamRepository.getSubscriptions()
+            ChannelsTabType.ALL -> streamRepository.getStreams(query)
+            ChannelsTabType.SUBSCRIBED -> streamRepository.getSubscriptions(query)
         }
     }
 }
