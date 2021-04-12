@@ -11,9 +11,10 @@ import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
-import ru.nordbird.tfsmessenger.data.DataGenerator
+import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
@@ -33,16 +34,16 @@ class TopicFragment : Fragment() {
     private var _binding: FragmentTopicBinding? = null
     private val binding get() = _binding!!
 
-    private var streamId: String? = null
-    private var streamName: String? = null
-    private var topicName: String? = null
+    private var streamId: String = ""
+    private var streamName: String = ""
+    private var topicName: String = ""
     private var topicColor: Int = 0
 
     private val topicInteractor = TopicInteractor
     private val compositeDisposable = CompositeDisposable()
 
     private var isTextMode = false
-    private val currentUser = DataGenerator.getCurrentUser()
+    private val currentUserId = ZulipAuth.AUTH_ID
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
@@ -57,16 +58,16 @@ class TopicFragment : Fragment() {
         }
     }
 
-    private val holderFactory = TfsHolderFactory(currentUser.id.toString(), clickListener)
+    private val holderFactory = TfsHolderFactory(currentUserId, clickListener)
     private val adapter = Adapter<ViewTyped>(holderFactory)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
         arguments?.let {
-            streamId = it.getString(REQUEST_OPEN_TOPIC_STREAM_ID)
-            streamName = it.getString(REQUEST_OPEN_TOPIC_STREAM_NAME)
-            topicName = it.getString(REQUEST_OPEN_TOPIC_NAME)
+            streamId = it.getString(REQUEST_OPEN_TOPIC_STREAM_ID, "")
+            streamName = it.getString(REQUEST_OPEN_TOPIC_STREAM_NAME, "")
+            topicName = it.getString(REQUEST_OPEN_TOPIC_NAME, "")
             topicColor = it.getInt(REQUEST_OPEN_TOPIC_COLOR)
         }
     }
@@ -75,6 +76,7 @@ class TopicFragment : Fragment() {
         _binding = FragmentTopicBinding.inflate(inflater, container, false)
         initUI()
         initToolbar()
+        updateMessages()
         return binding.root
     }
 
@@ -90,7 +92,6 @@ class TopicFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         compositeDisposable.clear()
-        topicInteractor.clearDisposable()
     }
 
     private fun initUI() {
@@ -101,13 +102,7 @@ class TopicFragment : Fragment() {
 
         binding.ibSend.setOnClickListener {
             if (isTextMode) {
-                topicInteractor.addMessage(currentUser, binding.edMessage.text.toString()).subscribe(
-                    {
-                        binding.edMessage.text.clear()
-                        linearLayoutManager.scrollToPosition(0)
-                    },
-                    { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
-                )
+                addMessage()
             }
         }
 
@@ -116,10 +111,23 @@ class TopicFragment : Fragment() {
             updateUI()
         }
 
-        showShimmer()
-        val usersDisposable = topicInteractor.getMessages()
-            .subscribe { updateMessages(it) }
-        compositeDisposable.add(usersDisposable)
+    }
+
+    private fun addMessage() {
+        val disposable = topicInteractor.addMessage(streamName, topicName, binding.edMessage.text.toString())
+            .subscribe(
+                { response ->
+                    if (response.result == "success") {
+                        binding.edMessage.text.clear()
+                        updateMessages()
+                        binding.rvChat.layoutManager?.scrollToPosition(0)
+                    } else {
+                        Toast.makeText(context, response.msg, Toast.LENGTH_SHORT).show()
+                    }
+                },
+                { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
+            )
+        compositeDisposable.add(disposable)
     }
 
     private fun initToolbar() {
@@ -144,11 +152,22 @@ class TopicFragment : Fragment() {
         adapter.items = listOf(TopicShimmerUi(), TopicShimmerUi())
     }
 
-    private fun updateMessages(resource: List<ViewTyped>) {
-        adapter.items = resource
+    private fun showError(throwable: Throwable) {
+        adapter.items = listOf(ErrorUi())
+        Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
-    private fun showReactionChooser(messageId: String) {
+    private fun updateMessages() {
+        showShimmer()
+        val usersDisposable = topicInteractor.getMessages(streamName, topicName)
+            .subscribe(
+                { adapter.items = it },
+                { showError(it) }
+            )
+        compositeDisposable.add(usersDisposable)
+    }
+
+    private fun showReactionChooser(message: MessageUi) {
         val bottomSheetDialog = BottomSheetDialog(requireContext())
         val sheetBinding = BottomSheetReactionBinding.inflate(layoutInflater)
         val sheetView = sheetBinding.root
@@ -166,10 +185,8 @@ class TopicFragment : Fragment() {
                 tableRow.addView(reactionView)
                 val localCode = getReaction(code)
                 reactionView.setOnClickListener {
-                    topicInteractor.updateReaction(messageId, currentUser.id.toString(), localCode).subscribe(
-                        { bottomSheetDialog.dismiss() },
-                        { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
-                    )
+                    updateReaction(message, localCode)
+                    bottomSheetDialog.dismiss()
                 }
                 code++
             }
@@ -181,31 +198,45 @@ class TopicFragment : Fragment() {
         bottomSheetDialog.show()
     }
 
+    private fun updateReaction(message: MessageUi, reactionCode: String) {
+        val disposable = topicInteractor.updateReaction(message, currentUserId, reactionCode).subscribe(
+            { response ->
+                if (response.result == "success") {
+                    updateMessages()
+                } else {
+                    Toast.makeText(context, response.msg, Toast.LENGTH_SHORT).show()
+                }
+
+            },
+            { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
+        )
+        compositeDisposable.add(disposable)
+    }
+
     private fun getReaction(unicode: Int): String {
         return String(Character.toChars(unicode))
     }
 
     private fun onMessageClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
+        val message = adapter.items[holder.absoluteAdapterPosition] as MessageUi
         when (clickType) {
             MessageVHClickType.UPDATE_REACTION_CLICK -> {
                 val reactionView = view as ReactionView
-                topicInteractor.updateReaction(holder.itemId, currentUser.id.toString(), reactionView.reactionCode).subscribe(
-                    {},
-                    { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
-                )
+
+                updateReaction(message, reactionView.reactionCode)
             }
-            MessageVHClickType.ADD_REACTION_CLICK -> showReactionChooser(holder.itemId)
+            MessageVHClickType.ADD_REACTION_CLICK -> showReactionChooser(message)
         }
     }
 
     private fun onMessageLongClick(holder: BaseViewHolder<*>): Boolean {
-        showReactionChooser(holder.itemId)
+        val message = adapter.items[holder.absoluteAdapterPosition] as MessageUi
+        showReactionChooser(message)
         return true
     }
 
     private fun onReloadClick() {
-        showShimmer()
-        compositeDisposable.add(topicInteractor.loadMessages())
+        updateMessages()
     }
 
     companion object {

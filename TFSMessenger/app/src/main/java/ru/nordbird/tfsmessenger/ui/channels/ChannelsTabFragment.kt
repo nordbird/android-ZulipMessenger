@@ -10,6 +10,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.setFragmentResultListener
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.google.android.material.snackbar.Snackbar
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.R
@@ -24,9 +26,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
-import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
-import ru.nordbird.tfsmessenger.ui.recycler.holder.StreamShimmerUi
-import ru.nordbird.tfsmessenger.ui.recycler.holder.TfsHolderFactory
+import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 
 class ChannelsTabFragment : Fragment() {
 
@@ -34,7 +34,7 @@ class ChannelsTabFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var tabType: ChannelsTabType = ChannelsTabType.ALL
-    private val channelsInteractor = ChannelsInteractor
+    private lateinit var channelsInteractor: ChannelsInteractor
     private val compositeDisposable = CompositeDisposable()
     private val searchObservable: BehaviorSubject<String> = BehaviorSubject.create()
 
@@ -61,10 +61,16 @@ class ChannelsTabFragment : Fragment() {
             ChannelsTabType.SUBSCRIBED.ordinal -> tabType = ChannelsTabType.SUBSCRIBED
         }
 
+        channelsInteractor = ChannelsInteractor(tabType)
+
         val searchDisposable = when (tabType) {
-            ChannelsTabType.ALL -> channelsInteractor.filterAllStreams(searchObservable)
-            ChannelsTabType.SUBSCRIBED -> channelsInteractor.filterSubscribedStreams(searchObservable)
+            ChannelsTabType.ALL -> channelsInteractor.filterStreams(searchObservable)
+            ChannelsTabType.SUBSCRIBED -> channelsInteractor.filterStreams(searchObservable)
+        }.subscribe {
+            adapter.items = it
+            binding.rvStreams.layoutManager?.scrollToPosition(0)
         }
+
         compositeDisposable.add(searchDisposable)
 
         val requestKey = REQUEST_FILTER_QUERY + tabType
@@ -76,7 +82,6 @@ class ChannelsTabFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentChannelsTabBinding.inflate(inflater, container, false)
         initUI()
-        initLoadStreams()
 
         return binding.root
     }
@@ -84,25 +89,27 @@ class ChannelsTabFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.clear()
-        channelsInteractor.clearDisposable()
     }
 
-    private fun initLoadStreams() {
+    private fun updateStreams() {
         showShimmer()
-        val streamDisposable = when (tabType) {
-            ChannelsTabType.ALL -> channelsInteractor.getAllStreams()
-            ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStreams()
-        }.subscribe ( {updateStreams(it)}, {updateStreams(listOf(ErrorUi()))} )
+        val streamDisposable = channelsInteractor.getStreams()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { adapter.items = it },
+                { showError(it) }
+            )
 
         compositeDisposable.add(streamDisposable)
     }
 
-    private fun updateStreams(resource: List<ViewTyped>) {
-        adapter.items = resource
-    }
-
     private fun showShimmer() {
         adapter.items = listOf(StreamShimmerUi(), StreamShimmerUi(), StreamShimmerUi())
+    }
+
+    private fun showError(throwable: Throwable) {
+        adapter.items = listOf(ErrorUi())
+        Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
     private fun initUI() {
@@ -112,25 +119,24 @@ class ChannelsTabFragment : Fragment() {
 
         binding.rvStreams.adapter = adapter
         binding.rvStreams.addItemDecoration(divider)
+
+        updateStreams()
     }
 
     private fun onStreamClick(holder: BaseViewHolder<*>) {
-        when (tabType) {
-            ChannelsTabType.ALL -> channelsInteractor.updateAllStreamTopics(holder.itemId)
-            ChannelsTabType.SUBSCRIBED -> channelsInteractor.updateSubscribedStreamTopics(holder.itemId)
-        }
+        val streamDisposable = channelsInteractor.updateStreamTopics(holder.itemId)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { adapter.items = it },
+                { showError(it) }
+            )
+
+        compositeDisposable.add(streamDisposable)
     }
 
     private fun onTopicClick(holder: BaseViewHolder<*>) {
-        val topic = when (tabType) {
-            ChannelsTabType.ALL -> channelsInteractor.getAllStreamsTopic(holder.itemId)
-            ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStreamsTopic(holder.itemId)
-        } ?: return
-
-        val stream = when (tabType) {
-            ChannelsTabType.ALL -> channelsInteractor.getAllStream(topic.streamId)
-            ChannelsTabType.SUBSCRIBED -> channelsInteractor.getSubscribedStream(topic.streamId)
-        } ?: return
+        val topic = adapter.items[holder.absoluteAdapterPosition] as TopicUi
+        val stream = getStream(topic.streamId) ?: return
 
         setFragmentResult(
             REQUEST_OPEN_TOPIC,
@@ -148,12 +154,11 @@ class ChannelsTabFragment : Fragment() {
     }
 
     private fun onReloadClick() {
-        showShimmer()
-        val streamDisposable = when (tabType) {
-            ChannelsTabType.ALL -> channelsInteractor.loadAllStreams()
-            ChannelsTabType.SUBSCRIBED -> channelsInteractor.loadSubscribedStreams()
-        }
-        compositeDisposable.add(streamDisposable)
+        updateStreams()
+    }
+
+    private fun getStream(streamId: String): StreamUi? {
+        return adapter.items.filterIsInstance<StreamUi>().firstOrNull { it.id == streamId }
     }
 
     companion object {

@@ -1,50 +1,44 @@
 package ru.nordbird.tfsmessenger.ui.topic
 
-import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.BehaviorSubject
+import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
+import ru.nordbird.tfsmessenger.data.model.BaseResponse
 import ru.nordbird.tfsmessenger.data.model.Message
-import ru.nordbird.tfsmessenger.data.model.User
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
+import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
 
 object TopicInteractor {
 
     private val messageRepository = MessageRepository
     private val messageMapper = MessageToViewTypedMapper()
 
-    private val messages: BehaviorSubject<List<ViewTyped>> = BehaviorSubject.create()
-    private val compositeDisposable = CompositeDisposable()
+    fun getMessages(streamName: String, topicName: String): Single<List<ViewTyped>> = messageRepository.getMessages(streamName, topicName)
+        .map { resource -> transformMessages(resource) }
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
 
-    init {
-        compositeDisposable.add(loadMessages())
-    }
+    fun addMessage(streamName: String, topicName: String, text: String): Single<BaseResponse> = messageRepository.addMessage(streamName, topicName, text)
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
 
-    fun clearDisposable() {
-        compositeDisposable.clear()
-    }
+    fun updateReaction(message: MessageUi, currentUserId: String, reactionCode: String): Single<BaseResponse> {
+        val reaction = message.reactions.firstOrNull { it.code == reactionCode && it.userIdList.contains(currentUserId) }
 
-    fun getMessages() = messages
-
-    fun loadMessages(): Disposable {
-        return messageRepository.getMessages()
-            .map { resource -> transformMessages(resource) }
+        return if (reaction != null) {
+            messageRepository.removeReaction(message.id, reactionCode)
+        } else {
+            messageRepository.addReaction(message.id, reactionCode)
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe { messages.onNext(it) }
     }
-
-    fun addMessage(user: User, text: String): Observable<Message> = messageRepository.addMessage(user, text).doAfterNext { loadMessages() }
-
-    fun updateReaction(messageId: String, userId: String, reactionCode: String): Observable<Message> =
-        messageRepository.updateReaction(messageId, userId, reactionCode).doAfterNext { loadMessages() }
 
     private fun transformMessages(resource: List<Message>): List<ViewTyped> {
-        return messageMapper.transform(resource)
-
+        return messageMapper.transform(resource.onEach { it.isIncoming = it.authorId.toString() != ZulipAuth.AUTH_ID })
     }
+
 }

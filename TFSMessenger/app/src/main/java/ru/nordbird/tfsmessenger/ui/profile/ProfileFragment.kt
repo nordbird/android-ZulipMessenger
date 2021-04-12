@@ -6,10 +6,12 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
+import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.databinding.FragmentProfileBinding
 import ru.nordbird.tfsmessenger.ui.people.PeopleInteractor
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserPresence
@@ -21,7 +23,7 @@ class ProfileFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val compositeDisposable = CompositeDisposable()
-    private var user: UserUi? = null
+    private var userId: String = ""
     private var isCurrentUser = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,16 +31,20 @@ class ProfileFragment : Fragment() {
         setHasOptionsMenu(true)
 
         arguments?.let {
-            user = it.getParcelable(PARAM_USER)
+            userId = it.getString(PARAM_USER_ID, "")
         }
-        isCurrentUser = user == null
+
+        if (userId.isBlank()) {
+            isCurrentUser = true
+            userId = ZulipAuth.AUTH_ID
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentProfileBinding.inflate(inflater, container, false)
         initUI()
         initToolbar()
-        setupUser()
+
         return binding.root
     }
 
@@ -59,35 +65,33 @@ class ProfileFragment : Fragment() {
     private fun initUI() {
         binding.ivProfileAvatar.clipToOutline = true
 
-        if (isCurrentUser) {
-            val disposable = PeopleInteractor.getUser("").subscribe { u ->
-                user = u
-                setupUser()
+        val disposable = PeopleInteractor.getUser(userId)
+            .subscribe { user ->
+                setupUser(user)
             }
-            compositeDisposable.add(disposable)
-        }
+        compositeDisposable.add(disposable)
     }
 
-    private fun setupUser() {
+    private fun setupUser(user: UserUi?) {
         if (user == null) return
-        binding.tvProfileName.text = user?.name
-        when (user?.presence) {
+
+        binding.tvProfileName.text = user.name
+        val (text, color) = when (user.presence) {
             UserPresence.ACTIVE -> {
-                binding.tvProfileOnline.text = getText(R.string.profile_active)
-                binding.tvProfileOnline.setTextColor(resources.getColor(R.color.color_green, context?.theme))
+                getText(R.string.profile_active) to ContextCompat.getColor(requireContext(), R.color.color_green)
             }
             UserPresence.IDLE -> {
-                binding.tvProfileOnline.text = getText(R.string.profile_idle)
-                binding.tvProfileOnline.setTextColor(resources.getColor(R.color.color_orange, context?.theme))
+                getText(R.string.profile_idle) to ContextCompat.getColor(requireContext(), R.color.color_orange)
             }
-            UserPresence.OFFLINE -> {
-                binding.tvProfileOnline.text = getText(R.string.profile_offline)
-                binding.tvProfileOnline.setTextColor(resources.getColor(R.color.color_red, context?.theme))
+            else -> {
+                getText(R.string.profile_offline) to ContextCompat.getColor(requireContext(), R.color.color_red)
             }
         }
-        binding.tvProfileStatus.text = getText(R.string.profile_status)
+        binding.tvProfileOnline.text = text
+        binding.tvProfileOnline.setTextColor(color)
 
-        Glide.with(this).load(user?.avatar).into(binding.ivProfileAvatar)
+        Glide.with(this).load(user.avatar).into(binding.ivProfileAvatar)
+        binding.sflProfile.hideShimmer()
     }
 
     private fun initToolbar() {
@@ -103,8 +107,7 @@ class ProfileFragment : Fragment() {
         }
     }
 
-
     companion object {
-        const val PARAM_USER = "param_user"
+        const val PARAM_USER_ID = "param_user_id"
     }
 }

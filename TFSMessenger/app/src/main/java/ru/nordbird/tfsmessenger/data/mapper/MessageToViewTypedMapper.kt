@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.data.mapper
 
 import ru.nordbird.tfsmessenger.data.model.Message
+import ru.nordbird.tfsmessenger.extensions.toZeroTime
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageInUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageOutUi
@@ -12,8 +13,8 @@ class MessageToViewTypedMapper : Mapper<List<Message>, List<ViewTyped>> {
     private val reactionMapper = ReactionToReactionGroupMapper()
 
     override fun transform(data: List<Message>): List<ViewTyped> {
-        val messageByDate = data.groupBy { it.date }
-        return messageByDate.flatMap { (date, list) -> makeMessages(list) + SeparatorDateUi(Date(date)) }
+        val messageByDate = data.asReversed().groupBy { Date(it.date * 1000).toZeroTime() }
+        return messageByDate.flatMap { (date, list) -> makeMessages(list) + SeparatorDateUi(date) }
     }
 
     private fun makeMessages(messages: List<Message>): List<ViewTyped> {

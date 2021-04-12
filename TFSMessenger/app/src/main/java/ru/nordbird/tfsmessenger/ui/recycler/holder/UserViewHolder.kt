@@ -1,8 +1,12 @@
 package ru.nordbird.tfsmessenger.ui.recycler.holder
 
+import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomViewTarget
+import com.bumptech.glide.request.transition.Transition
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.ui.custom.CircleImageView
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
@@ -40,6 +44,19 @@ class UserViewHolder(
     private val nameView: TextView = view.findViewById(R.id.tv_user_name)
     private val emailView: TextView = view.findViewById(R.id.tv_user_email)
     private val onlineView: View = view.findViewById(R.id.indicator)
+    private val target = object : CustomViewTarget<CircleImageView, Drawable>(avatarView) {
+        override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
+            avatarView.avatarDrawable = resource
+        }
+
+        override fun onLoadFailed(errorDrawable: Drawable?) {
+            avatarView.avatarDrawable = null
+        }
+
+        override fun onResourceCleared(placeholder: Drawable?) {
+            avatarView.avatarDrawable = null
+        }
+    }
 
     init {
         userBox.setOnClickListener { v ->
@@ -58,7 +75,15 @@ class UserViewHolder(
 
         avatarView.text = item.name
 
+        if (item.avatar.isBlank()) {
+            Glide.with(itemView)
+                .clear(target)
+        } else {
+            Glide.with(itemView)
+                .load(item.avatar)
+                .into(target)
+        }
+
         super.bind(item)
     }
-
 }

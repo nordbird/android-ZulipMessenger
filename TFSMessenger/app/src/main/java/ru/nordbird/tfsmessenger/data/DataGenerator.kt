@@ -60,7 +60,7 @@ object DataGenerator {
         val list = mutableListOf<Reaction>()
         val count = (1..5).random()
         (1..count).forEach {
-            list.add(Reaction(getReaction(0x1F600 + it), authors.random().id))
+            list.add(Reaction(getReaction(0x1F600 + it), "", authors.random().id))
         }
         return list
     }
@@ -171,7 +171,7 @@ object DataGenerator {
             if (reaction != null) {
                 reactions.remove(reaction)
             } else {
-                reactions.add(Reaction(reactionCode, userId.toInt()))
+                reactions.add(Reaction(reactionCode, reactionCode, userId.toInt()))
             }
             message.reactions = reactions
             return@flatMap Observable.just(message)
