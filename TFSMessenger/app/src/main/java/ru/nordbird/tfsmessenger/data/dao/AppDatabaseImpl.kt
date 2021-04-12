@@ -10,4 +10,8 @@ object AppDatabaseImpl {
     ).build()
 
     fun userDao(): UserDao = db.userDao()
+
+    fun streamDao(): StreamDao = db.streamDao()
+
+    fun topicDao(): TopicDao = db.topicDao()
 }
