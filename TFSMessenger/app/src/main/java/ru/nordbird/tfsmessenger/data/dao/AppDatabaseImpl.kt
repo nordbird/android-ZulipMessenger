@@ -14,4 +14,6 @@ object AppDatabaseImpl {
     fun streamDao(): StreamDao = db.streamDao()
 
     fun topicDao(): TopicDao = db.topicDao()
+
+    fun messageDao(): MessageDao = db.messageDao()
 }

@@ -2,7 +2,6 @@ package ru.nordbird.tfsmessenger.data.repository
 
 import io.reactivex.Flowable
 import io.reactivex.Observable
-import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
@@ -25,6 +24,7 @@ object StreamRepository {
         return Single.concat(
             getDatabaseStreams(query),
             getNetworkStreams(query)
+                .onErrorResumeNext(getDatabaseStreams(query))
         )
             .map { dbStreamMapper.transform(it) }
     }
@@ -33,13 +33,24 @@ object StreamRepository {
         return Single.concat(
             getDatabaseSubscriptions(query),
             getNetworkSubscriptions(query)
+                .onErrorResumeNext(getDatabaseSubscriptions(query))
         )
             .map { dbStreamMapper.transform(it) }
     }
 
+    fun getStreamTopics(streamId: String): Flowable<List<Topic>> {
+        return Single.concat(
+            getDatabaseStreamTopics(streamId),
+            getNetworkStreamTopics(streamId)
+                .onErrorResumeNext(getDatabaseStreamTopics(streamId))
+        )
+            .observeOn(Schedulers.computation())
+            .map { dbTopicMapper.transform(it) }
+    }
+
     private fun getNetworkStreams(query: String = ""): Single<List<StreamDb>> {
-        return ZulipServiceImpl.getApi()
-            .getStreams()
+        return ZulipServiceImpl.getApi().getStreams()
+            .observeOn(Schedulers.computation())
             .map { it.streams }
             .map { streams -> streams.map { nwStreamMapper.transform(it) } }
             .doOnSuccess { saveStreamsToDatabase(it) }
@@ -51,8 +62,8 @@ object StreamRepository {
     }
 
     private fun getNetworkSubscriptions(query: String = ""): Single<List<StreamDb>> {
-        return ZulipServiceImpl.getApi()
-            .getSubscriptions()
+        return ZulipServiceImpl.getApi().getSubscriptions()
+            .observeOn(Schedulers.computation())
             .map { it.subscriptions }
             .map { streams -> streams.map { nwStreamMapper.transform(it) } }
             .map { streams -> streams.onEach { it.subscribed = true } }
@@ -64,18 +75,8 @@ object StreamRepository {
         return AppDatabaseImpl.streamDao().getSubscriptions(query)
     }
 
-    fun getStreamTopics(streamId: String): Flowable<List<Topic>> {
-        return Single.concat(
-            getDatabaseStreamTopics(streamId),
-            getNetworkStreamTopics(streamId)
-        )
-            .observeOn(Schedulers.computation())
-            .map { dbTopicMapper.transform(it) }
-    }
-
     private fun getNetworkStreamTopics(streamId: String): Single<List<TopicDb>> {
-        return ZulipServiceImpl.getApi()
-            .getStreamTopics(streamId)
+        return ZulipServiceImpl.getApi().getStreamTopics(streamId)
             .observeOn(Schedulers.computation())
             .flatMapObservable { Observable.fromIterable(it.topics) }
             .map { nwTopicMapper.transform(it) }

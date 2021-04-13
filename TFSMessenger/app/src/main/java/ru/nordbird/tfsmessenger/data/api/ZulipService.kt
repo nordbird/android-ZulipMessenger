@@ -28,11 +28,11 @@ interface ZulipService {
     fun getMessages(@QueryMap queryMap: Map<String, String>): Single<MessagesResponse>
 
     @POST("messages")
-    fun sendMessage(@QueryMap queryMap: Map<String, String>): Single<BaseResponse>
+    fun sendMessage(@QueryMap queryMap: Map<String, String>): Single<MessageResponse>
 
     @POST("messages/{id}/reactions")
-    fun addMessageReaction(@Path("id") id: String, @Query("emoji_name") reactionName: String): Single<BaseResponse>
+    fun addMessageReaction(@Path("id") id: Int, @Query("emoji_name") reactionName: String): Single<BaseResponse>
 
     @DELETE("messages/{id}/reactions")
-    fun removeMessageReaction(@Path("id") id: String, @Query("emoji_name") reactionName: String): Single<BaseResponse>
+    fun removeMessageReaction(@Path("id") id: Int, @Query("emoji_name") reactionName: String): Single<BaseResponse>
 }
