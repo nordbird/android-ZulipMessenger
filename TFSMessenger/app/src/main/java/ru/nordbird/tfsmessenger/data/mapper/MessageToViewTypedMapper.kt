@@ -13,7 +13,7 @@ class MessageToViewTypedMapper : Mapper<List<Message>, List<ViewTyped>> {
     private val reactionMapper = ReactionToReactionGroupMapper()
 
     override fun transform(data: List<Message>): List<ViewTyped> {
-        val messageByDate = data.asReversed().groupBy { Date(it.date * 1000).toZeroTime() }
+        val messageByDate = data.asReversed().groupBy { Date(it.timestamp_ms).toZeroTime() }
         return messageByDate.flatMap { (date, list) -> makeMessages(list) + SeparatorDateUi(date) }
     }
 

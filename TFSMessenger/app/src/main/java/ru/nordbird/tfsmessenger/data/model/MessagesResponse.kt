@@ -7,5 +7,5 @@ import kotlinx.serialization.Serializable
 data class MessagesResponse(
 
     @SerialName("messages")
-    val messages: List<Message>
+    val messages: List<MessageNw>
 )
