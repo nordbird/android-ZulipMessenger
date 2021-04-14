@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.data.api
 
 import io.reactivex.Single
+import okhttp3.MultipartBody
 import retrofit2.http.*
 import ru.nordbird.tfsmessenger.data.model.*
 
@@ -35,4 +36,8 @@ interface ZulipService {
 
     @DELETE("messages/{id}/reactions")
     fun removeMessageReaction(@Path("id") id: Int, @Query("emoji_name") reactionName: String): Single<BaseResponse>
+
+    @Multipart
+    @POST("user_uploads")
+    fun uploadFile(@Part file: MultipartBody.Part): Single<UploadResponse>
 }

@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.ui.recycler.holder
 
+import android.text.method.LinkMovementMethod
 import android.view.View
 import android.widget.TextView
 import androidx.core.text.HtmlCompat
@@ -32,6 +33,7 @@ class MessageOutViewHolder(
     override fun bind(item: MessageOutUi) {
         itemId = item.id
         messageView.text = HtmlCompat.fromHtml(item.text, HtmlCompat.FROM_HTML_MODE_LEGACY)
+        messageView.movementMethod = LinkMovementMethod.getInstance()
         super.bind(item)
     }
 

@@ -9,14 +9,17 @@ import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.emojiSet.Emoji
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
 import ru.nordbird.tfsmessenger.data.model.Message
+import ru.nordbird.tfsmessenger.data.model.UploadResponse
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
+import java.io.InputStream
 
 class TopicInteractor {
 
     companion object {
-        const val COUNT_MESSAGES_PER_REQUEST = 10
+        private const val COUNT_MESSAGES_PER_REQUEST = 10
+        private const val BASE_URL_UPLOAD = "https://tfs-android-2021-spring.zulipchat.com"
     }
 
     private val messageRepository = MessageRepository
@@ -60,8 +63,29 @@ class TopicInteractor {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    fun sendFile(streamName: String, topicName: String, name: String?, stream: InputStream?): Flowable<List<ViewTyped>> {
+        val bytes = stream?.use {
+            it.readBytes()
+        }
+        return if (bytes == null) {
+            Single.just(UploadResponse("", "", ""))
+        } else {
+            messageRepository.sendFile(name ?: "", bytes)
+        }
+            .toFlowable()
+            .flatMap {
+                val content = "[$name]($BASE_URL_UPLOAD${it.uri})"
+                addMessage(streamName, topicName, content)
+            }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
     private fun transformMessages(messages: List<Message>): List<ViewTyped> {
-        val newList = messages.map { it.copy(isIncoming = it.authorId.toString() != ZulipAuth.AUTH_ID) }
+        val newList = messages.map {
+            val content = it.content.replace("=\"user_uploads/", "=\"${BASE_URL_UPLOAD}/user_uploads/")
+            it.copy(isIncoming = it.authorId.toString() != ZulipAuth.AUTH_ID, content = content)
+        }
         newList.onEach { minId = minOf(minId, it.id) }
         val oldList = items.filterNot { messageExists(newList, it) }
         items.clear()

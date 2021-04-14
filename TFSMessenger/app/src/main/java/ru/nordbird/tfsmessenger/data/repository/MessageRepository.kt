@@ -6,12 +6,16 @@ import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
 import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
 import ru.nordbird.tfsmessenger.data.mapper.MessageNwToMessageDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
 import java.util.*
+
 
 object MessageRepository {
     private const val MESSAGE_ANCHOR = "newest"
@@ -86,6 +90,12 @@ object MessageRepository {
         )
             .map { dbMessageMapper.transform(listOf(it)) }
             .onErrorReturnItem(emptyList())
+    }
+
+    fun sendFile(name: String, bytes: ByteArray): Single<UploadResponse> {
+        val requestBody: RequestBody = RequestBody.create(MediaType.parse("*/*"), bytes)
+        val fileToUpload = MultipartBody.Part.createFormData("file", name, requestBody)
+        return ZulipServiceImpl.getApi().uploadFile(fileToUpload)
     }
 
     private fun getNetworkMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
