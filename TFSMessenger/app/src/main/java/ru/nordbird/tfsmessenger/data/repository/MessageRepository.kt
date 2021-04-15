@@ -14,6 +14,8 @@ import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
 import ru.nordbird.tfsmessenger.data.mapper.MessageNwToMessageDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
+import ru.nordbird.tfsmessenger.ui.topic.TopicInteractor
+import java.io.InputStream
 import java.util.*
 
 
@@ -41,19 +43,22 @@ object MessageRepository {
 
     fun addMessage(streamName: String, topicName: String, senderId: String, text: String): Flowable<List<Message>> {
         val messageId = ++maxId
-        val message = MessageDb(messageId, streamName, topicName, senderId.toIntOrNull() ?: 0, "", "", text, Date().time)
+        val message = MessageDb(messageId, streamName, topicName, senderId.toIntOrNull() ?: 0, "", "", text, Date().time, localId = messageId)
 
-        return Single.concat(
-            Single.fromCallable { saveToDatabase(message) },
-            addNetworkMessage(streamName, topicName, text).flatMap {
-                if (it.result == RESPONSE_RESULT_SUCCESS) {
-                    Single.fromCallable { replaceMessage(message, it.id) }
+        return Flowable.concat(
+            Flowable.fromCallable { listOf(saveToDatabase(message)) },
+            addNetworkMessage(streamName, topicName, text).toFlowable().flatMap { response ->
+                if (response.result == RESPONSE_RESULT_SUCCESS) {
+                    Single.concat(
+                        Single.fromCallable { listOf(replaceMessage(message, response.id)) },
+                        getNetworkMessages(streamName, topicName, response.id, 1)
+                    )
                 } else {
-                    Single.just(message)
+                    Flowable.fromArray(listOf(message))
                 }
             }
         )
-            .map { dbMessageMapper.transform(listOf(it)) }
+            .map { dbMessageMapper.transform(it) }
             .onErrorReturnItem(emptyList())
     }
 
@@ -92,10 +97,18 @@ object MessageRepository {
             .onErrorReturnItem(emptyList())
     }
 
-    fun sendFile(name: String, bytes: ByteArray): Single<UploadResponse> {
+    fun sendFile(streamName: String, topicName: String, senderId: String, name: String, stream: InputStream?): Flowable<List<Message>> {
+        val bytes = stream?.use {
+            it.readBytes()
+        } ?: return Flowable.fromArray(emptyList())
+
         val requestBody: RequestBody = RequestBody.create(MediaType.parse("*/*"), bytes)
         val fileToUpload = MultipartBody.Part.createFormData("file", name, requestBody)
-        return ZulipServiceImpl.getApi().uploadFile(fileToUpload)
+        return ZulipServiceImpl.getApi().uploadFile(fileToUpload).toFlowable()
+            .flatMap {
+                val content = "[$name](${ZulipServiceImpl.BASE_URL}${it.uri})"
+                addMessage(streamName, topicName, senderId, content)
+            }
     }
 
     private fun getNetworkMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
@@ -142,7 +155,7 @@ object MessageRepository {
 
     private fun replaceMessage(message: MessageDb, newMessageId: Int): MessageDb {
         AppDatabaseImpl.messageDao().deleteById(message.id)
-        val newMessage = message.copy(id = newMessageId)
+        val newMessage = message.copy(id = newMessageId, localId = message.localId)
         AppDatabaseImpl.messageDao().insert(newMessage)
         return newMessage
     }

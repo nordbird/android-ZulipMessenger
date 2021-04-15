@@ -10,7 +10,8 @@ import ru.nordbird.tfsmessenger.data.api.ZulipAuth.AUTH_EMAIL
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth.AUTH_KEY
 
 object ZulipServiceImpl {
-    private const val BASE_URL = "https://tfs-android-2021-spring.zulipchat.com/api/v1/"
+    const val BASE_URL = "https://tfs-android-2021-spring.zulipchat.com"
+    private const val BASE_URL_API = "$BASE_URL/api/v1/"
 
     private val contentType = MediaType.get("application/json")
 
@@ -20,7 +21,7 @@ object ZulipServiceImpl {
 
     private val retrofit: Retrofit = Retrofit.Builder()
         .client(client)
-        .baseUrl(BASE_URL)
+        .baseUrl(BASE_URL_API)
         .addConverterFactory(Json { ignoreUnknownKeys = true }.asConverterFactory(contentType))
         .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
         .build()

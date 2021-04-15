@@ -5,11 +5,11 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
+import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.emojiSet.Emoji
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
 import ru.nordbird.tfsmessenger.data.model.Message
-import ru.nordbird.tfsmessenger.data.model.UploadResponse
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
@@ -19,7 +19,6 @@ class TopicInteractor {
 
     companion object {
         private const val COUNT_MESSAGES_PER_REQUEST = 10
-        private const val BASE_URL_UPLOAD = "https://tfs-android-2021-spring.zulipchat.com"
     }
 
     private val messageRepository = MessageRepository
@@ -63,27 +62,18 @@ class TopicInteractor {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    fun sendFile(streamName: String, topicName: String, name: String?, stream: InputStream?): Flowable<List<ViewTyped>> {
-        val bytes = stream?.use {
-            it.readBytes()
-        }
-        return if (bytes == null) {
-            Single.just(UploadResponse("", "", ""))
-        } else {
-            messageRepository.sendFile(name ?: "", bytes)
-        }
-            .toFlowable()
-            .flatMap {
-                val content = "[$name]($BASE_URL_UPLOAD${it.uri})"
-                addMessage(streamName, topicName, content)
-            }
+    fun sendFile(streamName: String, topicName: String, name: String, stream: InputStream?): Flowable<List<ViewTyped>> {
+        return messageRepository.sendFile(streamName, topicName, ZulipAuth.AUTH_ID, name, stream)
+            .map { transformMessages(it) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
 
     private fun transformMessages(messages: List<Message>): List<ViewTyped> {
         val newList = messages.map {
-            val content = it.content.replace("=\"user_uploads/", "=\"${BASE_URL_UPLOAD}/user_uploads/")
+            val content = it.content
+                .replace("=\"user_uploads/", "=\"${ZulipServiceImpl.BASE_URL}/user_uploads/")
+                .replace("=\"/user_uploads/", "=\"${ZulipServiceImpl.BASE_URL}/user_uploads/")
             it.copy(isIncoming = it.authorId.toString() != ZulipAuth.AUTH_ID, content = content)
         }
         newList.onEach { minId = minOf(minId, it.id) }
@@ -95,5 +85,7 @@ class TopicInteractor {
         return messageMapper.transform(items)
     }
 
-    private fun messageExists(list: List<Message>, message: Message) = list.firstOrNull { it.id == message.id } != null
+    private fun messageExists(list: List<Message>, message: Message): Boolean {
+        return list.firstOrNull { it.id == message.id || (it.localId != 0 && it.localId == message.localId) } != null
+    }
 }

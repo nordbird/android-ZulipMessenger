@@ -20,4 +20,5 @@
     <string name="default_error_tilte">Something went wrong</string>
     <string name="error_select_file">Please install a File Manager</string>
     <string name="title_select_file">Select a File to Upload</string>
+    <string name="error_file_not_found">File Not Found...</string>
 </resources>

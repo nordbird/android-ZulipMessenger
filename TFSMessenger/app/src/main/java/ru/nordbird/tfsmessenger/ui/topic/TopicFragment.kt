@@ -40,6 +40,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import java.io.FileNotFoundException
 
 
 class TopicFragment : Fragment() {
@@ -69,6 +70,18 @@ class TopicFragment : Fragment() {
 
         override fun onViewHolderLongClick(holder: BaseViewHolder<*>, view: View): Boolean {
             return onMessageLongClick(holder)
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+            showFileChooser()
+        }
+    }
+
+    private val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            sendFile(result.data?.data)
         }
     }
 
@@ -166,7 +179,6 @@ class TopicFragment : Fragment() {
     }
 
     private fun showError(throwable: Throwable) {
-        adapter.items = listOf(ErrorUi())
         Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
@@ -270,6 +282,25 @@ class TopicFragment : Fragment() {
         binding.rvChat.addOnScrollListener(scrollListener)
     }
 
+    private fun sendFile(data: Uri?) {
+        if (data == null) return
+        val contentResolver = requireActivity().contentResolver
+        try {
+            val stream = contentResolver.openInputStream(data)
+            val disposable = topicInteractor.sendFile(streamName, topicName, getFileName(data), stream)
+                .subscribe(
+                    {
+                        adapter.items = it
+                        binding.rvChat.layoutManager?.scrollToPosition(0)
+                    },
+                    { showError(it) }
+                )
+            compositeDisposable.add(disposable)
+        } catch (ex: FileNotFoundException) {
+            Snackbar.make(binding.root, getString(R.string.error_file_not_found), Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
     private fun showFileChooser() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
@@ -281,35 +312,11 @@ class TopicFragment : Fragment() {
         }
     }
 
-    private val startForResult =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val data = result.data?.data
-                if (data != null) {
-                    val contentResolver = requireActivity().contentResolver
-                    val stream = contentResolver.openInputStream(data)
-
-                    val disposable = topicInteractor.sendFile(streamName, topicName, getFileName(data), stream)
-                        .subscribe(
-                            { adapter.items = it },
-                            { showError(it) }
-                        )
-                    compositeDisposable.add(disposable)
-                }
-            }
-        }
-
-    private val requestPermissionLauncher = registerForActivityResult(
-        RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            showFileChooser()
-        }
-    }
-
     private fun checkMediaPermission() {
-        val permissionStatus =
-            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE)
+        val permissionStatus = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
 
         if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
             showFileChooser()
@@ -319,7 +326,7 @@ class TopicFragment : Fragment() {
     }
 
     private fun getFileName(uri: Uri): String {
-        var result = ""
+        var result = uri.lastPathSegment ?: DEFAULT_FILE_NAME
         requireActivity().contentResolver.query(uri, null, null, null, null)?.use {
             if (it.moveToFirst()) {
                 result = it.getString(it.getColumnIndex(OpenableColumns.DISPLAY_NAME))
@@ -332,5 +339,6 @@ class TopicFragment : Fragment() {
         private const val REACTION_SHEET_ROWS = 10
         private const val REACTION_SHEET_COLS = 10
         private const val ITEM_THRESHOLD = 5
+        private const val DEFAULT_FILE_NAME = "NoName"
     }
 }
