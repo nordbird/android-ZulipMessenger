@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -41,6 +40,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 import java.io.FileNotFoundException
+import java.io.InputStream
 
 
 class TopicFragment : Fragment() {
@@ -254,6 +254,7 @@ class TopicFragment : Fragment() {
                 updateReaction(message, reactionView.reactionCode)
             }
             MessageVHClickType.ADD_REACTION_CLICK -> showReactionChooser(message)
+            MessageVHClickType.GET_ATTACHMENT_CLICK -> downloadAttachment(message)
         }
     }
 
@@ -299,6 +300,19 @@ class TopicFragment : Fragment() {
         } catch (ex: FileNotFoundException) {
             Snackbar.make(binding.root, getString(R.string.error_file_not_found), Snackbar.LENGTH_SHORT).show()
         }
+    }
+
+    private fun downloadAttachment(message: MessageUi) {
+        val disposable = topicInteractor.downloadFile(message.link).subscribe(
+            { saveFile(it) },
+            { showError(it) }
+        )
+        compositeDisposable.add(disposable)
+    }
+
+    private fun saveFile(it: InputStream) {
+        // тут должно быть сохранение и открытие файла
+        Snackbar.make(binding.root, getString(R.string.info_file_downloaded), Snackbar.LENGTH_SHORT).show()
     }
 
     private fun showFileChooser() {

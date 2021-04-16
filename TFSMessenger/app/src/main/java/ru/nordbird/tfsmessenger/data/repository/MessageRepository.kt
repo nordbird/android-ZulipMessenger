@@ -110,6 +110,12 @@ object MessageRepository {
             }
     }
 
+    fun downloadFile(url: String): Single<InputStream> {
+        return ZulipServiceImpl.getApi().downloadFile(url).map {
+            it.byteStream()
+        }
+    }
+
     private fun getNetworkMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
         val narrow = listOf(
             MessagesNarrowRequest("stream", streamName),

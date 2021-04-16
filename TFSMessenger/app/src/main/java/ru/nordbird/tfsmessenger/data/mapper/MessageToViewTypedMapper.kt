@@ -1,8 +1,6 @@
 package ru.nordbird.tfsmessenger.data.mapper
 
 import android.text.SpannableStringBuilder
-import android.text.method.LinkMovementMethod
-import android.text.style.ImageSpan
 import android.text.style.URLSpan
 import androidx.core.text.HtmlCompat
 import androidx.core.text.toHtml
@@ -27,6 +25,8 @@ class MessageToViewTypedMapper(
 
     private fun makeMessages(messages: List<Message>): List<ViewTyped> {
         return messages.map {
+            // тут конечно можно получить и список ссылок в будущем
+            // и даже сделать преобразование в какой-нибудь AttachmentUi
             val (text, link) = getLink(it.content)
             if (it.isIncoming) {
                 MessageInUi(it.id.toString(), it.authorId, it.authorName, it.avatar_url, text, reactionMapper.transform(it.reactions), link)

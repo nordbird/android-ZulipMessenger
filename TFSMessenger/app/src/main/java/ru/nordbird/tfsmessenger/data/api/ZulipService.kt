@@ -2,8 +2,11 @@ package ru.nordbird.tfsmessenger.data.api
 
 import io.reactivex.Single
 import okhttp3.MultipartBody
+import okhttp3.ResponseBody
+import retrofit2.Call
 import retrofit2.http.*
 import ru.nordbird.tfsmessenger.data.model.*
+
 
 interface ZulipService {
 
@@ -40,4 +43,8 @@ interface ZulipService {
     @Multipart
     @POST("user_uploads")
     fun uploadFile(@Part file: MultipartBody.Part): Single<UploadResponse>
+
+    @Streaming
+    @GET
+    fun downloadFile(@Url url: String): Single<ResponseBody>
 }

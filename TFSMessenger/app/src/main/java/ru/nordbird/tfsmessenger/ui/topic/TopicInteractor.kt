@@ -69,6 +69,11 @@ class TopicInteractor {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    fun downloadFile(url: String): Single<InputStream> {
+        return messageRepository.downloadFile(url)
+            .subscribeOn(Schedulers.io())
+    }
+
     private fun transformMessages(messages: List<Message>): List<ViewTyped> {
         val newList = messages.map {
             val content = it.content
