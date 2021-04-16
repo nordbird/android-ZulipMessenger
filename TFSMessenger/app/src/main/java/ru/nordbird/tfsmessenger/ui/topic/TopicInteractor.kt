@@ -22,7 +22,7 @@ class TopicInteractor {
     }
 
     private val messageRepository = MessageRepository
-    private val messageMapper = MessageToViewTypedMapper()
+    private val messageMapper = MessageToViewTypedMapper(ZulipServiceImpl.BASE_URL)
 
     private val items = mutableListOf<Message>()
     private var minId = Int.MAX_VALUE

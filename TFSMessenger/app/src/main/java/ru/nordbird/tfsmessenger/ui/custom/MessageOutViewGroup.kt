@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.widget.ImageView
 import android.widget.TextView
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.extensions.layout
@@ -21,25 +22,37 @@ class MessageOutViewGroup @JvmOverloads constructor(
 
     private val messageView: TextView
     private val reactionBox: FlexBoxLayout
+    private val attachmentView: ImageView
 
     private val messageBoxRect = Rect()
     private val reactionBoxRect = Rect()
+    private val attachmentViewRect = Rect()
 
     init {
         LayoutInflater.from(context).inflate(R.layout.message_out_view_group, this, true)
         messageView = findViewById(R.id.tv_message)
         reactionBox = findViewById(R.id.fbl_reaction)
+        attachmentView = findViewById(R.id.iv_attachment)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         var reactionBoxHeight = 0
         var reactionBoxWidth = 0
+        var attachmentViewHeight = 0
+        var attachmentViewWidth = 0
 
         val (messageBoxWidth, messageBoxHeight) =
             measureChilds(messageView, widthMeasureSpec, 0, heightMeasureSpec, 0)
 
+        if (attachmentView.visibility != GONE) {
+            measureChilds(attachmentView, widthMeasureSpec, 0, heightMeasureSpec, messageBoxHeight).apply {
+                attachmentViewWidth = first
+                attachmentViewHeight = second
+            }
+        }
+
         if (reactionBox.visibility != GONE) {
-            measureChilds(reactionBox, widthMeasureSpec, 0, heightMeasureSpec, messageBoxHeight).apply {
+            measureChilds(reactionBox, widthMeasureSpec, 0, heightMeasureSpec, messageBoxHeight + attachmentViewHeight).apply {
                 reactionBoxWidth = first
                 reactionBoxHeight = second
             }
@@ -47,11 +60,11 @@ class MessageOutViewGroup @JvmOverloads constructor(
 
         setMeasuredDimension(
             resolveSize(
-                maxOf(messageBoxWidth, reactionBoxWidth) + paddingStart + paddingEnd,
+                maxOf(messageBoxWidth, reactionBoxWidth, attachmentViewWidth) + paddingStart + paddingEnd,
                 widthMeasureSpec
             ),
             resolveSize(
-                messageBoxHeight + reactionBoxHeight + paddingTop + paddingBottom,
+                messageBoxHeight + attachmentViewHeight + reactionBoxHeight + paddingTop + paddingBottom,
                 heightMeasureSpec
             )
         )
@@ -75,6 +88,7 @@ class MessageOutViewGroup @JvmOverloads constructor(
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         val messageBoxLayoutParams = messageView.layoutParams as MarginLayoutParams
         val reactionBoxLayoutParams = reactionBox.layoutParams as MarginLayoutParams
+        val attachmentViewLayoutParams = attachmentView.layoutParams as MarginLayoutParams
 
         with(messageBoxRect) {
             right = measuredWidth - messageBoxLayoutParams.rightMargin
@@ -84,11 +98,21 @@ class MessageOutViewGroup @JvmOverloads constructor(
         }
         messageView.layout(messageBoxRect)
 
+        if (attachmentView.visibility != GONE) {
+            with(attachmentViewRect) {
+                right = measuredWidth - attachmentViewLayoutParams.rightMargin
+                left = right - attachmentView.measuredWidth
+                top = messageBoxRect.height() + attachmentViewLayoutParams.topMargin
+                bottom = top + attachmentView.measuredHeight
+            }
+            attachmentView.layout(attachmentViewRect)
+        }
+
         if (reactionBox.visibility != GONE) {
             with(reactionBoxRect) {
                 right = measuredWidth - reactionBoxLayoutParams.rightMargin
                 left = right - reactionBox.measuredWidth
-                top = messageBoxRect.height() + reactionBoxLayoutParams.topMargin
+                top = attachmentViewRect.height() + reactionBoxLayoutParams.topMargin
                 bottom = reactionBoxRect.top + reactionBox.measuredHeight
             }
             reactionBox.layout(reactionBoxRect)

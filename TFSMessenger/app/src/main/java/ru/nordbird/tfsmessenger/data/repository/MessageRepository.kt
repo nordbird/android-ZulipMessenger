@@ -14,7 +14,6 @@ import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
 import ru.nordbird.tfsmessenger.data.mapper.MessageNwToMessageDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
-import ru.nordbird.tfsmessenger.ui.topic.TopicInteractor
 import java.io.InputStream
 import java.util.*
 

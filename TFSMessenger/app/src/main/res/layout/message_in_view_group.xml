@@ -44,15 +44,19 @@
             android:textSize="@dimen/message_text_size"
             tools:text="@string/message_text" />
 
-        <ImageView
-            android:visibility="gone"
-            android:id="@+id/iv_attachment"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:src="@drawable/avatar" />
-
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/iv_attachment"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/message_bg"
+        android:padding="8dp"
+        android:src="@drawable/ic_baseline_get_app_24" />
 
     <ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout
         android:id="@+id/fbl_reaction"

@@ -19,8 +19,9 @@ class MessageOutUi(
     authorId: Int,
     text: String,
     reactions: List<ReactionGroup>,
+    link: String,
     override val viewType: Int = R.layout.item_message_out
-) : MessageUi(id, authorId, text, reactions)
+) : MessageUi(id, authorId, text, reactions, link)
 
 class MessageOutViewHolder(
     view: View,
@@ -41,35 +42,9 @@ class MessageOutViewHolder(
 //        messageView.text = item.text
         messageView.text = HtmlCompat.fromHtml(item.text, HtmlCompat.FROM_HTML_MODE_LEGACY)
         messageView.movementMethod = LinkMovementMethod.getInstance()
-        messageView.handleUrlClicks {
-
-        }
 
         super.bind(item)
     }
 
 }
 
-fun TextView.handleUrlClicks(onClicked: ((String) -> Unit)? = null) {
-    //create span builder and replaces current text with it
-    text = SpannableStringBuilder.valueOf(text).apply {
-        //search for all URL spans and replace all spans with our own clickable spans
-        getSpans(0, length, URLSpan::class.java).forEach {
-            //add new clickable span at the same position
-            setSpan(
-                object : ClickableSpan() {
-                    override fun onClick(widget: View) {
-                        onClicked?.invoke(it.url)
-                    }
-                },
-                getSpanStart(it),
-                getSpanEnd(it),
-                Spanned.SPAN_INCLUSIVE_EXCLUSIVE
-            )
-            //remove old URLSpan
-            removeSpan(it)
-        }
-    }
-    //make sure movement method is set
-    movementMethod = LinkMovementMethod.getInstance()
-}

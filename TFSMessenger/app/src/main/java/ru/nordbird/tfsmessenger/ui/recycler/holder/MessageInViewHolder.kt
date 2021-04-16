@@ -27,8 +27,9 @@ class MessageInUi(
     val avatar: String,
     text: String,
     reactions: List<ReactionGroup>,
+    link: String,
     override val viewType: Int = R.layout.item_message_in
-) : MessageUi(id, authorId, text, reactions)
+) : MessageUi(id, authorId, text, reactions, link)
 
 class MessageInViewHolder(
     view: View,
@@ -64,8 +65,8 @@ class MessageInViewHolder(
     override fun bind(item: MessageInUi) {
         itemId = item.id
         authorView.text = item.authorName
-        messageView.text = item.text.stripHtml()
-//        messageView.text = HtmlCompat.fromHtml(item.text, HtmlCompat.FROM_HTML_MODE_LEGACY)
+//        messageView.text = item.text
+        messageView.text = HtmlCompat.fromHtml(item.text, HtmlCompat.FROM_HTML_MODE_LEGACY)
         messageView.movementMethod = LinkMovementMethod.getInstance()
 
         if (item.avatar.isBlank()) {
