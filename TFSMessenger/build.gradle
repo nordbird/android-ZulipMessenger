@@ -40,14 +40,16 @@ ext {
 
     RxJava2Version = '2.2.21'
     RxAndroid2Version = '2.1.1'
+    RxRelay2Version = '2.1.1'
 
     glideVersion = '4.12.0'
 
     kotlinxSerializationJsonVersion = '1.1.0'
     retrofitVersion = '2.9.0'
-    retrofitRxJavaAdapterVersion = '2.6.4'
+    retrofitRxJavaAdapterVersion = '2.9.0'
     retrofitKotlinxSerializationVersion = '0.8.0'
 
     roomVersion = '2.2.6'
 
+    RxReduxVersion = '1.0.1'
 }
