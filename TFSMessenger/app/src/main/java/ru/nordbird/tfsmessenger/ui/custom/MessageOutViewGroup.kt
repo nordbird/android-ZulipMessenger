@@ -98,6 +98,7 @@ class MessageOutViewGroup @JvmOverloads constructor(
         }
         messageView.layout(messageBoxRect)
 
+        var attachmentViewHeight = 0
         if (attachmentView.visibility != GONE) {
             with(attachmentViewRect) {
                 right = measuredWidth - attachmentViewLayoutParams.rightMargin
@@ -105,6 +106,7 @@ class MessageOutViewGroup @JvmOverloads constructor(
                 top = messageBoxRect.height() + attachmentViewLayoutParams.topMargin
                 bottom = top + attachmentView.measuredHeight
             }
+            attachmentViewHeight = attachmentViewRect.height() + attachmentViewLayoutParams.topMargin
             attachmentView.layout(attachmentViewRect)
         }
 
@@ -112,7 +114,7 @@ class MessageOutViewGroup @JvmOverloads constructor(
             with(reactionBoxRect) {
                 right = measuredWidth - reactionBoxLayoutParams.rightMargin
                 left = right - reactionBox.measuredWidth
-                top = attachmentViewRect.height() + reactionBoxLayoutParams.topMargin
+                top = messageBoxRect.height() + attachmentViewHeight + reactionBoxLayoutParams.topMargin
                 bottom = reactionBoxRect.top + reactionBox.measuredHeight
             }
             reactionBox.layout(reactionBoxRect)

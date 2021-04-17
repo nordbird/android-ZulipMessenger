@@ -112,6 +112,7 @@ class MessageInViewGroup @JvmOverloads constructor(
         }
         messageBox.layout(messageBoxRect)
 
+        var attachmentViewHeight = 0
         if (attachmentView.visibility != GONE) {
             with(attachmentViewRect) {
                 left = attachmentViewLayoutParams.leftMargin + avatarRect.right + avatarLayoutParams.rightMargin
@@ -119,13 +120,14 @@ class MessageInViewGroup @JvmOverloads constructor(
                 right = left + attachmentView.measuredWidth
                 bottom = top + attachmentView.measuredHeight
             }
+            attachmentViewHeight = attachmentViewRect.height() + attachmentViewLayoutParams.topMargin
             attachmentView.layout(attachmentViewRect)
         }
 
         if (reactionBox.visibility != GONE) {
             with(reactionBoxRect) {
                 left = reactionBoxLayoutParams.leftMargin + avatarRect.right + avatarLayoutParams.rightMargin
-                top = attachmentViewRect.bottom + reactionBoxLayoutParams.topMargin
+                top = messageBoxRect.height() + attachmentViewHeight + reactionBoxLayoutParams.topMargin
                 right = reactionBoxRect.left + reactionBox.measuredWidth
                 bottom = reactionBoxRect.top + reactionBox.measuredHeight
             }

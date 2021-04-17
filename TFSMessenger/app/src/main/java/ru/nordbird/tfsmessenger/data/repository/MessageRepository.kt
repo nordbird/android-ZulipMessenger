@@ -25,7 +25,7 @@ object MessageRepository {
     private const val MESSAGES_MAX_COUNT = 50
 
     private val nwMessageMapper = MessageNwToMessageDbMapper()
-    private val dbMessageMapper = MessageDbToMessageMapper()
+    private val dbMessageMapper = MessageDbToMessageMapper(ZulipServiceImpl.BASE_URL)
 
     private var maxId = 0
 

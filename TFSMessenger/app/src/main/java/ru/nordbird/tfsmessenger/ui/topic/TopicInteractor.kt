@@ -5,7 +5,6 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
-import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.emojiSet.Emoji
 import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
@@ -22,7 +21,7 @@ class TopicInteractor {
     }
 
     private val messageRepository = MessageRepository
-    private val messageMapper = MessageToViewTypedMapper(ZulipServiceImpl.BASE_URL)
+    private val messageMapper = MessageToViewTypedMapper(ZulipAuth.AUTH_ID)
 
     private val items = mutableListOf<Message>()
     private var minId = Int.MAX_VALUE
@@ -74,14 +73,9 @@ class TopicInteractor {
             .subscribeOn(Schedulers.io())
     }
 
-    private fun transformMessages(messages: List<Message>): List<ViewTyped> {
-        val newList = messages.map {
-            val content = it.content
-                .replace("=\"user_uploads/", "=\"${ZulipServiceImpl.BASE_URL}/user_uploads/")
-                .replace("=\"/user_uploads/", "=\"${ZulipServiceImpl.BASE_URL}/user_uploads/")
-            it.copy(isIncoming = it.authorId.toString() != ZulipAuth.AUTH_ID, content = content)
-        }
-        newList.onEach { minId = minOf(minId, it.id) }
+    private fun transformMessages(newList: List<Message>): List<ViewTyped> {
+        minId = minOf(minId, newList.minOf { it.id })
+
         val oldList = items.filterNot { messageExists(newList, it) }
         items.clear()
         items.addAll(oldList)
