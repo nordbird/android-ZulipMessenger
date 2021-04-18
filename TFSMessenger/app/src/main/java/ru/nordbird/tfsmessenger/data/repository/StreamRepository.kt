@@ -64,9 +64,10 @@ object StreamRepository {
     private fun getNetworkSubscriptions(query: String = ""): Single<List<StreamDb>> {
         return ZulipServiceImpl.getApi().getSubscriptions()
             .observeOn(Schedulers.computation())
-            .map { it.subscriptions }
-            .map { streams -> streams.map { nwStreamMapper.transform(it) } }
-            .map { streams -> streams.onEach { it.subscribed = true } }
+            .map { response -> response.subscriptions
+                .map { nwStreamMapper.transform(it) }
+                .onEach { it.subscribed = true } 
+            }
             .doOnSuccess { saveStreamsToDatabase(it) }
             .map { streams -> streams.filter { it.name.contains(query, true) } }
     }
