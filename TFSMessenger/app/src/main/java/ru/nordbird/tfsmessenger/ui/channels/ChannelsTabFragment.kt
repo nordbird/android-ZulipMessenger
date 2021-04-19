@@ -63,13 +63,11 @@ class ChannelsTabFragment : Fragment() {
 
         channelsInteractor = ChannelsInteractor(tabType)
 
-        val searchDisposable = when (tabType) {
-            ChannelsTabType.ALL -> channelsInteractor.filterStreams(searchObservable)
-            ChannelsTabType.SUBSCRIBED -> channelsInteractor.filterStreams(searchObservable)
-        }.subscribe {
-            adapter.items = it
-            binding.rvStreams.layoutManager?.scrollToPosition(0)
-        }
+        val searchDisposable = channelsInteractor.filterStreams(searchObservable)
+            .subscribe {
+                adapter.items = it
+                binding.rvStreams.layoutManager?.scrollToPosition(0)
+            }
 
         compositeDisposable.add(searchDisposable)
 
@@ -94,6 +92,7 @@ class ChannelsTabFragment : Fragment() {
     private fun updateStreams() {
         showShimmer()
         val streamDisposable = channelsInteractor.getStreams()
+            .filter { it.isNotEmpty() }
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { adapter.items = it },

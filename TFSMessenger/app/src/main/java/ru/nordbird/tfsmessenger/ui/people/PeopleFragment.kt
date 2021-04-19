@@ -109,8 +109,9 @@ class PeopleFragment : Fragment() {
     private fun updateUsers() {
         showShimmer()
         val usersDisposable = userInteractor.getUsers()
+            .filter { it.isNotEmpty() }
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
+            .subscribe (
                 { adapter.items = it },
                 { showError(it) }
             )

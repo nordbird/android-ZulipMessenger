@@ -5,7 +5,6 @@ import android.view.*
 import androidx.fragment.app.Fragment
 import android.widget.TableRow
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -40,9 +39,10 @@ class TopicFragment : Fragment() {
     private var topicName: String = ""
     private var topicColor: Int = 0
 
-    private val topicInteractor = TopicInteractor
+    private val topicInteractor = TopicInteractor()
     private val compositeDisposable = CompositeDisposable()
 
+    private var loading = false
     private var isTextMode = false
     private val currentUserId = ZulipAuth.AUTH_ID
 
@@ -77,7 +77,7 @@ class TopicFragment : Fragment() {
         _binding = FragmentTopicBinding.inflate(inflater, container, false)
         initUI()
         initToolbar()
-        updateMessages(true, true)
+        updateMessages()
         return binding.root
     }
 
@@ -100,10 +100,12 @@ class TopicFragment : Fragment() {
         val linearLayoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, true)
         binding.rvChat.adapter = adapter
         binding.rvChat.layoutManager = linearLayoutManager
+        setRecyclerViewScrollListener(linearLayoutManager)
 
         binding.ibSend.setOnClickListener {
             if (isTextMode) {
-                addMessage()
+                addMessage(binding.edMessage.text.toString())
+                binding.edMessage.text.clear()
             }
         }
 
@@ -114,18 +116,14 @@ class TopicFragment : Fragment() {
 
     }
 
-    private fun addMessage() {
-        val disposable = topicInteractor.addMessage(streamName, topicName, binding.edMessage.text.toString())
+    private fun addMessage(content: String) {
+        val disposable = topicInteractor.addMessage(streamName, topicName, content)
             .subscribe(
-                { response ->
-                    if (response.result == "success") {
-                        binding.edMessage.text.clear()
-                        updateMessages(false, true)
-                    } else {
-                        Toast.makeText(context, response.msg, Toast.LENGTH_SHORT).show()
-                    }
+                {
+                    adapter.items = it
+                    binding.rvChat.layoutManager?.scrollToPosition(0)
                 },
-                { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
+                { showError(it) }
             )
         compositeDisposable.add(disposable)
     }
@@ -157,18 +155,30 @@ class TopicFragment : Fragment() {
         Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
-    private fun updateMessages(needShimmer: Boolean, needScroll: Boolean) {
-        if (needShimmer) showShimmer()
+    private fun updateMessages() {
+        showShimmer()
 
-        val usersDisposable = topicInteractor.getMessages(streamName, topicName)
+        val messagesDisposable = topicInteractor.getMessages(streamName, topicName)
             .subscribe(
                 {
                     adapter.items = it
-                    if (needScroll) binding.rvChat.layoutManager?.scrollToPosition(0)
+                    binding.rvChat.layoutManager?.scrollToPosition(0)
                 },
                 { showError(it) }
             )
-        compositeDisposable.add(usersDisposable)
+        compositeDisposable.add(messagesDisposable)
+    }
+
+    private fun moreMessages() {
+        val messagesDisposable = topicInteractor.getMessages(streamName, topicName)
+            .subscribe(
+                {
+                    adapter.items = it
+                    loading = false
+                },
+                { showError(it) }
+            )
+        compositeDisposable.add(messagesDisposable)
     }
 
     private fun showReactionChooser(message: MessageUi) {
@@ -200,17 +210,11 @@ class TopicFragment : Fragment() {
     }
 
     private fun updateReaction(message: MessageUi, reactionCode: String) {
-        val disposable = topicInteractor.updateReaction(message, currentUserId, reactionCode).subscribe(
-            { response ->
-                if (response.result == "success") {
-                    updateMessages(false, false)
-                } else {
-                    Toast.makeText(context, response.msg, Toast.LENGTH_SHORT).show()
-                }
-
-            },
-            { err -> Toast.makeText(context, err.message, Toast.LENGTH_SHORT).show() }
-        )
+        val disposable = topicInteractor.updateReaction(message, currentUserId, reactionCode)
+            .subscribe(
+                { adapter.items = it },
+                { showError(it) }
+            )
         compositeDisposable.add(disposable)
     }
 
@@ -233,11 +237,28 @@ class TopicFragment : Fragment() {
     }
 
     private fun onReloadClick() {
-        updateMessages(true, true)
+        updateMessages()
+    }
+
+    private fun setRecyclerViewScrollListener(linearLayoutManager: LinearLayoutManager) {
+        val scrollListener = object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                val totalItemCount = linearLayoutManager.itemCount
+                val lastVisibleItemPosition = linearLayoutManager.findLastVisibleItemPosition()
+                if (totalItemCount <= lastVisibleItemPosition + ITEM_THRESHOLD && !loading) {
+                    loading = true
+                    Snackbar.make(binding.root, "Next page", Snackbar.LENGTH_SHORT).show()
+                    moreMessages()
+                }
+            }
+        }
+        binding.rvChat.addOnScrollListener(scrollListener)
     }
 
     companion object {
-        private const val REACTION_SHEET_ROWS = 5
+        private const val REACTION_SHEET_ROWS = 10
         private const val REACTION_SHEET_COLS = 10
+        private const val ITEM_THRESHOLD = 5
     }
 }
