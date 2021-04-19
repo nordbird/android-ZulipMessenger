@@ -2,6 +2,7 @@ package ru.nordbird.tfsmessenger
 
 import android.app.Application
 import android.content.Context
+import ru.nordbird.tfsmessenger.di.GlobalDI
 
 class App : Application() {
 
@@ -15,6 +16,7 @@ class App : Application() {
 
     init {
         instance = this
+        GlobalDI.init()
     }
 
 }

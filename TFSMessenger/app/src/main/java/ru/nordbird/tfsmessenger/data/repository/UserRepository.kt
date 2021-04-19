@@ -68,7 +68,7 @@ class UserRepository(
         return dbService.userDao().getAll(query)
     }
 
-    private fun getDatabaseUser(id: String): Single<UserDb> {
+    private fun getDatabaseUser(id: Int): Single<UserDb> {
         return dbService.userDao().getById(id)
     }
 
