@@ -1,12 +1,23 @@
 package ru.nordbird.tfsmessenger.ui.topic
 
+import android.Manifest
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.view.*
-import androidx.fragment.app.Fragment
 import android.widget.TableRow
 import android.widget.TextView
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -28,6 +39,9 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import java.io.FileNotFoundException
+import java.io.InputStream
+
 
 class TopicFragment : Fragment() {
 
@@ -56,6 +70,18 @@ class TopicFragment : Fragment() {
 
         override fun onViewHolderLongClick(holder: BaseViewHolder<*>, view: View): Boolean {
             return onMessageLongClick(holder)
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+            showFileChooser()
+        }
+    }
+
+    private val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            sendFile(result.data?.data)
         }
     }
 
@@ -106,6 +132,8 @@ class TopicFragment : Fragment() {
             if (isTextMode) {
                 addMessage(binding.edMessage.text.toString())
                 binding.edMessage.text.clear()
+            } else {
+                checkMediaPermission()
             }
         }
 
@@ -151,7 +179,6 @@ class TopicFragment : Fragment() {
     }
 
     private fun showError(throwable: Throwable) {
-        adapter.items = listOf(ErrorUi())
         Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
@@ -227,6 +254,7 @@ class TopicFragment : Fragment() {
                 updateReaction(message, reactionView.reactionCode)
             }
             MessageVHClickType.ADD_REACTION_CLICK -> showReactionChooser(message)
+            MessageVHClickType.GET_ATTACHMENT_CLICK -> downloadAttachment(message)
         }
     }
 
@@ -248,7 +276,6 @@ class TopicFragment : Fragment() {
                 val lastVisibleItemPosition = linearLayoutManager.findLastVisibleItemPosition()
                 if (totalItemCount <= lastVisibleItemPosition + ITEM_THRESHOLD && !loading) {
                     loading = true
-                    Snackbar.make(binding.root, "Next page", Snackbar.LENGTH_SHORT).show()
                     moreMessages()
                 }
             }
@@ -256,9 +283,76 @@ class TopicFragment : Fragment() {
         binding.rvChat.addOnScrollListener(scrollListener)
     }
 
+    private fun sendFile(data: Uri?) {
+        if (data == null) return
+        val contentResolver = requireActivity().contentResolver
+        try {
+            val stream = contentResolver.openInputStream(data)
+            val disposable = topicInteractor.sendFile(streamName, topicName, getFileName(data), stream)
+                .subscribe(
+                    {
+                        adapter.items = it
+                        binding.rvChat.layoutManager?.scrollToPosition(0)
+                    },
+                    { showError(it) }
+                )
+            compositeDisposable.add(disposable)
+        } catch (ex: FileNotFoundException) {
+            Snackbar.make(binding.root, getString(R.string.error_file_not_found), Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun downloadAttachment(message: MessageUi) {
+        val disposable = topicInteractor.downloadFile(message.link).subscribe(
+            { saveFile(it) },
+            { showError(it) }
+        )
+        compositeDisposable.add(disposable)
+    }
+
+    private fun saveFile(it: InputStream) {
+        // тут должно быть сохранение и открытие файла
+        Snackbar.make(binding.root, getString(R.string.info_file_downloaded), Snackbar.LENGTH_SHORT).show()
+    }
+
+    private fun showFileChooser() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.type = "*/*"
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        try {
+            startForResult.launch(Intent.createChooser(intent, getString(R.string.title_select_file)))
+        } catch (ex: ActivityNotFoundException) {
+            Snackbar.make(binding.root, getString(R.string.error_select_file), Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun checkMediaPermission() {
+        val permissionStatus = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+
+        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
+            showFileChooser()
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+
+    private fun getFileName(uri: Uri): String {
+        var result = uri.lastPathSegment ?: DEFAULT_FILE_NAME
+        requireActivity().contentResolver.query(uri, null, null, null, null)?.use {
+            if (it.moveToFirst()) {
+                result = it.getString(it.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+            }
+        }
+        return result
+    }
+
     companion object {
         private const val REACTION_SHEET_ROWS = 10
         private const val REACTION_SHEET_COLS = 10
         private const val ITEM_THRESHOLD = 5
+        private const val DEFAULT_FILE_NAME = "NoName"
     }
 }

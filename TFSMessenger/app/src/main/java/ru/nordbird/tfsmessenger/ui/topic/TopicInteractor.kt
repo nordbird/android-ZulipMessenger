@@ -12,15 +12,16 @@ import ru.nordbird.tfsmessenger.data.model.Message
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
+import java.io.InputStream
 
 class TopicInteractor {
 
     companion object {
-        const val COUNT_MESSAGES_PER_REQUEST = 10
+        private const val COUNT_MESSAGES_PER_REQUEST = 10
     }
 
     private val messageRepository = MessageRepository
-    private val messageMapper = MessageToViewTypedMapper()
+    private val messageMapper = MessageToViewTypedMapper(ZulipAuth.AUTH_ID)
 
     private val items = mutableListOf<Message>()
     private var minId = Int.MAX_VALUE
@@ -60,9 +61,21 @@ class TopicInteractor {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    private fun transformMessages(messages: List<Message>): List<ViewTyped> {
-        val newList = messages.map { it.copy(isIncoming = it.authorId.toString() != ZulipAuth.AUTH_ID) }
-        newList.onEach { minId = minOf(minId, it.id) }
+    fun sendFile(streamName: String, topicName: String, name: String, stream: InputStream?): Flowable<List<ViewTyped>> {
+        return messageRepository.sendFile(streamName, topicName, ZulipAuth.AUTH_ID, name, stream)
+            .map { transformMessages(it) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    fun downloadFile(url: String): Single<InputStream> {
+        return messageRepository.downloadFile(url)
+            .subscribeOn(Schedulers.io())
+    }
+
+    private fun transformMessages(newList: List<Message>): List<ViewTyped> {
+        minId = minOf(minId, newList.minOf { it.id })
+
         val oldList = items.filterNot { messageExists(newList, it) }
         items.clear()
         items.addAll(oldList)
@@ -71,5 +84,7 @@ class TopicInteractor {
         return messageMapper.transform(items)
     }
 
-    private fun messageExists(list: List<Message>, message: Message) = list.firstOrNull { it.id == message.id } != null
+    private fun messageExists(list: List<Message>, message: Message): Boolean {
+        return list.firstOrNull { it.id == message.id || (it.localId != 0 && it.localId == message.localId) } != null
+    }
 }
