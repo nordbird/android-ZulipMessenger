@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.ui.recycler.holder
 
 import android.view.View
+import android.widget.ImageView
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.model.ReactionGroup
 import ru.nordbird.tfsmessenger.extensions.inflate
@@ -15,7 +16,8 @@ open class MessageUi(
     val id: String,
     private val authorId: Int,
     val text: String,
-    val reactions: List<ReactionGroup>
+    val reactions: List<ReactionGroup>,
+    val link: String
 ) : ViewTyped {
 
     override val uid: String
@@ -28,17 +30,21 @@ open class MessageUi(
 }
 
 open class MessageViewHolder<T : MessageUi>(
-        view: View,
-        private val reactionResId: Int,
-        private val currentUserId: String,
-        private val clickListener: ViewHolderClickListener
+    view: View,
+    private val reactionResId: Int,
+    private val currentUserId: String,
+    private val clickListener: ViewHolderClickListener
 ) : BaseViewHolder<T>(view) {
 
     private val flexBox: FlexBoxLayout = view.findViewById(R.id.fbl_reaction)
+    private val attachmentView: ImageView = view.findViewById(R.id.iv_attachment)
 
     init {
         flexBox.btnAddView.setOnClickListener { v ->
             clickListener.onViewHolderClick(this, v, MessageVHClickType.ADD_REACTION_CLICK)
+        }
+        attachmentView.setOnClickListener { v ->
+            clickListener.onViewHolderClick(this, v, MessageVHClickType.GET_ATTACHMENT_CLICK)
         }
     }
 
@@ -55,11 +61,13 @@ open class MessageViewHolder<T : MessageUi>(
             }
             flexBox.addView(reactionView)
         }
+        attachmentView.visibility = if (item.link.isNotBlank()) View.VISIBLE else View.GONE
     }
 
 }
 
 enum class MessageVHClickType : ViewHolderClickType {
     UPDATE_REACTION_CLICK,
-    ADD_REACTION_CLICK
+    ADD_REACTION_CLICK,
+    GET_ATTACHMENT_CLICK
 }

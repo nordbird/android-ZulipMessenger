@@ -35,5 +35,8 @@ data class MessageDb(
     val timestamp_ms: Long,
 
     @ColumnInfo(name = "reactions")
-    var reactions: List<Reaction> = listOf()
+    var reactions: List<Reaction> = listOf(),
+
+    @ColumnInfo(name = "local_id")
+    val localId: Int = 0
 )

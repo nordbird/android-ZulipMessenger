@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.widget.ImageView
 import android.widget.LinearLayout
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.extensions.layout
@@ -22,29 +23,41 @@ class MessageInViewGroup @JvmOverloads constructor(
     private val avatarView: CircleImageView
     private val messageBox: LinearLayout
     private val reactionBox: FlexBoxLayout
+    private val attachmentView: ImageView
 
     private val avatarRect = Rect()
     private val messageBoxRect = Rect()
     private val reactionBoxRect = Rect()
+    private val attachmentViewRect = Rect()
 
     init {
         LayoutInflater.from(context).inflate(R.layout.message_in_view_group, this, true)
         avatarView = findViewById(R.id.civ_avatar)
         messageBox = findViewById(R.id.ll_messageBox)
         reactionBox = findViewById(R.id.fbl_reaction)
+        attachmentView = findViewById(R.id.iv_attachment)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         var reactionBoxHeight = 0
         var reactionBoxWidth = 0
+        var attachmentViewHeight = 0
+        var attachmentViewWidth = 0
 
         val (avatarWidth, avatarHeight) =
             measureChilds(avatarView, widthMeasureSpec, 0, heightMeasureSpec, 0)
         val (messageBoxWidth, messageBoxHeight) =
             measureChilds(messageBox, widthMeasureSpec, avatarWidth, heightMeasureSpec, 0)
 
+        if (attachmentView.visibility != GONE) {
+            measureChilds(attachmentView, widthMeasureSpec, avatarWidth, heightMeasureSpec, messageBoxHeight).apply {
+                attachmentViewWidth = first
+                attachmentViewHeight = second
+            }
+        }
+
         if (reactionBox.visibility != GONE) {
-            measureChilds(reactionBox, widthMeasureSpec, avatarWidth, heightMeasureSpec, messageBoxHeight).apply {
+            measureChilds(reactionBox, widthMeasureSpec, avatarWidth, heightMeasureSpec, messageBoxHeight + attachmentViewHeight).apply {
                 reactionBoxWidth = first
                 reactionBoxHeight = second
             }
@@ -52,11 +65,11 @@ class MessageInViewGroup @JvmOverloads constructor(
 
         setMeasuredDimension(
             resolveSize(
-                avatarWidth + maxOf(messageBoxWidth, reactionBoxWidth) + paddingStart + paddingEnd,
+                avatarWidth + maxOf(messageBoxWidth, reactionBoxWidth, attachmentViewWidth) + paddingStart + paddingEnd,
                 widthMeasureSpec
             ),
             resolveSize(
-                maxOf(avatarHeight, messageBoxHeight + reactionBoxHeight) + paddingTop + paddingBottom,
+                maxOf(avatarHeight, messageBoxHeight + reactionBoxHeight + attachmentViewHeight) + paddingTop + paddingBottom,
                 heightMeasureSpec
             )
         )
@@ -81,6 +94,7 @@ class MessageInViewGroup @JvmOverloads constructor(
         val avatarLayoutParams = avatarView.layoutParams as MarginLayoutParams
         val messageBoxLayoutParams = messageBox.layoutParams as MarginLayoutParams
         val reactionBoxLayoutParams = reactionBox.layoutParams as MarginLayoutParams
+        val attachmentViewLayoutParams = attachmentView.layoutParams as MarginLayoutParams
 
         with(avatarRect) {
             left = paddingStart + avatarLayoutParams.leftMargin
@@ -98,10 +112,22 @@ class MessageInViewGroup @JvmOverloads constructor(
         }
         messageBox.layout(messageBoxRect)
 
+        var attachmentViewHeight = 0
+        if (attachmentView.visibility != GONE) {
+            with(attachmentViewRect) {
+                left = attachmentViewLayoutParams.leftMargin + avatarRect.right + avatarLayoutParams.rightMargin
+                top = messageBoxRect.bottom + attachmentViewLayoutParams.topMargin
+                right = left + attachmentView.measuredWidth
+                bottom = top + attachmentView.measuredHeight
+            }
+            attachmentViewHeight = attachmentViewRect.height() + attachmentViewLayoutParams.topMargin
+            attachmentView.layout(attachmentViewRect)
+        }
+
         if (reactionBox.visibility != GONE) {
             with(reactionBoxRect) {
                 left = reactionBoxLayoutParams.leftMargin + avatarRect.right + avatarLayoutParams.rightMargin
-                top = messageBoxRect.height() + reactionBoxLayoutParams.topMargin
+                top = messageBoxRect.height() + attachmentViewHeight + reactionBoxLayoutParams.topMargin
                 right = reactionBoxRect.left + reactionBox.measuredWidth
                 bottom = reactionBoxRect.top + reactionBox.measuredHeight
             }

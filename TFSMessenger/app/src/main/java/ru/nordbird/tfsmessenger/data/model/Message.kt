@@ -8,5 +8,6 @@ data class Message(
     val content: String,
     val timestamp_ms: Long,
     var reactions: List<Reaction> = listOf(),
-    var isIncoming: Boolean = false
+    val localId: Int = 0,
+    val link: String = ""
 )

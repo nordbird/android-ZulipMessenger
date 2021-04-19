@@ -6,12 +6,17 @@ import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
 import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
 import ru.nordbird.tfsmessenger.data.mapper.MessageNwToMessageDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
+import java.io.InputStream
 import java.util.*
+
 
 object MessageRepository {
     private const val MESSAGE_ANCHOR = "newest"
@@ -20,7 +25,7 @@ object MessageRepository {
     private const val MESSAGES_MAX_COUNT = 50
 
     private val nwMessageMapper = MessageNwToMessageDbMapper()
-    private val dbMessageMapper = MessageDbToMessageMapper()
+    private val dbMessageMapper = MessageDbToMessageMapper(ZulipServiceImpl.BASE_URL)
 
     private var maxId = 0
 
@@ -37,19 +42,22 @@ object MessageRepository {
 
     fun addMessage(streamName: String, topicName: String, senderId: String, text: String): Flowable<List<Message>> {
         val messageId = ++maxId
-        val message = MessageDb(messageId, streamName, topicName, senderId.toIntOrNull() ?: 0, "", "", text, Date().time)
+        val message = MessageDb(messageId, streamName, topicName, senderId.toIntOrNull() ?: 0, "", "", text, Date().time, localId = messageId)
 
-        return Single.concat(
-            Single.fromCallable { saveToDatabase(message) },
-            addNetworkMessage(streamName, topicName, text).flatMap {
-                if (it.result == RESPONSE_RESULT_SUCCESS) {
-                    Single.fromCallable { replaceMessage(message, it.id) }
+        return Flowable.concat(
+            Flowable.fromCallable { listOf(saveToDatabase(message)) },
+            addNetworkMessage(streamName, topicName, text).toFlowable().flatMap { response ->
+                if (response.result == RESPONSE_RESULT_SUCCESS) {
+                    Single.concat(
+                        Single.fromCallable { listOf(replaceMessage(message, response.id)) },
+                        getNetworkMessages(streamName, topicName, response.id, 1)
+                    )
                 } else {
-                    Single.just(message)
+                    Flowable.fromArray(listOf(message))
                 }
             }
         )
-            .map { dbMessageMapper.transform(listOf(it)) }
+            .map { dbMessageMapper.transform(it) }
             .onErrorReturnItem(emptyList())
     }
 
@@ -86,6 +94,26 @@ object MessageRepository {
         )
             .map { dbMessageMapper.transform(listOf(it)) }
             .onErrorReturnItem(emptyList())
+    }
+
+    fun sendFile(streamName: String, topicName: String, senderId: String, name: String, stream: InputStream?): Flowable<List<Message>> {
+        val bytes = stream?.use {
+            it.readBytes()
+        } ?: return Flowable.fromArray(emptyList())
+
+        val requestBody: RequestBody = RequestBody.create(MediaType.parse("*/*"), bytes)
+        val fileToUpload = MultipartBody.Part.createFormData("file", name, requestBody)
+        return ZulipServiceImpl.getApi().uploadFile(fileToUpload).toFlowable()
+            .flatMap {
+                val content = "[$name](${ZulipServiceImpl.BASE_URL}${it.uri})"
+                addMessage(streamName, topicName, senderId, content)
+            }
+    }
+
+    fun downloadFile(url: String): Single<InputStream> {
+        return ZulipServiceImpl.getApi().downloadFile(url).map {
+            it.byteStream()
+        }
     }
 
     private fun getNetworkMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
@@ -132,7 +160,7 @@ object MessageRepository {
 
     private fun replaceMessage(message: MessageDb, newMessageId: Int): MessageDb {
         AppDatabaseImpl.messageDao().deleteById(message.id)
-        val newMessage = message.copy(id = newMessageId)
+        val newMessage = message.copy(id = newMessageId, localId = message.localId)
         AppDatabaseImpl.messageDao().insert(newMessage)
         return newMessage
     }

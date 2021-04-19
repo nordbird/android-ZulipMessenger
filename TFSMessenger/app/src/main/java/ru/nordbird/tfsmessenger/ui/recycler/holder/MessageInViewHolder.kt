@@ -1,6 +1,13 @@
 package ru.nordbird.tfsmessenger.ui.recycler.holder
 
 import android.graphics.drawable.Drawable
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
+import android.text.style.URLSpan
+import android.util.Patterns
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -14,19 +21,20 @@ import ru.nordbird.tfsmessenger.ui.custom.CircleImageView
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 
 class MessageInUi(
-        id: String,
+    id: String,
     authorId: Int,
     val authorName: String,
     val avatar: String,
-        text: String,
-        reactions: List<ReactionGroup>,
-        override val viewType: Int = R.layout.item_message_in
-) : MessageUi(id, authorId, text, reactions)
+    text: String,
+    reactions: List<ReactionGroup>,
+    link: String,
+    override val viewType: Int = R.layout.item_message_in
+) : MessageUi(id, authorId, text, reactions, link)
 
 class MessageInViewHolder(
-        view: View,
+    view: View,
     currentUserId: String,
-        private val clickListener: ViewHolderClickListener
+    private val clickListener: ViewHolderClickListener
 ) : MessageViewHolder<MessageInUi>(view, R.layout.left_reaction_view, currentUserId, clickListener) {
 
     private val messageBox: LinearLayout = view.findViewById(R.id.ll_messageBox)
@@ -57,7 +65,9 @@ class MessageInViewHolder(
     override fun bind(item: MessageInUi) {
         itemId = item.id
         authorView.text = item.authorName
+//        messageView.text = item.text
         messageView.text = HtmlCompat.fromHtml(item.text, HtmlCompat.FROM_HTML_MODE_LEGACY)
+        messageView.movementMethod = LinkMovementMethod.getInstance()
 
         if (item.avatar.isBlank()) {
             Glide.with(itemView)

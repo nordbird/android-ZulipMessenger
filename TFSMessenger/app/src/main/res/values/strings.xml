@@ -18,4 +18,8 @@
     <string name="profile_status">In a meeting</string>
     <string name="error_button_reload">Reload</string>
     <string name="default_error_tilte">Something went wrong</string>
+    <string name="error_select_file">Please install a File Manager</string>
+    <string name="title_select_file">Select a File to Upload</string>
+    <string name="error_file_not_found">File Not Found...</string>
+    <string name="info_file_downloaded">File downloaded</string>
 </resources>
