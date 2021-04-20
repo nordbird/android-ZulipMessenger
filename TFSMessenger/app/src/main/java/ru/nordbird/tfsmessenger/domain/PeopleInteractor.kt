@@ -11,12 +11,12 @@ class PeopleInteractor(
 
     private val userMapper = UserToUserUiMapper()
 
-    fun getUsers(query: String = ""): Flowable<List<UserUi>> {
+    fun loadUsers(query: String = ""): Flowable<List<UserUi>> {
         return userRepository.getUsers(query)
             .map { users -> userMapper.transform(users).sortedBy { it.name } }
     }
 
-    fun getUser(userId: Int): Flowable<UserUi> {
+    fun loadUser(userId: Int): Flowable<UserUi> {
         return userRepository.getUser(userId)
             .map { user -> userMapper.transform(listOf(user)).first() }
     }

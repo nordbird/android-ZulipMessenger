@@ -50,7 +50,7 @@ class ProfilePresenter(
     }
 
     private fun getUser(userId: Int): Observable<ProfileAction> {
-        return peopleInteractor.getUser(userId)
+        return peopleInteractor.loadUser(userId)
             .subscribeOn(Schedulers.io())
             .toObservable()
             .map { item -> ProfileAction.ProfileLoaded(item = item) }

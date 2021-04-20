@@ -78,7 +78,7 @@ class PeoplePresenter(
     }
 
     private fun searchUsers(query: String = ""): Observable<PeopleAction> {
-        return peopleInteractor.getUsers(query)
+        return peopleInteractor.loadUsers(query)
             .subscribeOn(Schedulers.io())
             .toObservable()
             .map { items -> PeopleAction.UsersLoaded(items = items) }

@@ -1,9 +1,7 @@
-package ru.nordbird.tfsmessenger.ui.topic
+package ru.nordbird.tfsmessenger.domain
 
 import io.reactivex.Flowable
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.emojiSet.Emoji
@@ -14,34 +12,30 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
 import java.io.InputStream
 
-class TopicInteractor {
+class TopicInteractor(
+    private val messageRepository: MessageRepository
+) {
 
     companion object {
-        private const val COUNT_MESSAGES_PER_REQUEST = 10
+        private const val COUNT_MESSAGES_PER_REQUEST = 20
     }
 
-    private val messageRepository = MessageRepository
     private val messageMapper = MessageToViewTypedMapper(ZulipAuth.AUTH_ID)
 
     private val items = mutableListOf<Message>()
-    private var minId = Int.MAX_VALUE
 
-    fun getMessages(streamName: String, topicName: String): Single<List<ViewTyped>> {
-        return messageRepository.getMessages(streamName, topicName, minId, COUNT_MESSAGES_PER_REQUEST)
+    fun loadMessages(streamName: String, topicName: String, messageId: Int): Flowable<List<ViewTyped>> {
+        return messageRepository.getMessages(streamName, topicName, messageId, COUNT_MESSAGES_PER_REQUEST)
             .map { transformMessages(it) }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<ViewTyped>> {
         return messageRepository.addMessage(streamName, topicName, ZulipAuth.AUTH_ID, text)
             .map { transformMessages(it) }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<ViewTyped>> {
-        val msg = items.first { it.id.toString() == message.id }
+        val msg = items.first { it.id == message.id }
         val baseReaction = EMOJI_SET.firstOrNull { it.getCodeString() == reactionCode } ?: Emoji("", "", 0)
         val reaction = message.reactions.firstOrNull { it.userIdList.contains(currentUserId) }
 
@@ -57,25 +51,18 @@ class TopicInteractor {
             messageRepository.addReaction(msg, currentUserId, baseReaction.code, baseReaction.name)
         }
             .map { transformMessages(it) }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun sendFile(streamName: String, topicName: String, name: String, stream: InputStream?): Flowable<List<ViewTyped>> {
         return messageRepository.sendFile(streamName, topicName, ZulipAuth.AUTH_ID, name, stream)
             .map { transformMessages(it) }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun downloadFile(url: String): Single<InputStream> {
         return messageRepository.downloadFile(url)
-            .subscribeOn(Schedulers.io())
     }
 
     private fun transformMessages(newList: List<Message>): List<ViewTyped> {
-        minId = minOf(minId, newList.minOf { it.id })
-
         val oldList = items.filterNot { messageExists(newList, it) }
         items.clear()
         items.addAll(oldList)

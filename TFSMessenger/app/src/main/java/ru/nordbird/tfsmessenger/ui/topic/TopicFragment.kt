@@ -17,21 +17,21 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestPermissi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
-import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
+import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
+import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
@@ -42,7 +42,7 @@ import java.io.FileNotFoundException
 import java.io.InputStream
 
 
-class TopicFragment : Fragment() {
+class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
 
     private var _binding: FragmentTopicBinding? = null
     private val binding get() = _binding!!
@@ -51,10 +51,6 @@ class TopicFragment : Fragment() {
     private var topicName: String = ""
     private var topicColor: Int = 0
 
-    private val topicInteractor = TopicInteractor()
-    private val compositeDisposable = CompositeDisposable()
-
-    private var loading = false
     private var isTextMode = false
     private val currentUserId = ZulipAuth.AUTH_ID
 
@@ -86,6 +82,10 @@ class TopicFragment : Fragment() {
     private val holderFactory = TfsHolderFactory(currentUserId, clickListener)
     private val adapter = Adapter<ViewTyped>(holderFactory)
 
+    override fun getPresenter(): TopicPresenter = GlobalDI.INSTANCE.topicPresenter
+
+    override fun getMviView(): TopicView = this
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -98,10 +98,15 @@ class TopicFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentTopicBinding.inflate(inflater, container, false)
+
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         initUI()
         initToolbar()
         updateMessages()
-        return binding.root
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -111,11 +116,6 @@ class TopicFragment : Fragment() {
         } else {
             super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        compositeDisposable.clear()
     }
 
     private fun initUI() {
@@ -141,16 +141,23 @@ class TopicFragment : Fragment() {
 
     }
 
+    override fun render(state: TopicState) {
+        adapter.items = state.items
+        if (state.needScroll) {
+            binding.rvChat.layoutManager?.scrollToPosition(0)
+        }
+
+        state.error?.let { throwable -> showError(throwable) }
+    }
+
+    override fun handleUiEffect(uiEffect: TopicUiEffect) {
+        when (uiEffect) {
+            is TopicUiEffect.DownloadFile -> saveFile(uiEffect.stream)
+        }
+    }
+
     private fun addMessage(content: String) {
-        val disposable = topicInteractor.addMessage(streamName, topicName, content)
-            .subscribe(
-                {
-                    adapter.items = it
-                    binding.rvChat.layoutManager?.scrollToPosition(0)
-                },
-                { showError(it) }
-            )
-        compositeDisposable.add(disposable)
+        getPresenter().input.accept(TopicAction.SendMessage(streamName, topicName, content))
     }
 
     private fun initToolbar() {
@@ -171,38 +178,16 @@ class TopicFragment : Fragment() {
         }
     }
 
-    private fun showShimmer() {
-        adapter.items = listOf(TopicShimmerUi(), TopicShimmerUi())
-    }
-
     private fun showError(throwable: Throwable) {
         Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
     private fun updateMessages() {
-        showShimmer()
-
-        val messagesDisposable = topicInteractor.getMessages(streamName, topicName)
-            .subscribe(
-                {
-                    adapter.items = it
-                    binding.rvChat.layoutManager?.scrollToPosition(0)
-                },
-                { showError(it) }
-            )
-        compositeDisposable.add(messagesDisposable)
+        getPresenter().input.accept(TopicAction.FirstLoadMessages(streamName, topicName))
     }
 
     private fun moreMessages() {
-        val messagesDisposable = topicInteractor.getMessages(streamName, topicName)
-            .subscribe(
-                {
-                    adapter.items = it
-                    loading = false
-                },
-                { showError(it) }
-            )
-        compositeDisposable.add(messagesDisposable)
+        getPresenter().input.accept(TopicAction.NextLoadMessages(streamName, topicName))
     }
 
     private fun showReactionChooser(message: MessageUi) {
@@ -234,12 +219,7 @@ class TopicFragment : Fragment() {
     }
 
     private fun updateReaction(message: MessageUi, reactionCode: String) {
-        val disposable = topicInteractor.updateReaction(message, currentUserId, reactionCode)
-            .subscribe(
-                { adapter.items = it },
-                { showError(it) }
-            )
-        compositeDisposable.add(disposable)
+        getPresenter().input.accept(TopicAction.UpdateReaction(message, currentUserId, reactionCode))
     }
 
     private fun onMessageClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
@@ -271,8 +251,7 @@ class TopicFragment : Fragment() {
                 super.onScrollStateChanged(recyclerView, newState)
                 val totalItemCount = linearLayoutManager.itemCount
                 val lastVisibleItemPosition = linearLayoutManager.findLastVisibleItemPosition()
-                if (totalItemCount <= lastVisibleItemPosition + ITEM_THRESHOLD && !loading) {
-                    loading = true
+                if (totalItemCount <= lastVisibleItemPosition + ITEM_THRESHOLD) {
                     moreMessages()
                 }
             }
@@ -285,26 +264,14 @@ class TopicFragment : Fragment() {
         val contentResolver = requireActivity().contentResolver
         try {
             val stream = contentResolver.openInputStream(data)
-            val disposable = topicInteractor.sendFile(streamName, topicName, getFileName(data), stream)
-                .subscribe(
-                    {
-                        adapter.items = it
-                        binding.rvChat.layoutManager?.scrollToPosition(0)
-                    },
-                    { showError(it) }
-                )
-            compositeDisposable.add(disposable)
+            getPresenter().input.accept(TopicAction.SendFile(streamName, topicName, getFileName(data), stream))
         } catch (ex: FileNotFoundException) {
             Snackbar.make(binding.root, getString(R.string.error_file_not_found), Snackbar.LENGTH_SHORT).show()
         }
     }
 
     private fun downloadAttachment(message: MessageUi) {
-        val disposable = topicInteractor.downloadFile(message.link).subscribe(
-            { saveFile(it) },
-            { showError(it) }
-        )
-        compositeDisposable.add(disposable)
+        getPresenter().input.accept(TopicAction.DownloadFile(message.link))
     }
 
     private fun saveFile(it: InputStream) {
