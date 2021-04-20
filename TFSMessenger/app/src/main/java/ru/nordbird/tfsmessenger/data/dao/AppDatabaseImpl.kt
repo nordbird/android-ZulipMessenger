@@ -11,5 +11,4 @@ object AppDatabaseImpl {
 
     fun getApi(): AppDatabase = db
 
-    fun messageDao(): MessageDao = db.messageDao()
 }
