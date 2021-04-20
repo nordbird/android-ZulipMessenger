@@ -33,7 +33,7 @@ object PeopleInteractor {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    fun getUser(userId: String): Flowable<UserUi?> {
+    fun getUser(userId: Int): Flowable<UserUi?> {
         return userRepository.getUser(userId)
             .map { user -> userMapper.transform(listOf(user)).firstOrNull() }
             .subscribeOn(Schedulers.io())

@@ -128,7 +128,8 @@ class PeopleFragment : Fragment() {
     }
 
     private fun onUserClick(holder: BaseViewHolder<*>) {
-        activityListener.onOpenUserProfile(adapter.items[holder.absoluteAdapterPosition].uid)
+        val user = adapter.items[holder.absoluteAdapterPosition] as UserUi
+        activityListener.onOpenUserProfile(user.id)
     }
 
     private fun onReloadClick() {
@@ -136,7 +137,7 @@ class PeopleFragment : Fragment() {
     }
 
     interface PeopleFragmentListener {
-        fun onOpenUserProfile(userId: String)
+        fun onOpenUserProfile(userId: Int)
     }
 
 }

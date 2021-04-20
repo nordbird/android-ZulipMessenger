@@ -25,7 +25,7 @@ class ProfileFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val compositeDisposable = CompositeDisposable()
-    private var userId: String = ""
+    private var userId: Int = INVALID_USER_ID
     private var isCurrentUser = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,10 +33,10 @@ class ProfileFragment : Fragment() {
         setHasOptionsMenu(true)
 
         arguments?.let {
-            userId = it.getString(PARAM_USER_ID, "")
+            userId = it.getInt(PARAM_USER_ID, INVALID_USER_ID)
         }
 
-        if (userId.isBlank()) {
+        if (userId == INVALID_USER_ID) {
             isCurrentUser = true
             userId = ZulipAuth.AUTH_ID
         }
@@ -115,5 +115,6 @@ class ProfileFragment : Fragment() {
 
     companion object {
         const val PARAM_USER_ID = "param_user_id"
+        private const val INVALID_USER_ID = 0
     }
 }
