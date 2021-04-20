@@ -10,13 +10,13 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
 class StreamUi(
-    val id: String,
+    val id: Int,
     val name: String,
     var topicExpanded: Boolean = false,
     override val viewType: Int = R.layout.item_stream
 ) : ViewTyped {
 
-    override val uid = id
+    override val uid = id.toString()
 
     override fun asString() = "$name $topicExpanded"
 

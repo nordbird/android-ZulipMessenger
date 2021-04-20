@@ -12,7 +12,7 @@ class TopicUi(
     val name: String,
     val color: Int,
     val messageCount: Int,
-    var streamId: String = "",
+    var streamId: Int,
     override val viewType: Int = R.layout.item_topic
 ) : ViewTyped {
 

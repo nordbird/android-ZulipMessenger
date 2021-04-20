@@ -6,7 +6,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.holder.StreamUi
 class StreamToStreamUiMapper : Mapper<List<Stream>, List<StreamUi>> {
 
     override fun transform(data: List<Stream>): List<StreamUi> {
-        return data.map { StreamUi(it.id.toString(), it.name) }
+        return data.map { StreamUi(it.id, it.name) }
     }
 
 }

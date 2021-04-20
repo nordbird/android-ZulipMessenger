@@ -26,7 +26,7 @@ interface ZulipService {
     fun getSubscriptions(): Single<SubscriptionsResponse>
 
     @GET("users/me/{id}/topics")
-    fun getStreamTopics(@Path("id") id: String): Single<TopicsResponse>
+    fun getStreamTopics(@Path("id") id: Int): Single<TopicsResponse>
 
     @GET("messages")
     fun getMessages(@QueryMap queryMap: Map<String, String>): Single<MessagesResponse>

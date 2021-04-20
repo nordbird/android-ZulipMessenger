@@ -30,7 +30,6 @@ import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_ID
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
@@ -48,7 +47,6 @@ class TopicFragment : Fragment() {
     private var _binding: FragmentTopicBinding? = null
     private val binding get() = _binding!!
 
-    private var streamId: String = ""
     private var streamName: String = ""
     private var topicName: String = ""
     private var topicColor: Int = 0
@@ -92,7 +90,6 @@ class TopicFragment : Fragment() {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
         arguments?.let {
-            streamId = it.getString(REQUEST_OPEN_TOPIC_STREAM_ID, "")
             streamName = it.getString(REQUEST_OPEN_TOPIC_STREAM_NAME, "")
             topicName = it.getString(REQUEST_OPEN_TOPIC_NAME, "")
             topicColor = it.getInt(REQUEST_OPEN_TOPIC_COLOR)

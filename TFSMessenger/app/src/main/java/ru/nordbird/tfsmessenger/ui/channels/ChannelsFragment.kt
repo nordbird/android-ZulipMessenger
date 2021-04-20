@@ -100,7 +100,6 @@ class ChannelsFragment : Fragment() {
     companion object {
 
         const val REQUEST_OPEN_TOPIC = "request_open_topic"
-        const val REQUEST_OPEN_TOPIC_STREAM_ID = "stream_id"
         const val REQUEST_OPEN_TOPIC_STREAM_NAME = "stream_name"
         const val REQUEST_OPEN_TOPIC_NAME = "topic_name"
         const val REQUEST_OPEN_TOPIC_COLOR = "topic_color"

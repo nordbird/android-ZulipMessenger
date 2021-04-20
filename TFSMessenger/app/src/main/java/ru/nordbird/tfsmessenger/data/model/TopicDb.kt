@@ -10,5 +10,5 @@ data class TopicDb(
     val name: String,
 
     @ColumnInfo(name = "stream_id")
-    var streamId: String = ""
+    var streamId: Int = 0
 )
