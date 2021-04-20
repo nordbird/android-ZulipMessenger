@@ -8,9 +8,9 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth.AUTH_EMAIL
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth.AUTH_KEY
+import ru.nordbird.tfsmessenger.data.api.ZulipAuth.BASE_URL
 
 object ZulipServiceImpl {
-    const val BASE_URL = "https://tfs-android-2021-spring.zulipchat.com"
     private const val BASE_URL_API = "$BASE_URL/api/v1/"
 
     private val contentType = MediaType.get("application/json")
