@@ -13,15 +13,14 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
 open class MessageUi(
-    val id: String,
+    val id: Int,
     private val authorId: Int,
     val text: String,
     val reactions: List<ReactionGroup>,
     val link: String
 ) : ViewTyped {
 
-    override val uid: String
-        get() = id
+    override val uid = id.toString()
 
     override fun asString(): String {
         val reactionStr = reactions.map { it.toString() }.reduceOrNull { acc, s -> "$acc $s" }

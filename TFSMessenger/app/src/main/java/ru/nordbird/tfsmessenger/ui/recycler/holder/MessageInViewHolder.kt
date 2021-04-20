@@ -15,7 +15,7 @@ import ru.nordbird.tfsmessenger.ui.custom.CircleImageView
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 
 class MessageInUi(
-    id: String,
+    id: Int,
     authorId: Int,
     val authorName: String,
     val avatar: String,

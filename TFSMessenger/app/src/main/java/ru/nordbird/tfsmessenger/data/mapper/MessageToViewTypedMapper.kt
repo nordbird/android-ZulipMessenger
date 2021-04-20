@@ -24,9 +24,9 @@ class MessageToViewTypedMapper(
             val isIncoming = it.authorId != currentUserId
 
             if (isIncoming) {
-                MessageInUi(it.id.toString(), it.authorId, it.authorName, it.avatar_url, it.content, reactionMapper.transform(it.reactions), it.link)
+                MessageInUi(it.id, it.authorId, it.authorName, it.avatar_url, it.content, reactionMapper.transform(it.reactions), it.link)
             } else {
-                MessageOutUi(it.id.toString(), it.authorId, it.content, reactionMapper.transform(it.reactions), it.link)
+                MessageOutUi(it.id, it.authorId, it.content, reactionMapper.transform(it.reactions), it.link)
             }
         }
     }

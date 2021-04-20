@@ -9,7 +9,7 @@ import ru.nordbird.tfsmessenger.data.model.ReactionGroup
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 
 class MessageOutUi(
-    id: String,
+    id: Int,
     authorId: Int,
     text: String,
     reactions: List<ReactionGroup>,
