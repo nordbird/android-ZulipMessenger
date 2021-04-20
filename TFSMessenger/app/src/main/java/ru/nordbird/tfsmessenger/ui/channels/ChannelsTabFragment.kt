@@ -123,7 +123,8 @@ class ChannelsTabFragment : Fragment() {
     }
 
     private fun onStreamClick(holder: BaseViewHolder<*>) {
-        val streamDisposable = channelsInteractor.updateStreamTopics(holder.itemId)
+        val stream = adapter.items[holder.absoluteAdapterPosition] as StreamUi
+        val streamDisposable = channelsInteractor.updateStreamTopics(stream.id)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { adapter.items = it },

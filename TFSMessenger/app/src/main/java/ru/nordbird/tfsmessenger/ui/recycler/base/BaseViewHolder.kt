@@ -7,8 +7,6 @@ open class BaseViewHolder<T : ViewTyped>(
         containerView: View
 ) : RecyclerView.ViewHolder(containerView) {
 
-    open var itemId: String = ""
-
     open fun bind(item: T) = Unit
 
     open fun bind(item: T, payload: List<Any>) = Unit

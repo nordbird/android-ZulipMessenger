@@ -38,7 +38,6 @@ class StreamViewHolder(
     }
 
     override fun bind(item: StreamUi) {
-        itemId = item.uid
         streamView.text = item.name
         val imageRes = if (item.topicExpanded) R.drawable.ic_arrow_up_24 else R.drawable.ic_arrow_down_24
         toggleView.setImageResource(imageRes)
