@@ -10,8 +10,8 @@ class ReactionToReactionGroupMapper : Mapper<List<Reaction>, List<ReactionGroup>
         return reactionByCode.map { (code, reactions) -> ReactionGroup(getReaction(code), reactions.first().name, parseReaction(reactions)) }
     }
 
-    private fun parseReaction(reactions: List<Reaction>): List<String> {
-        return reactions.map { it.userId.toString() }
+    private fun parseReaction(reactions: List<Reaction>): List<Int> {
+        return reactions.map { it.userId }
     }
 
     private fun getReaction(unicode: String): String {

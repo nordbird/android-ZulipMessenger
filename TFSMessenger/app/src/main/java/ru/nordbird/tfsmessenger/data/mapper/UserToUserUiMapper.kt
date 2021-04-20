@@ -9,7 +9,7 @@ import java.util.*
 class UserToUserUiMapper : Mapper<List<User>, List<UserUi>> {
 
     override fun transform(data: List<User>): List<UserUi> {
-        return data.map { UserUi(it.id.toString(), it.full_name, it.email, it.avatar_url, convertPresence(it.timestamp)) }
+        return data.map { UserUi(it.id, it.full_name, it.email, it.avatar_url, convertPresence(it.timestamp)) }
     }
 
     private fun convertPresence(timestamp: Int): UserPresence {

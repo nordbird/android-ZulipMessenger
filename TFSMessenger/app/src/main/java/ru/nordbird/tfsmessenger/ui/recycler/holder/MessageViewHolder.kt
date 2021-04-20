@@ -32,7 +32,7 @@ open class MessageUi(
 open class MessageViewHolder<T : MessageUi>(
     view: View,
     private val reactionResId: Int,
-    private val currentUserId: String,
+    private val currentUserId: Int,
     private val clickListener: ViewHolderClickListener
 ) : BaseViewHolder<T>(view) {
 

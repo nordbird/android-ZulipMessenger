@@ -38,7 +38,6 @@ class TopicViewHolder(
     }
 
     override fun bind(item: TopicUi) {
-        itemId = item.uid
         nameView.text = item.name
         topicBox.setBackgroundColor(item.color)
         countView.text = countView.resources.getString(R.string.item_topic_count, item.messageCount)

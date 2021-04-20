@@ -40,9 +40,9 @@ object MessageRepository {
             .map { dbMessageMapper.transform(it) }
     }
 
-    fun addMessage(streamName: String, topicName: String, senderId: String, text: String): Flowable<List<Message>> {
+    fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {
         val messageId = ++maxId
-        val message = MessageDb(messageId, streamName, topicName, senderId.toIntOrNull() ?: 0, "", "", text, Date().time, localId = messageId)
+        val message = MessageDb(messageId, streamName, topicName, senderId, "", "", text, Date().time, localId = messageId)
 
         return Flowable.concat(
             Flowable.fromCallable { listOf(saveToDatabase(message)) },
@@ -61,9 +61,9 @@ object MessageRepository {
             .onErrorReturnItem(emptyList())
     }
 
-    fun addReaction(message: Message, currentUserId: String, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
+    fun addReaction(message: Message, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
         val list = message.reactions.toMutableList()
-        list.add(Reaction(reactionCode.toString(16), reactionName, currentUserId.toIntOrNull() ?: 0))
+        list.add(Reaction(reactionCode.toString(16), reactionName, currentUserId))
 
         return Single.concat(
             AppDatabaseImpl.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = list)) },
@@ -79,8 +79,8 @@ object MessageRepository {
             .onErrorReturnItem(emptyList())
     }
 
-    fun removeReaction(message: Message, currentUserId: String, reactionName: String): Flowable<List<Message>> {
-        val list = message.reactions.filterNot { it.userId.toString() == currentUserId && it.name == reactionName }
+    fun removeReaction(message: Message, currentUserId: Int, reactionName: String): Flowable<List<Message>> {
+        val list = message.reactions.filterNot { it.userId == currentUserId && it.name == reactionName }
 
         return Single.concat(
             AppDatabaseImpl.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = list)) },
@@ -96,7 +96,7 @@ object MessageRepository {
             .onErrorReturnItem(emptyList())
     }
 
-    fun sendFile(streamName: String, topicName: String, senderId: String, name: String, stream: InputStream?): Flowable<List<Message>> {
+    fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>> {
         val bytes = stream?.use {
             it.readBytes()
         } ?: return Flowable.fromArray(emptyList())

@@ -9,7 +9,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.holder.SeparatorDateUi
 import java.util.*
 
 class MessageToViewTypedMapper(
-    private val currentUserId: String
+    private val currentUserId: Int
 ) : Mapper<List<Message>, List<ViewTyped>> {
 
     private val reactionMapper = ReactionToReactionGroupMapper()
@@ -21,7 +21,7 @@ class MessageToViewTypedMapper(
 
     private fun makeMessages(messages: List<Message>): List<ViewTyped> {
         return messages.map {
-            val isIncoming = it.authorId.toString() != currentUserId
+            val isIncoming = it.authorId != currentUserId
 
             if (isIncoming) {
                 MessageInUi(it.id.toString(), it.authorId, it.authorName, it.avatar_url, it.content, reactionMapper.transform(it.reactions), it.link)

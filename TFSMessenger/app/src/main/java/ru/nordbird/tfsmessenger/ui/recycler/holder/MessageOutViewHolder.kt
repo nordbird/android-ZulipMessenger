@@ -1,12 +1,6 @@
 package ru.nordbird.tfsmessenger.ui.recycler.holder
 
-import android.text.SpannableString
-import android.text.SpannableStringBuilder
-import android.text.Spanned
 import android.text.method.LinkMovementMethod
-import android.text.style.ClickableSpan
-import android.text.style.URLSpan
-import android.util.Patterns
 import android.view.View
 import android.widget.TextView
 import androidx.core.text.HtmlCompat
@@ -25,7 +19,7 @@ class MessageOutUi(
 
 class MessageOutViewHolder(
     view: View,
-    currentUserId: String,
+    currentUserId: Int,
     private val clickListener: ViewHolderClickListener,
 ) : MessageViewHolder<MessageOutUi>(view, R.layout.right_reaction_view, currentUserId, clickListener) {
 
@@ -38,8 +32,6 @@ class MessageOutViewHolder(
     }
 
     override fun bind(item: MessageOutUi) {
-        itemId = item.id
-//        messageView.text = item.text
         messageView.text = HtmlCompat.fromHtml(item.text, HtmlCompat.FROM_HTML_MODE_LEGACY)
         messageView.movementMethod = LinkMovementMethod.getInstance()
 

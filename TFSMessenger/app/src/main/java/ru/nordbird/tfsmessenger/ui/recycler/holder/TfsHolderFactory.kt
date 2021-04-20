@@ -5,7 +5,7 @@ import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 
 class TfsHolderFactory(
-    private val currentUserId: String = "",
+    private val currentUserId: Int = 0,
     private val clickListener: ViewHolderClickListener,
 ) : HolderFactory() {
 

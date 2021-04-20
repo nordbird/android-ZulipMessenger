@@ -40,7 +40,7 @@ class TopicInteractor {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    fun updateReaction(message: MessageUi, currentUserId: String, reactionCode: String): Flowable<List<ViewTyped>> {
+    fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<ViewTyped>> {
         val msg = items.first { it.id.toString() == message.id }
         val baseReaction = EMOJI_SET.firstOrNull { it.getCodeString() == reactionCode } ?: Emoji("", "", 0)
         val reaction = message.reactions.firstOrNull { it.userIdList.contains(currentUserId) }

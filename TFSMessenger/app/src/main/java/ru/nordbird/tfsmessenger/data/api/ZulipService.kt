@@ -14,10 +14,10 @@ interface ZulipService {
     fun getUsers(): Single<UsersResponse>
 
     @GET("users/{id}")
-    fun getUser(@Path("id") id: String): Single<UserResponse>
+    fun getUser(@Path("id") id: Int): Single<UserResponse>
 
     @GET("users/{id}/presence")
-    fun getUserPresence(@Path("id") id: String): Single<PresenceResponse>
+    fun getUserPresence(@Path("id") id: Int): Single<PresenceResponse>
 
     @GET("streams")
     fun getStreams(): Single<StreamsResponse>

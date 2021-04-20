@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
         navController.navigate(R.id.navigation_topic, bundle)
     }
 
-    override fun onOpenUserProfile(userId: String) {
+    override fun onOpenUserProfile(userId: Int) {
         navController.navigate(
             R.id.navigation_profile_another,
             bundleOf(PARAM_USER_ID to userId)

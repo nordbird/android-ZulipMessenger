@@ -3,7 +3,6 @@ package ru.nordbird.tfsmessenger.data.repository
 import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
 import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
 import ru.nordbird.tfsmessenger.data.mapper.UserDbToUserMapper
@@ -21,29 +20,28 @@ object UserRepository {
         return Single.concat(
             getDatabaseUsers(query),
             getNetworkUsers(query)
-                .onErrorResumeNext(getDatabaseUsers(query))
         )
             .map { dbUserMapper.transform(it) }
     }
 
-    fun getUser(id: String): Flowable<User> {
+    fun getUser(id: Int): Flowable<User> {
         return Single.concat(
             getDatabaseUser(id),
             getNetworkUser(id)
-                .onErrorResumeNext(getDatabaseUser(id))
         )
-            .map { dbUserMapper.transform(listOf(it)).firstOrNull() }
+            .map { dbUserMapper.transform(listOf(it)).first() }
     }
 
     private fun getNetworkUsers(query: String = ""): Single<List<UserDb>> {
         return ZulipServiceImpl.getApi().getUsers()
-            .observeOn(Schedulers.computation())
-            .flatMapObservable { Observable.fromIterable(it.members) }
-            .map { nwUserMapper.transform(it) }
+            .flatMapObservable { response ->
+                Observable.fromIterable(response.members
+                    .map { nwUserMapper.transform(it) })
+            }
             .flatMap(
                 { user ->
                     ZulipServiceImpl.getApi()
-                        .getUserPresence(user.id.toString())
+                        .getUserPresence(user.id)
                         .onErrorReturnItem(PresenceResponse())
                         .toObservable()
                 },
@@ -54,7 +52,7 @@ object UserRepository {
             .map { list -> list.filter { it.full_name.contains(query, true) } }
     }
 
-    private fun getNetworkUser(id: String): Single<UserDb> {
+    private fun getNetworkUser(id: Int): Single<UserDb> {
         return Single.zip(
             ZulipServiceImpl.getApi().getUser(id)
                 .map { nwUserMapper.transform(it.user) },
@@ -68,8 +66,8 @@ object UserRepository {
         return AppDatabaseImpl.userDao().getAll(query)
     }
 
-    private fun getDatabaseUser(id: String): Single<UserDb> {
-        return AppDatabaseImpl.userDao().getById(id.toIntOrNull() ?: 0)
+    private fun getDatabaseUser(id: Int): Single<UserDb> {
+        return AppDatabaseImpl.userDao().getById(id)
     }
 
     private fun addPresence(user: UserDb, presenceResponse: PresenceResponse): UserDb {

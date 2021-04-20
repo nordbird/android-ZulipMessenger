@@ -20,7 +20,7 @@ enum class UserPresence {
 }
 
 class UserUi(
-    val id: String,
+    val id: Int,
     val name: String,
     val email: String,
     val avatar: String,
@@ -28,7 +28,7 @@ class UserUi(
     override val viewType: Int = R.layout.item_user
 ) : ViewTyped {
 
-    override val uid = id
+    override val uid = id.toString()
 
     override fun asString() = "$name $email ${presence.ordinal}"
 
@@ -65,7 +65,6 @@ class UserViewHolder(
     }
 
     override fun bind(item: UserUi) {
-        itemId = item.id
         nameView.text = item.name
         emailView.text = item.email
 
