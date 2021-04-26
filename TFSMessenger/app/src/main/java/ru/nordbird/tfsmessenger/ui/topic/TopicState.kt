@@ -26,7 +26,7 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         )
 
         is TopicAction.MessagesLoaded -> {
-            val minId = minOf(oldestMessageId, topicAction.messages.filterIsInstance<MessageUi>().minOf { it.id })
+            val minId = minOf(oldestMessageId, topicAction.messages.filterIsInstance<MessageUi>().minOfOrNull { it.id } ?: oldestMessageId)
             copy(
                 oldestMessageId = minId,
                 items = topicAction.messages,
