@@ -12,10 +12,7 @@ import ru.nordbird.tfsmessenger.databinding.FragmentPeopleBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
-import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
-import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
-import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
-import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
+import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
 
@@ -39,7 +36,8 @@ class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
     }
 
     private val holderFactory = TfsHolderFactory(clickListener = clickListener)
-    private val adapter = Adapter<ViewTyped>(holderFactory)
+    private val diffUtilCallback = DiffUtilCallback<ViewTyped>()
+    private val adapter = Adapter(holderFactory, diffUtilCallback)
 
     override fun getPresenter(): PeoplePresenter = GlobalDI.INSTANCE.peoplePresenter
 
