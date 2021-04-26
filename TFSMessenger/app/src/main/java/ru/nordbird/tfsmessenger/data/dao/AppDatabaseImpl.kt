@@ -9,11 +9,6 @@ object AppDatabaseImpl {
         AppDatabase::class.java, "tfs_messenger"
     ).build()
 
-    fun userDao(): UserDao = db.userDao()
+    fun getApi(): AppDatabase = db
 
-    fun streamDao(): StreamDao = db.streamDao()
-
-    fun topicDao(): TopicDao = db.topicDao()
-
-    fun messageDao(): MessageDao = db.messageDao()
 }

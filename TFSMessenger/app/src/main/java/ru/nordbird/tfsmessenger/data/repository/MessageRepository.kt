@@ -9,34 +9,36 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
-import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
+import ru.nordbird.tfsmessenger.data.api.ZulipAuth
+import ru.nordbird.tfsmessenger.data.api.ZulipService
+import ru.nordbird.tfsmessenger.data.dao.AppDatabase
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
 import ru.nordbird.tfsmessenger.data.mapper.MessageNwToMessageDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
 import java.io.InputStream
 import java.util.*
 
-
-object MessageRepository {
-    private const val MESSAGE_ANCHOR = "newest"
-    private const val MESSAGE_TYPE_STREAM = "stream"
-    private const val MESSAGE_AFTER_ID = "0"
-    private const val MESSAGES_MAX_COUNT = 50
+class MessageRepository(
+    private val apiService: ZulipService,
+    private val dbService: AppDatabase
+) {
+    companion object {
+        private const val MESSAGE_ANCHOR = "newest"
+        private const val MESSAGE_TYPE_STREAM = "stream"
+        private const val MESSAGE_AFTER_ID = "0"
+        private const val MESSAGES_MAX_COUNT = 50
+    }
 
     private val nwMessageMapper = MessageNwToMessageDbMapper()
-    private val dbMessageMapper = MessageDbToMessageMapper(ZulipServiceImpl.BASE_URL)
+    private val dbMessageMapper = MessageDbToMessageMapper(ZulipAuth.BASE_URL)
 
     private var maxId = 0
 
-    fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<Message>> {
+    fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Flowable<List<Message>> {
         return Single.concat(
             getDatabaseMessages(streamName, topicName, lastMessageId, count),
             getNetworkMessages(streamName, topicName, lastMessageId, count)
-                .onErrorReturnItem(emptyList())
         )
-            .filter { it.isNotEmpty() }
-            .first(emptyList())
             .map { dbMessageMapper.transform(it) }
     }
 
@@ -66,12 +68,12 @@ object MessageRepository {
         list.add(Reaction(reactionCode.toString(16), reactionName, currentUserId))
 
         return Single.concat(
-            AppDatabaseImpl.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = list)) },
-            ZulipServiceImpl.getApi().addMessageReaction(message.id, reactionName).flatMap { response ->
+            dbService.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = list)) },
+            apiService.addMessageReaction(message.id, reactionName).flatMap { response ->
                 if (response.result == RESPONSE_RESULT_SUCCESS) {
-                    AppDatabaseImpl.messageDao().getById(message.id)
+                    dbService.messageDao().getById(message.id)
                 } else {
-                    AppDatabaseImpl.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = message.reactions)) }
+                    dbService.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = message.reactions)) }
                 }
             }
         )
@@ -83,12 +85,12 @@ object MessageRepository {
         val list = message.reactions.filterNot { it.userId == currentUserId && it.name == reactionName }
 
         return Single.concat(
-            AppDatabaseImpl.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = list)) },
-            ZulipServiceImpl.getApi().removeMessageReaction(message.id, reactionName).flatMap { response ->
+            dbService.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = list)) },
+            apiService.removeMessageReaction(message.id, reactionName).flatMap { response ->
                 if (response.result == RESPONSE_RESULT_SUCCESS) {
-                    AppDatabaseImpl.messageDao().getById(message.id)
+                    dbService.messageDao().getById(message.id)
                 } else {
-                    AppDatabaseImpl.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = message.reactions)) }
+                    dbService.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = message.reactions)) }
                 }
             }
         )
@@ -103,15 +105,15 @@ object MessageRepository {
 
         val requestBody: RequestBody = RequestBody.create(MediaType.parse("*/*"), bytes)
         val fileToUpload = MultipartBody.Part.createFormData("file", name, requestBody)
-        return ZulipServiceImpl.getApi().uploadFile(fileToUpload).toFlowable()
+        return apiService.uploadFile(fileToUpload).toFlowable()
             .flatMap {
-                val content = "[$name](${ZulipServiceImpl.BASE_URL}${it.uri})"
+                val content = "[$name](${ZulipAuth.BASE_URL}${it.uri})"
                 addMessage(streamName, topicName, senderId, content)
             }
     }
 
     fun downloadFile(url: String): Single<InputStream> {
-        return ZulipServiceImpl.getApi().downloadFile(url).map {
+        return apiService.downloadFile(url).map {
             it.byteStream()
         }
     }
@@ -130,7 +132,7 @@ object MessageRepository {
             "narrow" to Json.encodeToString(narrow)
         )
 
-        return ZulipServiceImpl.getApi().getMessages(query)
+        return apiService.getMessages(query)
             .observeOn(Schedulers.computation())
             .map { nwMessageMapper.transform(it.messages) }
             .flatMapObservable { Observable.fromIterable(it) }
@@ -145,7 +147,7 @@ object MessageRepository {
     }
 
     private fun getDatabaseMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
-        return AppDatabaseImpl.messageDao().getAll(streamName, topicName, lastMessageId, count)
+        return dbService.messageDao().getAll(streamName, topicName, lastMessageId, count)
     }
 
     private fun addNetworkMessage(streamName: String, topicName: String, text: String): Single<MessageResponse> {
@@ -155,23 +157,23 @@ object MessageRepository {
             "content" to text,
             "topic" to topicName
         )
-        return ZulipServiceImpl.getApi().sendMessage(query)
+        return apiService.sendMessage(query)
     }
 
     private fun replaceMessage(message: MessageDb, newMessageId: Int): MessageDb {
-        AppDatabaseImpl.messageDao().deleteById(message.id)
+        dbService.messageDao().deleteById(message.id)
         val newMessage = message.copy(id = newMessageId, localId = message.localId)
-        AppDatabaseImpl.messageDao().insert(newMessage)
+        dbService.messageDao().insert(newMessage)
         return newMessage
     }
 
     private fun saveToDatabase(streamName: String, topicName: String, messages: List<MessageDb>) {
-        AppDatabaseImpl.messageDao().insertAll(messages)
-        AppDatabaseImpl.messageDao().deleteOverLimit(streamName, topicName, MESSAGES_MAX_COUNT)
+        dbService.messageDao().insertAll(messages)
+        dbService.messageDao().deleteOverLimit(streamName, topicName, MESSAGES_MAX_COUNT)
     }
 
     private fun saveToDatabase(message: MessageDb): MessageDb {
-        AppDatabaseImpl.messageDao().insert(message)
+        dbService.messageDao().insert(message)
         return message
     }
 }

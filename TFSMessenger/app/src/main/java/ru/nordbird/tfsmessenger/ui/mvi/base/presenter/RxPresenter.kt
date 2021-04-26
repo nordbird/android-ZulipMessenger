@@ -8,7 +8,7 @@ abstract class RxPresenter<V> protected constructor(viewClass: Class<V>) : BaseP
 
     override fun detachView(isFinishing: Boolean) {
         if (isFinishing) {
-            disposables.dispose()
+            disposables.clear()
         }
         super.detachView(isFinishing)
     }

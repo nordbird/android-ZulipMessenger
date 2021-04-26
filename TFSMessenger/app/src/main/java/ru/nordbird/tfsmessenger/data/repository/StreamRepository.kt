@@ -3,16 +3,18 @@ package ru.nordbird.tfsmessenger.data.repository
 import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.schedulers.Schedulers
-import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
-import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
+import ru.nordbird.tfsmessenger.data.api.ZulipService
+import ru.nordbird.tfsmessenger.data.dao.AppDatabase
 import ru.nordbird.tfsmessenger.data.mapper.StreamDbToStreamMapper
 import ru.nordbird.tfsmessenger.data.mapper.StreamNwToStreamDbMapper
 import ru.nordbird.tfsmessenger.data.mapper.TopicDbToTopicMapper
 import ru.nordbird.tfsmessenger.data.mapper.TopicNwToTopicDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
 
-object StreamRepository {
+class StreamRepository(
+    private val apiService: ZulipService,
+    private val dbService: AppDatabase
+) {
 
     private val nwStreamMapper = StreamNwToStreamDbMapper()
     private val dbStreamMapper = StreamDbToStreamMapper()
@@ -24,7 +26,6 @@ object StreamRepository {
         return Single.concat(
             getDatabaseStreams(query),
             getNetworkStreams(query)
-                .onErrorResumeNext(getDatabaseStreams(query))
         )
             .map { dbStreamMapper.transform(it) }
     }
@@ -33,72 +34,70 @@ object StreamRepository {
         return Single.concat(
             getDatabaseSubscriptions(query),
             getNetworkSubscriptions(query)
-                .onErrorResumeNext(getDatabaseSubscriptions(query))
         )
             .map { dbStreamMapper.transform(it) }
     }
 
-    fun getStreamTopics(streamId: String): Flowable<List<Topic>> {
+    fun getStreamTopics(streamId: Int): Flowable<List<Topic>> {
         return Single.concat(
             getDatabaseStreamTopics(streamId),
             getNetworkStreamTopics(streamId)
-                .onErrorResumeNext(getDatabaseStreamTopics(streamId))
         )
-            .observeOn(Schedulers.computation())
             .map { dbTopicMapper.transform(it) }
     }
 
     private fun getNetworkStreams(query: String = ""): Single<List<StreamDb>> {
-        return ZulipServiceImpl.getApi().getStreams()
-            .observeOn(Schedulers.computation())
-            .map { it.streams }
-            .map { streams -> streams.map { nwStreamMapper.transform(it) } }
+        return apiService.getStreams()
+            .map { response ->
+                response.streams
+                    .map { nwStreamMapper.transform(it) }
+            }
             .doOnSuccess { saveStreamsToDatabase(it) }
             .map { streams -> streams.filter { it.name.contains(query, true) } }
     }
 
     private fun getDatabaseStreams(query: String = ""): Single<List<StreamDb>> {
-        return AppDatabaseImpl.streamDao().getStreams(query)
+        return dbService.streamDao().getStreams(query)
     }
 
     private fun getNetworkSubscriptions(query: String = ""): Single<List<StreamDb>> {
-        return ZulipServiceImpl.getApi().getSubscriptions()
-            .observeOn(Schedulers.computation())
-            .map { response -> response.subscriptions
-                .map { nwStreamMapper.transform(it) }
-                .onEach { it.subscribed = true } 
+        return apiService.getSubscriptions()
+            .map { response ->
+                response.subscriptions
+                    .map { nwStreamMapper.transform(it) }
+                    .onEach { it.subscribed = true }
             }
             .doOnSuccess { saveStreamsToDatabase(it) }
             .map { streams -> streams.filter { it.name.contains(query, true) } }
     }
 
     private fun getDatabaseSubscriptions(query: String = ""): Single<List<StreamDb>> {
-        return AppDatabaseImpl.streamDao().getSubscriptions(query)
+        return dbService.streamDao().getSubscriptions(query)
     }
 
-    private fun getNetworkStreamTopics(streamId: String): Single<List<TopicDb>> {
-        return ZulipServiceImpl.getApi().getStreamTopics(streamId)
-            .observeOn(Schedulers.computation())
-            .flatMapObservable { Observable.fromIterable(it.topics) }
-            .map { nwTopicMapper.transform(it) }
+    private fun getNetworkStreamTopics(streamId: Int): Single<List<TopicDb>> {
+        return apiService.getStreamTopics(streamId)
+            .flatMapObservable { response ->
+                Observable.fromIterable(response.topics
+                    .map { nwTopicMapper.transform(it) })
+            }
             .map { topic ->
                 topic.streamId = streamId
                 topic
             }
             .toList()
-            .observeOn(Schedulers.io())
             .doOnSuccess { saveTopicsToDatabase(it) }
     }
 
-    private fun getDatabaseStreamTopics(streamId: String): Single<List<TopicDb>> {
-        return AppDatabaseImpl.topicDao().getByStreamId(streamId)
+    private fun getDatabaseStreamTopics(streamId: Int): Single<List<TopicDb>> {
+        return dbService.topicDao().getByStreamId(streamId)
     }
 
     private fun saveStreamsToDatabase(streams: List<StreamDb>) {
-        AppDatabaseImpl.streamDao().insertAll(streams)
+        dbService.streamDao().insertAll(streams)
     }
 
     private fun saveTopicsToDatabase(topics: List<TopicDb>) {
-        AppDatabaseImpl.topicDao().insertAll(topics)
+        dbService.topicDao().insertAll(topics)
     }
 }

@@ -3,15 +3,18 @@ package ru.nordbird.tfsmessenger.data.repository
 import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
-import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
-import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
+import ru.nordbird.tfsmessenger.data.api.ZulipService
+import ru.nordbird.tfsmessenger.data.dao.AppDatabase
 import ru.nordbird.tfsmessenger.data.mapper.UserDbToUserMapper
 import ru.nordbird.tfsmessenger.data.mapper.UserNwToUserDbMapper
 import ru.nordbird.tfsmessenger.data.model.PresenceResponse
 import ru.nordbird.tfsmessenger.data.model.User
 import ru.nordbird.tfsmessenger.data.model.UserDb
 
-object UserRepository {
+class UserRepository(
+    private val apiService: ZulipService,
+    private val dbService: AppDatabase
+) {
 
     private val nwUserMapper = UserNwToUserDbMapper()
     private val dbUserMapper = UserDbToUserMapper()
@@ -33,15 +36,14 @@ object UserRepository {
     }
 
     private fun getNetworkUsers(query: String = ""): Single<List<UserDb>> {
-        return ZulipServiceImpl.getApi().getUsers()
+        return apiService.getUsers()
             .flatMapObservable { response ->
                 Observable.fromIterable(response.members
                     .map { nwUserMapper.transform(it) })
             }
             .flatMap(
                 { user ->
-                    ZulipServiceImpl.getApi()
-                        .getUserPresence(user.id)
+                    apiService.getUserPresence(user.id)
                         .onErrorReturnItem(PresenceResponse())
                         .toObservable()
                 },
@@ -54,20 +56,20 @@ object UserRepository {
 
     private fun getNetworkUser(id: Int): Single<UserDb> {
         return Single.zip(
-            ZulipServiceImpl.getApi().getUser(id)
+            apiService.getUser(id)
                 .map { nwUserMapper.transform(it.user) },
-            ZulipServiceImpl.getApi().getUserPresence(id)
+            apiService.getUserPresence(id)
                 .onErrorReturnItem(PresenceResponse()),
             { user, presence -> addPresence(user, presence) }
         )
     }
 
     private fun getDatabaseUsers(query: String = ""): Single<List<UserDb>> {
-        return AppDatabaseImpl.userDao().getAll(query)
+        return dbService.userDao().getAll(query)
     }
 
     private fun getDatabaseUser(id: Int): Single<UserDb> {
-        return AppDatabaseImpl.userDao().getById(id)
+        return dbService.userDao().getById(id)
     }
 
     private fun addPresence(user: UserDb, presenceResponse: PresenceResponse): UserDb {
@@ -76,7 +78,7 @@ object UserRepository {
     }
 
     private fun saveToDatabase(users: List<UserDb>) {
-        AppDatabaseImpl.userDao().insertAll(users)
+        dbService.userDao().insertAll(users)
     }
 
 }

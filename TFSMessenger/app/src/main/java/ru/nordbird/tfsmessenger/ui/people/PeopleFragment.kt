@@ -5,12 +5,12 @@ import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
-import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentPeopleBinding
+import ru.nordbird.tfsmessenger.di.GlobalDI
+import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
@@ -19,13 +19,12 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
 
-class PeopleFragment : Fragment() {
+class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
 
     private var _binding: FragmentPeopleBinding? = null
     private val binding get() = _binding!!
     private lateinit var activityListener: PeopleFragmentListener
 
-    private val userInteractor = PeopleInteractor
     private val compositeDisposable = CompositeDisposable()
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
@@ -41,6 +40,10 @@ class PeopleFragment : Fragment() {
 
     private val holderFactory = TfsHolderFactory(clickListener = clickListener)
     private val adapter = Adapter<ViewTyped>(holderFactory)
+
+    override fun getPresenter(): PeoplePresenter = GlobalDI.INSTANCE.peoplePresenter
+
+    override fun getMviView(): PeopleView = this
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -62,9 +65,13 @@ class PeopleFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentPeopleBinding.inflate(inflater, container, false)
-        initUI()
-
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        initUI()
+        initToolbar()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -73,19 +80,10 @@ class PeopleFragment : Fragment() {
         val searchView = searchItem?.actionView as SearchView
 
         val searchObservable = RxSearchObservable.fromView(searchView)
-        val searchDisposable = userInteractor.filterUsers(searchObservable)
-            .subscribe {
-                adapter.items = it
-                binding.rvUsers.layoutManager?.scrollToPosition(0)
-            }
+        val searchDisposable = searchObservable.map { PeopleAction.SearchUsers(it) }.subscribe(getPresenter().input)
         compositeDisposable.add(searchDisposable)
 
         super.onCreateOptionsMenu(menu, inflater)
-    }
-
-    override fun onStart() {
-        super.onStart()
-        initToolbar()
     }
 
     override fun onDestroyView() {
@@ -103,28 +101,25 @@ class PeopleFragment : Fragment() {
     private fun initUI() {
         binding.rvUsers.adapter = adapter
 
-        updateUsers()
+        getPresenter().input.accept(PeopleAction.LoadUsers)
     }
 
-    private fun updateUsers() {
-        showShimmer()
-        val usersDisposable = userInteractor.getUsers()
-            .filter { it.isNotEmpty() }
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe (
-                { adapter.items = it },
-                { showError(it) }
-            )
-        compositeDisposable.add(usersDisposable)
+    override fun render(state: PeopleState) {
+        adapter.items = state.items
+
+        state.error?.let { throwable -> showError(throwable) }
+    }
+
+    override fun handleUiEffect(uiEffect: PeopleUiEffect) {
+        when (uiEffect) {
+            is PeopleUiEffect.SearchUsersError -> {
+                showError(uiEffect.error)
+            }
+        }
     }
 
     private fun showError(throwable: Throwable) {
-        adapter.items = listOf(ErrorUi())
         Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
-    }
-
-    private fun showShimmer() {
-        adapter.items = listOf(UserShimmerUi(), UserShimmerUi(), UserShimmerUi())
     }
 
     private fun onUserClick(holder: BaseViewHolder<*>) {
@@ -133,7 +128,7 @@ class PeopleFragment : Fragment() {
     }
 
     private fun onReloadClick() {
-        updateUsers()
+        getPresenter().input.accept(PeopleAction.LoadUsers)
     }
 
     interface PeopleFragmentListener {

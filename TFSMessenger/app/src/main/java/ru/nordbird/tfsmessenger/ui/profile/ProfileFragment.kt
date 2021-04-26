@@ -7,22 +7,25 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.databinding.FragmentProfileBinding
-import ru.nordbird.tfsmessenger.ui.people.PeopleInteractor
-import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
+import ru.nordbird.tfsmessenger.di.GlobalDI
+import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserPresence
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
-class ProfileFragment : Fragment() {
+class ProfileFragment : MviFragment<ProfileView, ProfilePresenter>(), ProfileView {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
+
+    override fun getPresenter(): ProfilePresenter = GlobalDI.INSTANCE.profilePresenter
+
+    override fun getMviView(): ProfileView = this
 
     private val compositeDisposable = CompositeDisposable()
     private var userId: Int = INVALID_USER_ID
@@ -44,10 +47,13 @@ class ProfileFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentProfileBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         initUI()
         initToolbar()
-
-        return binding.root
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -67,11 +73,7 @@ class ProfileFragment : Fragment() {
     private fun initUI() {
         binding.ivProfileAvatar.clipToOutline = true
 
-        val disposable = PeopleInteractor.getUser(userId)
-            .subscribe(
-                { setupUser(it) },
-                { showError(it) })
-        compositeDisposable.add(disposable)
+        getPresenter().input.accept(ProfileAction.LoadProfile(userId))
     }
 
     private fun setupUser(user: UserUi?) {
@@ -94,6 +96,18 @@ class ProfileFragment : Fragment() {
 
         Glide.with(this).load(user.avatar).into(binding.ivProfileAvatar)
         binding.sflProfile.hideShimmer()
+    }
+
+    override fun render(state: ProfileState) {
+        setupUser(state.item)
+    }
+
+    override fun handleUiEffect(uiEffect: ProfileUiEffect) {
+        when (uiEffect) {
+            is ProfileUiEffect.LoadUserError -> {
+                showError(uiEffect.error)
+            }
+        }
     }
 
     private fun initToolbar() {

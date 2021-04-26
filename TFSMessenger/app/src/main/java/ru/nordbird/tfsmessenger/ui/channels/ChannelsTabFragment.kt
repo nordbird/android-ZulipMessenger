@@ -6,21 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.setFragmentResultListener
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.snackbar.Snackbar
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.BehaviorSubject
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
+import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_ID
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
+import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
@@ -28,15 +25,12 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 
-class ChannelsTabFragment : Fragment() {
+class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), ChannelsView {
 
     private var _binding: FragmentChannelsTabBinding? = null
     private val binding get() = _binding!!
 
     private var tabType: ChannelsTabType = ChannelsTabType.ALL
-    private lateinit var channelsInteractor: ChannelsInteractor
-    private val compositeDisposable = CompositeDisposable()
-    private val searchObservable: BehaviorSubject<String> = BehaviorSubject.create()
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
@@ -53,6 +47,15 @@ class ChannelsTabFragment : Fragment() {
     private val holderFactory = TfsHolderFactory(clickListener = clickListener)
     private val adapter = Adapter<ViewTyped>(holderFactory)
 
+    override fun getPresenter(): ChannelsPresenter {
+        return when (tabType) {
+            ChannelsTabType.ALL -> GlobalDI.INSTANCE.streamPresenter
+            ChannelsTabType.SUBSCRIBED -> GlobalDI.INSTANCE.subscriptionPresenter
+        }
+    }
+
+    override fun getMviView(): ChannelsView = this
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -60,16 +63,18 @@ class ChannelsTabFragment : Fragment() {
             ChannelsTabType.ALL.ordinal -> tabType = ChannelsTabType.ALL
             ChannelsTabType.SUBSCRIBED.ordinal -> tabType = ChannelsTabType.SUBSCRIBED
         }
+    }
 
-        channelsInteractor = ChannelsInteractor(tabType)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentChannelsTabBinding.inflate(inflater, container, false)
 
-        val searchDisposable = channelsInteractor.filterStreams(searchObservable)
-            .subscribe {
-                adapter.items = it
-                binding.rvStreams.layoutManager?.scrollToPosition(0)
-            }
+        return binding.root
+    }
 
-        compositeDisposable.add(searchDisposable)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        initUI()
 
         val requestKey = REQUEST_FILTER_QUERY + tabType
         setFragmentResultListener(requestKey) { _, bundle ->
@@ -77,37 +82,21 @@ class ChannelsTabFragment : Fragment() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentChannelsTabBinding.inflate(inflater, container, false)
-        initUI()
+    override fun render(state: ChannelsState) {
+        adapter.items = state.items
 
-        return binding.root
+        state.error?.let { throwable -> showError(throwable) }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        compositeDisposable.clear()
-    }
-
-    private fun updateStreams() {
-        showShimmer()
-        val streamDisposable = channelsInteractor.getStreams()
-            .filter { it.isNotEmpty() }
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { adapter.items = it },
-                { showError(it) }
-            )
-
-        compositeDisposable.add(streamDisposable)
-    }
-
-    private fun showShimmer() {
-        adapter.items = listOf(StreamShimmerUi(), StreamShimmerUi(), StreamShimmerUi())
+    override fun handleUiEffect(uiEffect: ChannelsUiEffect) {
+        when (uiEffect) {
+            is ChannelsUiEffect.SearchStreamsError -> {
+                showError(uiEffect.error)
+            }
+        }
     }
 
     private fun showError(throwable: Throwable) {
-        adapter.items = listOf(ErrorUi())
         Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
@@ -119,19 +108,16 @@ class ChannelsTabFragment : Fragment() {
         binding.rvStreams.adapter = adapter
         binding.rvStreams.addItemDecoration(divider)
 
-        updateStreams()
+        getPresenter().input.accept(ChannelsAction.LoadStreams)
     }
 
     private fun onStreamClick(holder: BaseViewHolder<*>) {
         val stream = adapter.items[holder.absoluteAdapterPosition] as StreamUi
-        val streamDisposable = channelsInteractor.updateStreamTopics(stream.id)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { adapter.items = it },
-                { showError(it) }
-            )
-
-        compositeDisposable.add(streamDisposable)
+        if (stream.topicExpanded) {
+            getPresenter().input.accept(ChannelsAction.CollapseTopics(stream.id))
+        } else {
+            getPresenter().input.accept(ChannelsAction.ExpandTopics(stream.id))
+        }
     }
 
     private fun onTopicClick(holder: BaseViewHolder<*>) {
@@ -141,7 +127,6 @@ class ChannelsTabFragment : Fragment() {
         setFragmentResult(
             REQUEST_OPEN_TOPIC,
             bundleOf(
-                REQUEST_OPEN_TOPIC_STREAM_ID to stream.id,
                 REQUEST_OPEN_TOPIC_STREAM_NAME to stream.name,
                 REQUEST_OPEN_TOPIC_NAME to topic.name,
                 REQUEST_OPEN_TOPIC_COLOR to topic.color
@@ -150,14 +135,14 @@ class ChannelsTabFragment : Fragment() {
     }
 
     private fun filterStreams(query: String) {
-        searchObservable.onNext(query)
+        getPresenter().input.accept(ChannelsAction.SearchStreams(query))
     }
 
     private fun onReloadClick() {
-        updateStreams()
+        getPresenter().input.accept(ChannelsAction.LoadStreams)
     }
 
-    private fun getStream(streamId: String): StreamUi? {
+    private fun getStream(streamId: Int): StreamUi? {
         return adapter.items.filterIsInstance<StreamUi>().firstOrNull { it.id == streamId }
     }
 
