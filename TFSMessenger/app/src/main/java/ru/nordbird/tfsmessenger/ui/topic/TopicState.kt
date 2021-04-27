@@ -1,11 +1,13 @@
 package ru.nordbird.tfsmessenger.ui.topic
 
+import ru.nordbird.tfsmessenger.data.mapper.MessageUiToViewTypedMapper
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 
 data class TopicState(
     val oldestMessageId: Int = Int.MAX_VALUE,
     val items: List<ViewTyped> = listOf(TopicShimmerUi(), TopicShimmerUi()),
+    val messages: List<MessageUi> = emptyList(),
     val error: Throwable? = null,
     val isLoading: Boolean = false,
     val needScroll: Boolean = false
@@ -26,10 +28,19 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         )
 
         is TopicAction.MessagesLoaded -> {
-            val minId = minOf(oldestMessageId, topicAction.messages.filterIsInstance<MessageUi>().minOfOrNull { it.id } ?: oldestMessageId)
+            val oldList = messages.filterNot { messageExists(topicAction.newMessages, it) }
+            val newList = mutableListOf<MessageUi>()
+
+            newList.addAll(oldList)
+            newList.addAll(topicAction.newMessages)
+            newList.sortBy { it.id }
+
+            val mapper = MessageUiToViewTypedMapper()
+            val minId = minOf(oldestMessageId, topicAction.newMessages.minOfOrNull { it.id } ?: oldestMessageId)
             copy(
                 oldestMessageId = minId,
-                items = topicAction.messages,
+                items = mapper.transform(newList),
+                messages = newList,
                 isLoading = false
             )
         }
@@ -55,4 +66,8 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
 
         is TopicAction.FileDownloaded -> this
     }
+}
+
+private fun messageExists(list: List<MessageUi>, message: MessageUi): Boolean {
+    return list.firstOrNull { it.id == message.id || (it.localId != 0 && it.localId == message.localId) } != null
 }

@@ -10,12 +10,14 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 
 class MessageOutUi(
     id: Int,
+    localId: Int,
     authorId: Int,
     text: String,
     reactions: List<ReactionGroup>,
     link: String,
+    timestamp_ms: Long,
     override val viewType: Int = R.layout.item_message_out
-) : MessageUi(id, authorId, text, reactions, link)
+) : MessageUi(id, localId, authorId, text, reactions, link, timestamp_ms)
 
 class MessageOutViewHolder(
     view: View,

@@ -63,17 +63,18 @@ class MessageRepository(
             .onErrorReturnItem(emptyList())
     }
 
-    fun addReaction(message: Message, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
-        val list = message.reactions.toMutableList()
-        list.add(Reaction(reactionCode.toString(16), reactionName, currentUserId))
-
+    fun addReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
         return Single.concat(
-            dbService.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = list)) },
-            apiService.addMessageReaction(message.id, reactionName).flatMap { response ->
+            dbService.messageDao().getById(messageId).map { message ->
+                saveToDatabase(addReaction(message, currentUserId, reactionCode, reactionName))
+            },
+            apiService.addMessageReaction(messageId, reactionName).flatMap { response ->
                 if (response.result == RESPONSE_RESULT_SUCCESS) {
-                    dbService.messageDao().getById(message.id)
+                    dbService.messageDao().getById(messageId)
                 } else {
-                    dbService.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = message.reactions)) }
+                    dbService.messageDao().getById(messageId).map { message ->
+                        saveToDatabase(removeReaction(message, currentUserId, reactionName))
+                    }
                 }
             }
         )
@@ -81,16 +82,18 @@ class MessageRepository(
             .onErrorReturnItem(emptyList())
     }
 
-    fun removeReaction(message: Message, currentUserId: Int, reactionName: String): Flowable<List<Message>> {
-        val list = message.reactions.filterNot { it.userId == currentUserId && it.name == reactionName }
-
+    fun removeReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
         return Single.concat(
-            dbService.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = list)) },
-            apiService.removeMessageReaction(message.id, reactionName).flatMap { response ->
+            dbService.messageDao().getById(messageId).map { message ->
+                saveToDatabase(removeReaction(message, currentUserId, reactionName))
+            },
+            apiService.removeMessageReaction(messageId, reactionName).flatMap { response ->
                 if (response.result == RESPONSE_RESULT_SUCCESS) {
-                    dbService.messageDao().getById(message.id)
+                    dbService.messageDao().getById(messageId)
                 } else {
-                    dbService.messageDao().getById(message.id).map { saveToDatabase(it.copy(reactions = message.reactions)) }
+                    dbService.messageDao().getById(messageId).map { message ->
+                        saveToDatabase(addReaction(message, currentUserId, reactionCode, reactionName))
+                    }
                 }
             }
         )
@@ -165,6 +168,17 @@ class MessageRepository(
         val newMessage = message.copy(id = newMessageId, localId = message.localId)
         dbService.messageDao().insert(newMessage)
         return newMessage
+    }
+
+    private fun addReaction(message: MessageDb, senderId: Int, reactionCode: Int, reactionName: String): MessageDb {
+        val list = message.reactions.toMutableList()
+        list.add(Reaction(reactionCode.toString(16), reactionName, senderId))
+        return message.copy(reactions = list)
+    }
+
+    private fun removeReaction(message: MessageDb, senderId: Int, reactionName: String): MessageDb {
+        val list = message.reactions.filterNot { it.userId == senderId && it.name == reactionName }
+        return message.copy(reactions = list)
     }
 
     private fun saveToDatabase(streamName: String, topicName: String, messages: List<MessageDb>) {

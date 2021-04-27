@@ -14,10 +14,12 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
 open class MessageUi(
     val id: Int,
+    val localId: Int = 0,
     private val authorId: Int,
     val text: String,
     val reactions: List<ReactionGroup>,
-    val link: String
+    val link: String,
+    val timestamp_ms: Long
 ) : ViewTyped {
 
     override val uid = id.toString()

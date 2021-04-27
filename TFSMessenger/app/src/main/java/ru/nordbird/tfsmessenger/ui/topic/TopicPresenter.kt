@@ -115,28 +115,28 @@ class TopicPresenter(
         return topicInteractor.loadMessages(streamName, topicName, messageId)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { items -> TopicAction.MessagesLoaded(messages = items) }
+            .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
     }
 
     private fun sendMessage(streamName: String, topicName: String, content: String): Observable<TopicAction> {
         return topicInteractor.addMessage(streamName, topicName, content)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { items -> TopicAction.MessagesLoaded(messages = items) }
+            .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
     }
 
     private fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Observable<TopicAction> {
         return topicInteractor.updateReaction(message, currentUserId, reactionCode)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { items -> TopicAction.MessagesLoaded(messages = items) }
+            .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
     }
 
     private fun sendFile(streamName: String, topicName: String, name: String, stream: InputStream?): Observable<TopicAction> {
         return topicInteractor.sendFile(streamName, topicName, name, stream)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { items -> TopicAction.MessagesLoaded(messages = items) }
+            .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
     }
 
     private fun downloadFile(url: String): Observable<TopicAction> {

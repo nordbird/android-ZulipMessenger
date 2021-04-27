@@ -5,10 +5,9 @@ import io.reactivex.Single
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.emojiSet.Emoji
-import ru.nordbird.tfsmessenger.data.mapper.MessageToViewTypedMapper
+import ru.nordbird.tfsmessenger.data.mapper.MessageToMessageUiMapper
 import ru.nordbird.tfsmessenger.data.model.Message
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
-import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
 import java.io.InputStream
 
@@ -20,58 +19,56 @@ class TopicInteractor(
         private const val COUNT_MESSAGES_PER_REQUEST = 20
     }
 
-    private val messageMapper = MessageToViewTypedMapper(ZulipAuth.AUTH_ID)
+    private val messageMapper = MessageToMessageUiMapper(ZulipAuth.AUTH_ID)
 
-    private val items = mutableListOf<Message>()
-
-    fun loadMessages(streamName: String, topicName: String, messageId: Int): Flowable<List<ViewTyped>> {
+    fun loadMessages(streamName: String, topicName: String, messageId: Int): Flowable<List<MessageUi>> {
         return messageRepository.getMessages(streamName, topicName, messageId, COUNT_MESSAGES_PER_REQUEST)
-            .map { transformMessages(it) }
+            .map { messageMapper.transform(it) }
     }
 
-    fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<ViewTyped>> {
+    fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<MessageUi>> {
         return messageRepository.addMessage(streamName, topicName, ZulipAuth.AUTH_ID, text)
-            .map { transformMessages(it) }
+            .map { messageMapper.transform(it) }
     }
 
-    fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<ViewTyped>> {
-        val msg = items.first { it.id == message.id }
-        val baseReaction = EMOJI_SET.firstOrNull { it.getCodeString() == reactionCode } ?: Emoji("", "", 0)
-        val reaction = message.reactions.firstOrNull { it.userIdList.contains(currentUserId) }
+    fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<MessageUi>> {
+        val clickedReaction = EMOJI_SET.firstOrNull { it.getCodeString() == reactionCode } ?: Emoji("", "", 0)
+        val selectedReactionName = message.reactions.firstOrNull { it.userIdList.contains(currentUserId) }?.name
 
-        return if (reaction != null) {
-            if (reaction.name != baseReaction.name) {
-                Flowable.concat(
-                    messageRepository.removeReaction(msg, currentUserId, reaction.name),
-                    messageRepository.addReaction(msg, currentUserId, baseReaction.code, baseReaction.name)
-                )
-            } else
-                messageRepository.removeReaction(msg, currentUserId, reaction.name)
+        return if (selectedReactionName != null) {
+            val selectedReaction = EMOJI_SET.firstOrNull { it.name == selectedReactionName } ?: Emoji("", "", 0)
+
+            if (selectedReaction.name != clickedReaction.name)
+                replaceReaction(message.id, currentUserId, selectedReaction.code, selectedReaction.name)
+            else
+                removeReaction(message.id, currentUserId, selectedReaction.code, selectedReaction.name)
         } else {
-            messageRepository.addReaction(msg, currentUserId, baseReaction.code, baseReaction.name)
+            addReaction(message.id, currentUserId, clickedReaction.code, clickedReaction.name)
         }
-            .map { transformMessages(it) }
+            .map { messageMapper.transform(it) }
     }
 
-    fun sendFile(streamName: String, topicName: String, name: String, stream: InputStream?): Flowable<List<ViewTyped>> {
+    fun sendFile(streamName: String, topicName: String, name: String, stream: InputStream?): Flowable<List<MessageUi>> {
         return messageRepository.sendFile(streamName, topicName, ZulipAuth.AUTH_ID, name, stream)
-            .map { transformMessages(it) }
+            .map { messageMapper.transform(it) }
     }
 
     fun downloadFile(url: String): Single<InputStream> {
         return messageRepository.downloadFile(url)
     }
 
-    private fun transformMessages(newList: List<Message>): List<ViewTyped> {
-        val oldList = items.filterNot { messageExists(newList, it) }
-        items.clear()
-        items.addAll(oldList)
-        items.addAll(newList)
-        items.sortBy { it.id }
-        return messageMapper.transform(items)
+    private fun addReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
+        return messageRepository.addReaction(messageId, currentUserId, reactionCode, reactionName)
     }
 
-    private fun messageExists(list: List<Message>, message: Message): Boolean {
-        return list.firstOrNull { it.id == message.id || (it.localId != 0 && it.localId == message.localId) } != null
+    private fun removeReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
+        return messageRepository.removeReaction(messageId, currentUserId, reactionCode, reactionName)
+    }
+
+    private fun replaceReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
+        return Flowable.concat(
+            removeReaction(messageId, currentUserId, reactionCode, reactionName),
+            addReaction(messageId, currentUserId, reactionCode, reactionName)
+        )
     }
 }
