@@ -10,6 +10,7 @@ import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.setFragmentResultListener
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.snackbar.Snackbar
+import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
@@ -28,6 +29,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
     private val binding get() = _binding!!
 
     private var tabType: ChannelsTabType = ChannelsTabType.ALL
+    private val compositeDisposable = CompositeDisposable()
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
@@ -44,6 +46,8 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
     private val holderFactory = TfsHolderFactory(clickListener = clickListener)
     private val diffUtilCallback = DiffUtilCallback<ViewTyped>()
     private val adapter = Adapter(holderFactory, diffUtilCallback)
+
+    private var lastState: ChannelsState = ChannelsState()
 
     override fun getPresenter(): ChannelsPresenter {
         return when (tabType) {
@@ -80,9 +84,14 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
         }
     }
 
-    override fun render(state: ChannelsState) {
-        adapter.items = state.items
+    override fun onDestroyView() {
+        super.onDestroyView()
+        compositeDisposable.clear()
+    }
 
+    override fun render(state: ChannelsState) {
+        lastState = state
+        adapter.items = state.items
         state.error?.let { throwable -> showError(throwable) }
     }
 
@@ -107,6 +116,13 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
         binding.rvStreams.addItemDecoration(divider)
 
         getPresenter().input.accept(ChannelsAction.LoadStreams)
+
+        val disposable = adapter.updateAction.subscribe {
+            if (lastState.needScroll) {
+                binding.rvStreams.layoutManager?.scrollToPosition(0)
+            }
+        }
+        compositeDisposable.add(disposable)
     }
 
     private fun onStreamClick(holder: BaseViewHolder<*>) {

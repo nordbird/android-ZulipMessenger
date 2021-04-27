@@ -11,7 +11,8 @@ data class ChannelsState(
     val items: List<ViewTyped> = listOf(StreamShimmerUi(), StreamShimmerUi(), StreamShimmerUi()),
     val streams: List<StreamUi> = emptyList(),
     val topics: List<TopicUi> = emptyList(),
-    val error: Throwable? = null
+    val error: Throwable? = null,
+    val needScroll: Boolean = false
 )
 
 internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState {
@@ -20,7 +21,8 @@ internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState
             val list = if (streams.isEmpty()) listOf(StreamShimmerUi(), StreamShimmerUi(), StreamShimmerUi()) else items
             copy(
                 items = list,
-                error = null
+                error = null,
+                needScroll = false
             )
         }
 
@@ -42,10 +44,18 @@ internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState
             filterQuery = channelsAction.query
         )
 
+        is ChannelsAction.StreamsFound -> copy(
+            streams = channelsAction.streams,
+            items = combineItems(channelsAction.streams, topics, filterQuery),
+            error = null,
+            needScroll = true
+        )
+
         ChannelsAction.SearchStreamsStop -> this
 
         is ChannelsAction.ExpandTopics -> copy(
-            error = null
+            error = null,
+            needScroll = false
         )
 
         is ChannelsAction.TopicsLoaded -> {
@@ -54,7 +64,8 @@ internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState
             copy(
                 topics = topicList,
                 items = combineItems(streams, topicList, filterQuery),
-                error = null
+                error = null,
+                needScroll = false
             )
         }
 
@@ -63,7 +74,8 @@ internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState
             copy(
                 topics = topicList,
                 items = combineItems(streams, topicList, filterQuery),
-                error = null
+                error = null,
+                needScroll = false
             )
         }
     }

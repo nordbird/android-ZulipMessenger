@@ -39,6 +39,8 @@ class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
     private val diffUtilCallback = DiffUtilCallback<ViewTyped>()
     private val adapter = Adapter(holderFactory, diffUtilCallback)
 
+    private var lastState: PeopleState = PeopleState()
+
     override fun getPresenter(): PeoplePresenter = GlobalDI.INSTANCE.peoplePresenter
 
     override fun getMviView(): PeopleView = this
@@ -100,11 +102,18 @@ class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
         binding.rvUsers.adapter = adapter
 
         getPresenter().input.accept(PeopleAction.LoadUsers)
+
+        val disposable = adapter.updateAction.subscribe {
+            if (lastState.needScroll) {
+                binding.rvUsers.layoutManager?.scrollToPosition(0)
+            }
+        }
+        compositeDisposable.add(disposable)
     }
 
     override fun render(state: PeopleState) {
+        lastState = state
         adapter.items = state.items
-
         state.error?.let { throwable -> showError(throwable) }
     }
 

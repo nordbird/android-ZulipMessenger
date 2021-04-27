@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
+import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
@@ -43,6 +44,8 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
 
     private var _binding: FragmentTopicBinding? = null
     private val binding get() = _binding!!
+
+    private val compositeDisposable = CompositeDisposable()
 
     private var streamName: String = ""
     private var topicName: String = ""
@@ -80,6 +83,8 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
     private val diffUtilCallback = DiffUtilCallback<ViewTyped>()
     private val adapter = Adapter(holderFactory, diffUtilCallback)
 
+    private var lastState: TopicState = TopicState()
+
     override fun getPresenter(): TopicPresenter = GlobalDI.INSTANCE.topicPresenter
 
     override fun getMviView(): TopicView = this
@@ -116,6 +121,11 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        compositeDisposable.clear()
+    }
+
     private fun initUI() {
         binding.tvTopicTitle.text = topicName
         val linearLayoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, true)
@@ -137,14 +147,17 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
             updateUI()
         }
 
+        val disposable = adapter.updateAction.subscribe {
+            if (lastState.needScroll) {
+                binding.rvChat.layoutManager?.scrollToPosition(0)
+            }
+        }
+        compositeDisposable.add(disposable)
     }
 
     override fun render(state: TopicState) {
+        lastState = state
         adapter.items = state.items
-        if (state.needScroll) {
-            binding.rvChat.layoutManager?.scrollToPosition(0)
-        }
-
         state.error?.let { throwable -> showError(throwable) }
     }
 

@@ -13,6 +13,8 @@ sealed class ChannelsAction {
 
     data class SearchStreams(val query: String) : ChannelsAction()
 
+    data class StreamsFound(val streams: List<StreamUi>) : ChannelsAction()
+
     object SearchStreamsStop : ChannelsAction()
 
     data class ExpandTopics(val streamId: Int) : ChannelsAction()

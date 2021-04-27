@@ -52,10 +52,10 @@ class ChannelsPresenter(
     }
 
     private fun loadStreams(): ChannelsSideEffect {
-        return { actions, state ->
+        return { actions, _ ->
             actions.ofType(ChannelsAction.LoadStreams::class.java)
                 .switchMap {
-                    searchStreams(state().filterQuery)
+                    getStreams()
                         .onErrorReturn { error -> ChannelsAction.ErrorLoadStreams(error) }
                 }
         }
@@ -87,11 +87,18 @@ class ChannelsPresenter(
         }
     }
 
-    private fun searchStreams(query: String = ""): Observable<ChannelsAction> {
-        return channelsInteractor.loadStreams(query)
+    private fun getStreams(): Observable<ChannelsAction> {
+        return channelsInteractor.loadStreams()
             .subscribeOn(Schedulers.io())
             .toObservable()
             .map { items -> ChannelsAction.StreamsLoaded(streams = items) }
+    }
+
+    private fun searchStreams(query: String): Observable<ChannelsAction> {
+        return channelsInteractor.loadStreams(query)
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { items -> ChannelsAction.StreamsFound(streams = items) }
     }
 
     private fun loadTopics(streamId: Int): Observable<ChannelsAction> {
