@@ -55,7 +55,7 @@ class PeoplePresenter(
         return { actions, state ->
             actions.ofType(PeopleAction.LoadUsers::class.java)
                 .switchMap {
-                    searchUsers(state().filterQuery)
+                    getUsers()
                         .onErrorReturn { error -> PeopleAction.ErrorLoadUsers(error) }
                 }
         }
@@ -77,11 +77,18 @@ class PeoplePresenter(
         }
     }
 
-    private fun searchUsers(query: String = ""): Observable<PeopleAction> {
+    private fun getUsers(): Observable<PeopleAction> {
+        return peopleInteractor.loadUsers()
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { items -> PeopleAction.UsersLoaded(users = items) }
+    }
+
+    private fun searchUsers(query: String): Observable<PeopleAction> {
         return peopleInteractor.loadUsers(query)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { items -> PeopleAction.UsersLoaded(items = items) }
+            .map { items -> PeopleAction.UsersFound(users = items) }
     }
 
 }

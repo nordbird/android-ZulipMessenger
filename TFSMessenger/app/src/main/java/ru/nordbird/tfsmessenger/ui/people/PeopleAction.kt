@@ -6,11 +6,13 @@ sealed class PeopleAction {
 
     object LoadUsers : PeopleAction()
 
-    data class UsersLoaded(val items: List<UserUi>) : PeopleAction()
+    data class UsersLoaded(val users: List<UserUi>) : PeopleAction()
 
     data class ErrorLoadUsers(val error: Throwable) : PeopleAction()
 
     data class SearchUsers(val query: String) : PeopleAction()
+
+    data class UsersFound(val users: List<UserUi>) : PeopleAction()
 
     object SearchUsersStop : PeopleAction()
 

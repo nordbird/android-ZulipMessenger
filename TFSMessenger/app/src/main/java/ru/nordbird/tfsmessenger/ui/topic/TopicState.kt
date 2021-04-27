@@ -28,19 +28,13 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         )
 
         is TopicAction.MessagesLoaded -> {
-            val oldList = messages.filterNot { messageExists(topicAction.newMessages, it) }
-            val newList = mutableListOf<MessageUi>()
-
-            newList.addAll(oldList)
-            newList.addAll(topicAction.newMessages)
-            newList.sortBy { it.id }
-
             val mapper = MessageUiToViewTypedMapper()
+            val list = combineMessages(messages, topicAction.newMessages)
             val minId = minOf(oldestMessageId, topicAction.newMessages.minOfOrNull { it.id } ?: oldestMessageId)
             copy(
                 oldestMessageId = minId,
-                items = mapper.transform(newList),
-                messages = newList,
+                items = mapper.transform(list),
+                messages = list,
                 isLoading = false
             )
         }
@@ -66,6 +60,17 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
 
         is TopicAction.FileDownloaded -> this
     }
+}
+
+private fun combineMessages(oldMessages: List<MessageUi>, newMessages: List<MessageUi>): List<MessageUi> {
+    val oldList = oldMessages.filterNot { messageExists(newMessages, it) }
+    val newList = mutableListOf<MessageUi>()
+
+    newList.addAll(oldList)
+    newList.addAll(newMessages)
+    newList.sortBy { it.id }
+
+    return newList
 }
 
 private fun messageExists(list: List<MessageUi>, message: MessageUi): Boolean {
