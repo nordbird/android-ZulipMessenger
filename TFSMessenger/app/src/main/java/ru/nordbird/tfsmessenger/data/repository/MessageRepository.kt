@@ -9,9 +9,10 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import ru.nordbird.tfsmessenger.data.api.MessageQuery
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.api.ZulipService
-import ru.nordbird.tfsmessenger.data.dao.AppDatabase
+import ru.nordbird.tfsmessenger.data.dao.MessageDao
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
 import ru.nordbird.tfsmessenger.data.mapper.MessageNwToMessageDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
@@ -20,7 +21,7 @@ import java.util.*
 
 class MessageRepository(
     private val apiService: ZulipService,
-    private val dbService: AppDatabase
+    private val messageDao: MessageDao
 ) {
     companion object {
         private const val MESSAGE_ANCHOR = "newest"
@@ -63,36 +64,6 @@ class MessageRepository(
             .onErrorReturnItem(emptyList())
     }
 
-    fun addReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
-        return Single.concat(
-            addDatabaseReaction(messageId, currentUserId, reactionCode, reactionName),
-            apiService.addMessageReaction(messageId, reactionName).flatMap { response ->
-                if (response.result == RESPONSE_RESULT_SUCCESS) {
-                    dbService.messageDao().getById(messageId)
-                } else {
-                    removeDatabaseReaction(messageId, currentUserId, reactionName)
-                }
-            }
-        )
-            .map { dbMessageMapper.transform(listOf(it)) }
-            .onErrorReturnItem(emptyList())
-    }
-
-    fun removeReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
-        return Single.concat(
-            removeDatabaseReaction(messageId, currentUserId, reactionName),
-            apiService.removeMessageReaction(messageId, reactionName).flatMap { response ->
-                if (response.result == RESPONSE_RESULT_SUCCESS) {
-                    dbService.messageDao().getById(messageId)
-                } else {
-                    addDatabaseReaction(messageId, currentUserId, reactionCode, reactionName)
-                }
-            }
-        )
-            .map { dbMessageMapper.transform(listOf(it)) }
-            .onErrorReturnItem(emptyList())
-    }
-
     fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>> {
         val bytes = stream?.use {
             it.readBytes()
@@ -114,18 +85,7 @@ class MessageRepository(
     }
 
     private fun getNetworkMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
-        val narrow = listOf(
-            MessagesNarrowRequest("stream", streamName),
-            MessagesNarrowRequest("topic", topicName)
-        )
-
-        val anchor = if (lastMessageId > 0) lastMessageId.toString() else MESSAGE_ANCHOR
-        val query = mapOf(
-            "anchor" to anchor,
-            "num_before" to count.toString(),
-            "num_after" to MESSAGE_AFTER_ID,
-            "narrow" to Json.encodeToString(narrow)
-        )
+        val query = MessageQuery.getMessages(streamName, topicName, lastMessageId, count)
 
         return apiService.getMessages(query)
             .observeOn(Schedulers.computation())
@@ -142,7 +102,7 @@ class MessageRepository(
     }
 
     private fun getDatabaseMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
-        return dbService.messageDao().getAll(streamName, topicName, lastMessageId, count)
+        return messageDao.getTopicMessages(streamName, topicName, lastMessageId, count)
     }
 
     private fun addNetworkMessage(streamName: String, topicName: String, text: String): Single<MessageResponse> {
@@ -156,34 +116,19 @@ class MessageRepository(
     }
 
     private fun replaceMessage(message: MessageDb, newMessageId: Int): MessageDb {
-        dbService.messageDao().deleteById(message.id)
+        messageDao.deleteById(message.id)
         val newMessage = message.copy(id = newMessageId, localId = message.localId)
-        dbService.messageDao().insert(newMessage)
+        messageDao.insert(newMessage)
         return newMessage
     }
 
-    private fun addDatabaseReaction(messageId: Int, senderId: Int, reactionCode: Int, reactionName: String): Single<MessageDb> {
-        return dbService.messageDao().getById(messageId).map { message ->
-            val list = message.reactions.toMutableList()
-            list.add(Reaction(reactionCode.toString(16), reactionName, senderId))
-            saveToDatabase(message.copy(reactions = list))
-        }
-    }
-
-    private fun removeDatabaseReaction(messageId: Int, senderId: Int, reactionName: String): Single<MessageDb> {
-        return dbService.messageDao().getById(messageId).map { message ->
-            val list = message.reactions.filterNot { it.userId == senderId && it.name == reactionName }
-            saveToDatabase(message.copy(reactions = list))
-        }
-    }
-
     private fun saveToDatabase(streamName: String, topicName: String, messages: List<MessageDb>) {
-        dbService.messageDao().insertAll(messages)
-        dbService.messageDao().deleteOverLimit(streamName, topicName, MESSAGES_MAX_COUNT)
+        messageDao.insertAll(messages)
+        messageDao.deleteOverLimit(streamName, topicName, MESSAGES_MAX_COUNT)
     }
 
     private fun saveToDatabase(message: MessageDb): MessageDb {
-        dbService.messageDao().insert(message)
+        messageDao.insert(message)
         return message
     }
 }

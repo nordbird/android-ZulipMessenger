@@ -52,7 +52,7 @@ class PeoplePresenter(
     }
 
     private fun loadUsers(): PeopleSideEffect {
-        return { actions, state ->
+        return { actions, _ ->
             actions.ofType(PeopleAction.LoadUsers::class.java)
                 .switchMap {
                     getUsers()

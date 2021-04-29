@@ -4,7 +4,7 @@ import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
 import ru.nordbird.tfsmessenger.data.api.ZulipService
-import ru.nordbird.tfsmessenger.data.dao.AppDatabase
+import ru.nordbird.tfsmessenger.data.dao.UserDao
 import ru.nordbird.tfsmessenger.data.mapper.UserDbToUserMapper
 import ru.nordbird.tfsmessenger.data.mapper.UserNwToUserDbMapper
 import ru.nordbird.tfsmessenger.data.model.PresenceResponse
@@ -13,7 +13,7 @@ import ru.nordbird.tfsmessenger.data.model.UserDb
 
 class UserRepository(
     private val apiService: ZulipService,
-    private val dbService: AppDatabase
+    private val userDao: UserDao
 ) {
 
     private val nwUserMapper = UserNwToUserDbMapper()
@@ -65,11 +65,11 @@ class UserRepository(
     }
 
     private fun getDatabaseUsers(query: String = ""): Single<List<UserDb>> {
-        return dbService.userDao().getAll(query)
+        return userDao.getUsers(query)
     }
 
     private fun getDatabaseUser(id: Int): Single<UserDb> {
-        return dbService.userDao().getById(id)
+        return userDao.getById(id)
     }
 
     private fun addPresence(user: UserDb, presenceResponse: PresenceResponse): UserDb {
@@ -78,7 +78,7 @@ class UserRepository(
     }
 
     private fun saveToDatabase(users: List<UserDb>) {
-        dbService.userDao().insertAll(users)
+        userDao.insertAll(users)
     }
 
 }

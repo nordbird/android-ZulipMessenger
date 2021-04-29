@@ -7,8 +7,8 @@ import ru.nordbird.tfsmessenger.data.model.MessageDb
 @Dao
 interface MessageDao {
 
-    @Query("SELECT * FROM messages WHERE stream_name = :streamName and topic_name = :topicName and id < :lastMessageId ORDER BY id DESC LIMIT :count")
-    fun getAll(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>>
+    @Query("SELECT * FROM messages WHERE stream_name = :streamName and topic_name = :topicName and id <= :lastMessageId ORDER BY id DESC LIMIT :count")
+    fun getTopicMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>>
 
     @Query("SELECT * FROM messages WHERE id = :messageId")
     fun getById(messageId: Int): Single<MessageDb>
