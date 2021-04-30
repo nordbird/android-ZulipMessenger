@@ -17,9 +17,13 @@ sealed class ChannelsAction {
 
     object SearchStreamsStop : ChannelsAction()
 
-    data class ExpandTopics(val streamId: Int) : ChannelsAction()
+    data class ExpandTopics(val streamId: Int, val streamName: String) : ChannelsAction()
 
-    data class CollapseTopics(val streamId: Int) : ChannelsAction()
+    data class CollapseTopics(val streamName: String) : ChannelsAction()
 
     data class TopicsLoaded(val topics: List<TopicUi>) : ChannelsAction()
+
+    data class TopicUnreadMessagesLoaded(val streamName: String, val topicName: String, val unreadMessageCount: Int) : ChannelsAction()
+
+    object LoadTopicUnreadMessagesStop : ChannelsAction()
 }

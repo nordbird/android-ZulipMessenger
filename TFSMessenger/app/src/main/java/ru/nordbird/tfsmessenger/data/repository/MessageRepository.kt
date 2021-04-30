@@ -3,9 +3,6 @@ package ru.nordbird.tfsmessenger.data.repository
 import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.schedulers.Schedulers
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -24,9 +21,6 @@ class MessageRepository(
     private val messageDao: MessageDao
 ) {
     companion object {
-        private const val MESSAGE_ANCHOR = "newest"
-        private const val MESSAGE_TYPE_STREAM = "stream"
-        private const val MESSAGE_AFTER_ID = "0"
         private const val MESSAGES_MAX_COUNT = 50
     }
 
@@ -41,6 +35,13 @@ class MessageRepository(
             getNetworkMessages(streamName, topicName, lastMessageId, count)
         )
             .map { dbMessageMapper.transform(it) }
+    }
+
+    fun getUnreadMessageCount(streamName: String, topicName: String): Single<Int> {
+        val query = MessageQuery.getUnreadMessages(streamName, topicName)
+
+        return apiService.getMessages(query)
+            .map { it.messages.size }
     }
 
     fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {
@@ -88,7 +89,6 @@ class MessageRepository(
         val query = MessageQuery.getMessages(streamName, topicName, lastMessageId, count)
 
         return apiService.getMessages(query)
-            .observeOn(Schedulers.computation())
             .map { nwMessageMapper.transform(it.messages) }
             .flatMapObservable { Observable.fromIterable(it) }
             .map { message ->
@@ -106,12 +106,7 @@ class MessageRepository(
     }
 
     private fun addNetworkMessage(streamName: String, topicName: String, text: String): Single<MessageResponse> {
-        val query = mapOf(
-            "type" to MESSAGE_TYPE_STREAM,
-            "to" to streamName,
-            "content" to text,
-            "topic" to topicName
-        )
+        val query = MessageQuery.addMessage(streamName, topicName, text)
         return apiService.sendMessage(query)
     }
 

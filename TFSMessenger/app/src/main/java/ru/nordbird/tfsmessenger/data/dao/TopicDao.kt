@@ -7,8 +7,8 @@ import ru.nordbird.tfsmessenger.data.model.TopicDb
 @Dao
 interface TopicDao {
 
-    @Query("SELECT * FROM topics WHERE stream_id = :streamId")
-    fun getByStreamId(streamId: Int): Single<List<TopicDb>>
+    @Query("SELECT * FROM topics WHERE stream_name = :streamName")
+    fun getByStreamName(streamName: String): Single<List<TopicDb>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(topics: List<TopicDb>)

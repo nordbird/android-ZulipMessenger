@@ -97,7 +97,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
 
     override fun handleUiEffect(uiEffect: ChannelsUiEffect) {
         when (uiEffect) {
-            is ChannelsUiEffect.SearchStreamsError -> {
+            is ChannelsUiEffect.ActionError -> {
                 showError(uiEffect.error)
             }
         }
@@ -128,15 +128,15 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
     private fun onStreamClick(holder: BaseViewHolder<*>) {
         val stream = adapter.items[holder.absoluteAdapterPosition] as StreamUi
         if (stream.topicExpanded) {
-            getPresenter().input.accept(ChannelsAction.CollapseTopics(stream.id))
+            getPresenter().input.accept(ChannelsAction.CollapseTopics(stream.name))
         } else {
-            getPresenter().input.accept(ChannelsAction.ExpandTopics(stream.id))
+            getPresenter().input.accept(ChannelsAction.ExpandTopics(stream.id, stream.name))
         }
     }
 
     private fun onTopicClick(holder: BaseViewHolder<*>) {
         val topic = adapter.items[holder.absoluteAdapterPosition] as TopicUi
-        val stream = getStream(topic.streamId) ?: return
+        val stream = getStream(topic.streamName) ?: return
 
         setFragmentResult(
             REQUEST_OPEN_TOPIC,
@@ -156,8 +156,8 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
         getPresenter().input.accept(ChannelsAction.LoadStreams)
     }
 
-    private fun getStream(streamId: Int): StreamUi? {
-        return adapter.items.filterIsInstance<StreamUi>().firstOrNull { it.id == streamId }
+    private fun getStream(streamName: String): StreamUi? {
+        return adapter.items.filterIsInstance<StreamUi>().firstOrNull { it.name == streamName }
     }
 
     companion object {

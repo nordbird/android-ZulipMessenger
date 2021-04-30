@@ -17,30 +17,29 @@ class TopicRepository(
     private val nwTopicMapper = TopicNwToTopicDbMapper()
     private val dbTopicMapper = TopicDbToTopicMapper()
 
-    fun getStreamTopics(streamId: Int): Flowable<List<Topic>> {
+    fun getStreamTopics(streamId: Int, streamName: String): Flowable<List<Topic>> {
         return Single.concat(
-            getDatabaseStreamTopics(streamId),
-            getNetworkStreamTopics(streamId)
+            getDatabaseStreamTopics(streamName),
+            getNetworkStreamTopics(streamId, streamName)
         )
             .map { dbTopicMapper.transform(it) }
     }
 
-    private fun getNetworkStreamTopics(streamId: Int): Single<List<TopicDb>> {
+    private fun getNetworkStreamTopics(streamId: Int, streamName: String): Single<List<TopicDb>> {
         return apiService.getStreamTopics(streamId)
             .flatMapObservable { response ->
                 Observable.fromIterable(response.topics
                     .map { nwTopicMapper.transform(it) })
             }
             .map { topic ->
-                topic.streamId = streamId
-                topic
+                topic.copy(streamName = streamName)
             }
             .toList()
             .doOnSuccess { saveTopicsToDatabase(it) }
     }
 
-    private fun getDatabaseStreamTopics(streamId: Int): Single<List<TopicDb>> {
-        return topicDao.getByStreamId(streamId)
+    private fun getDatabaseStreamTopics(streamName: String): Single<List<TopicDb>> {
+        return topicDao.getByStreamName(streamName)
     }
 
     private fun saveTopicsToDatabase(topics: List<TopicDb>) {

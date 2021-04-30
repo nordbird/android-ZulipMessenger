@@ -70,7 +70,7 @@ internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState
         }
 
         is ChannelsAction.CollapseTopics -> {
-            val topicList = topics.filterNot { it.streamId == channelsAction.streamId }
+            val topicList = topics.filterNot { it.streamName == channelsAction.streamName }
             copy(
                 topics = topicList,
                 items = combineItems(streams, topicList, filterQuery),
@@ -78,6 +78,25 @@ internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState
                 needScroll = false
             )
         }
+
+        is ChannelsAction.TopicUnreadMessagesLoaded -> {
+            val topic = topics.firstOrNull {
+                it.name == channelsAction.topicName && it.streamName == channelsAction.streamName
+            }?.let {
+                TopicUi(it.name, it.color, channelsAction.unreadMessageCount, it.streamName)
+            }
+
+            val topicList = if (topic != null) (listOf(topic) + topics).distinctBy { it.uid } else topics
+
+            copy(
+                topics = topicList,
+                items = combineItems(streams, topicList, filterQuery),
+                error = null,
+                needScroll = false
+            )
+        }
+
+        ChannelsAction.LoadTopicUnreadMessagesStop -> this
     }
 }
 
@@ -87,7 +106,7 @@ private fun combineItems(
     filterQuery: String
 ): List<ViewTyped> {
     return streams.filter { it.name.contains(filterQuery, true) }.flatMap { stream ->
-        val topicList = topics.filter { it.streamId == stream.id }
+        val topicList = topics.filter { it.streamName == stream.name }.sortedBy { it.name }
         val newStream = StreamUi(stream.id, stream.name, topicList.isNotEmpty())
 
         listOf(newStream) + topicList
