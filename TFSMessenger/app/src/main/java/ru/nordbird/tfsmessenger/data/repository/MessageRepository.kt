@@ -1,7 +1,6 @@
 package ru.nordbird.tfsmessenger.data.repository
 
 import io.reactivex.Flowable
-import io.reactivex.Observable
 import io.reactivex.Single
 import okhttp3.MediaType
 import okhttp3.MultipartBody
@@ -26,7 +25,6 @@ class MessageRepository(
 
     private val nwMessageMapper = MessageNwToMessageDbMapper()
     private val dbMessageMapper = MessageDbToMessageMapper(ZulipAuth.BASE_URL)
-
     private var maxId = 0
 
     fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Flowable<List<Message>> {
@@ -39,9 +37,7 @@ class MessageRepository(
 
     fun getUnreadMessageCount(streamName: String, topicName: String): Single<Int> {
         val query = MessageQuery.getUnreadMessages(streamName, topicName)
-
-        return apiService.getMessages(query)
-            .map { it.messages.size }
+        return apiService.getMessages(query).map { it.messages.size }
     }
 
     fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {
@@ -66,9 +62,7 @@ class MessageRepository(
     }
 
     fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>> {
-        val bytes = stream?.use {
-            it.readBytes()
-        } ?: return Flowable.fromArray(emptyList())
+        val bytes = stream?.use { it.readBytes() } ?: return Flowable.fromArray(emptyList())
 
         val requestBody: RequestBody = RequestBody.create(MediaType.parse("*/*"), bytes)
         val fileToUpload = MultipartBody.Part.createFormData("file", name, requestBody)
@@ -80,24 +74,17 @@ class MessageRepository(
     }
 
     fun downloadFile(url: String): Single<InputStream> {
-        return apiService.downloadFile(url).map {
-            it.byteStream()
-        }
+        return apiService.downloadFile(url).map { it.byteStream() }
     }
 
     private fun getNetworkMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
         val query = MessageQuery.getMessages(streamName, topicName, lastMessageId, count)
 
-        return apiService.getMessages(query)
-            .map { nwMessageMapper.transform(it.messages) }
-            .flatMapObservable { Observable.fromIterable(it) }
-            .map { message ->
-                message.streamName = streamName
-                message.topicName = topicName
-                message
-            }
-            .doOnNext { maxId = maxOf(maxId, it.id) }
-            .toList()
+        return apiService.getMessages(query).map { response ->
+            nwMessageMapper.transform(response.messages)
+                .map { message -> message.copy(streamName = streamName, topicName = topicName) }
+        }
+            .doOnSuccess { messages -> maxId = maxOf(maxId, messages.maxOfOrNull { it.id } ?: 0) }
             .doOnSuccess { saveToDatabase(streamName, topicName, it) }
     }
 

@@ -16,7 +16,10 @@ interface StreamDao {
     @Query("SELECT * FROM streams WHERE id = :streamId")
     fun getById(streamId: Int): Single<StreamDb>
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertStreams(streams: List<StreamDb>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertAll(streams: List<StreamDb>)
+    fun insertSubscriptions(streams: List<StreamDb>)
 
 }

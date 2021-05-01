@@ -53,7 +53,7 @@ class StreamRepository(
                     .map { nwStreamMapper.transform(it) }
                     .onEach { it.subscribed = true }
             }
-            .doOnSuccess { saveStreamsToDatabase(it) }
+            .doOnSuccess { saveSubscriptionsToDatabase(it) }
             .map { streams -> streams.filter { it.name.contains(query, true) } }
     }
 
@@ -62,7 +62,10 @@ class StreamRepository(
     }
 
     private fun saveStreamsToDatabase(streams: List<StreamDb>) {
-        streamDao.insertAll(streams)
+        streamDao.insertStreams(streams)
     }
 
+    private fun saveSubscriptionsToDatabase(streams: List<StreamDb>) {
+        streamDao.insertStreams(streams)
+    }
 }

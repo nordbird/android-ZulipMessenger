@@ -14,10 +14,10 @@ data class MessageDb(
     val id: Int,
 
     @ColumnInfo(name = "stream_name")
-    var streamName: String,
+    val streamName: String,
 
     @ColumnInfo(name = "topic_name")
-    var topicName: String,
+    val topicName: String,
 
     @ColumnInfo(name = "sender_id")
     val authorId: Int,
@@ -35,7 +35,7 @@ data class MessageDb(
     val timestamp_ms: Long,
 
     @ColumnInfo(name = "reactions")
-    var reactions: List<Reaction> = listOf(),
+    val reactions: List<Reaction> = listOf(),
 
     @ColumnInfo(name = "local_id")
     val localId: Int = 0
