@@ -22,4 +22,5 @@
     <string name="title_select_file">Select a File to Upload</string>
     <string name="error_file_not_found">File Not Found...</string>
     <string name="info_file_downloaded">File downloaded</string>
+    <string name="error_connection_lost">Connection lost. Please check your Internet connection</string>
 </resources>

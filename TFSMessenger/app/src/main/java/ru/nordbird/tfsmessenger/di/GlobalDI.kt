@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.di
 
+import android.content.Context
 import ru.nordbird.tfsmessenger.data.api.ZulipServiceImpl
 import ru.nordbird.tfsmessenger.data.dao.AppDatabaseImpl
 import ru.nordbird.tfsmessenger.data.repository.*
@@ -11,8 +12,11 @@ import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabType
 import ru.nordbird.tfsmessenger.ui.people.PeoplePresenter
 import ru.nordbird.tfsmessenger.ui.profile.ProfilePresenter
 import ru.nordbird.tfsmessenger.ui.topic.TopicPresenter
+import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
 
-class GlobalDI private constructor() {
+class GlobalDI private constructor(context: Context) {
+
+    val connectionState by lazy { RxConnectionObservable(context) }
 
     private val peopleRepository by lazy { UserRepository(ZulipServiceImpl.getApi(), AppDatabaseImpl.userDao()) }
     private val peopleInteractor by lazy { PeopleInteractor(peopleRepository) }
@@ -35,8 +39,8 @@ class GlobalDI private constructor() {
 
         lateinit var INSTANCE: GlobalDI
 
-        fun init() {
-            INSTANCE = GlobalDI()
+        fun init(context: Context) {
+            INSTANCE = GlobalDI(context)
         }
     }
 }

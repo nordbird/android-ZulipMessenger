@@ -16,7 +16,7 @@ class App : Application() {
 
     init {
         instance = this
-        GlobalDI.init()
+        GlobalDI.init(this)
     }
 
 }

@@ -16,7 +16,6 @@ import ru.nordbird.tfsmessenger.databinding.FragmentProfileBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserPresence
-import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
 class ProfileFragment : MviFragment<ProfileView, ProfilePresenter>(), ProfileView {
 

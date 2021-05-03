@@ -2,16 +2,20 @@ package ru.nordbird.tfsmessenger.ui.main
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
+import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment
 import ru.nordbird.tfsmessenger.ui.people.PeopleFragment
 import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ID
+import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
 
 class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener {
 
@@ -19,6 +23,8 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var navController: NavController
     private var statusBarColor: Int = 0
+    private val connectionObservable: RxConnectionObservable = GlobalDI.INSTANCE.connectionState
+    private val compositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,12 +35,20 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
         initUI()
     }
 
+    override fun onDestroy() {
+        compositeDisposable.clear()
+        super.onDestroy()
+    }
+
     private fun initUI() {
         statusBarColor = window.statusBarColor
         binding.navView.setupWithNavController(navController)
         navController.addOnDestinationChangedListener { _, destination, _ ->
             onDestinationChanged(destination.id)
         }
+
+        val disposable = connectionObservable.networkState.subscribe(::showConnectionInfo)
+        compositeDisposable.add(disposable)
     }
 
     private fun onDestinationChanged(fragmentId: Int) {
@@ -44,6 +58,12 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
                 binding.navView.visibility = View.VISIBLE
                 window.statusBarColor = statusBarColor
             }
+        }
+    }
+
+    private fun showConnectionInfo(isConnected: Boolean) {
+        if (!isConnected) {
+            Toast.makeText(this, getString(R.string.error_connection_lost), Toast.LENGTH_LONG).show()
         }
     }
 
