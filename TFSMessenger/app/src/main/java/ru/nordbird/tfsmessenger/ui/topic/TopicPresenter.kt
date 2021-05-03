@@ -35,7 +35,7 @@ class TopicPresenter(
     override fun attachView(view: TopicView) {
         super.attachView(view)
 
-        topicState.observeOn(AndroidSchedulers.mainThread())
+        topicState.observeOn(AndroidSchedulers.mainThread()).startWith(lastState)
             .subscribe(view::render)
             .disposeOnFinish()
 
@@ -44,19 +44,15 @@ class TopicPresenter(
             .disposeOnFinish()
     }
 
-    override fun detachView(isFinishing: Boolean) {
-        super.detachView(isFinishing)
-        if (isFinishing) {
-            lastState = TopicState()
-        }
-    }
-
     private fun firstLoadMessages(): TopicSideEffect {
-        return { actions, state ->
+        return { actions, _ ->
             actions.ofType(TopicAction.FirstLoadMessages::class.java)
                 .switchMap { action ->
-                    loadMessages(action.streamName, action.topicName, state().oldestMessageId)
-                        .onErrorReturn { error -> TopicAction.ErrorLoadMessages(error) }
+                    loadMessages(action.streamName, action.topicName, 0)
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            TopicAction.LoadMessagesStop
+                        }
                 }
         }
     }
@@ -66,7 +62,10 @@ class TopicPresenter(
             actions.ofType(TopicAction.NextLoadMessages::class.java)
                 .switchMap { action ->
                     loadMessages(action.streamName, action.topicName, state().oldestMessageId)
-                        .onErrorReturn { error -> TopicAction.ErrorLoadMessages(error) }
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            TopicAction.LoadMessagesStop
+                        }
                 }
         }
     }
@@ -76,7 +75,10 @@ class TopicPresenter(
             actions.ofType(TopicAction.SendMessage::class.java)
                 .switchMap { action ->
                     sendMessage(action.streamName, action.topicName, action.content)
-                        .onErrorReturn { error -> TopicAction.ErrorLoadMessages(error) }
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            TopicAction.LoadMessagesStop
+                        }
                 }
         }
     }
@@ -86,7 +88,10 @@ class TopicPresenter(
             actions.ofType(TopicAction.UpdateReaction::class.java)
                 .switchMap { action ->
                     updateReaction(action.message, action.currentUserId, action.reactionCode)
-                        .onErrorReturn { error -> TopicAction.ErrorLoadMessages(error) }
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            TopicAction.LoadMessagesStop
+                        }
                 }
         }
     }
@@ -96,7 +101,10 @@ class TopicPresenter(
             actions.ofType(TopicAction.SendFile::class.java)
                 .switchMap { action ->
                     sendFile(action.streamName, action.topicName, action.name, action.stream)
-                        .onErrorReturn { error -> TopicAction.ErrorLoadMessages(error) }
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            TopicAction.LoadMessagesStop
+                        }
                 }
         }
     }
@@ -106,7 +114,10 @@ class TopicPresenter(
             actions.ofType(TopicAction.DownloadFile::class.java)
                 .switchMap { action ->
                     downloadFile(action.url)
-                        .onErrorReturn { error -> TopicAction.ErrorLoadMessages(error) }
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            TopicAction.LoadMessagesStop
+                        }
                 }
         }
     }

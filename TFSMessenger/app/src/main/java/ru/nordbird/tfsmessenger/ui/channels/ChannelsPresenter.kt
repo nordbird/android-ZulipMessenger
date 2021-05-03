@@ -28,14 +28,14 @@ class ChannelsPresenter(
     private val channelsState: Observable<ChannelsState>
         get() = inputRelay.reduxStore(
             initialState = lastState,
-            sideEffects = listOf(loadStreams(), searchStreams(), expandTopics(), loadTopicUnreadMessages()),
+            sideEffects = listOf(loadStreams(), filterStreams(), expandTopics(), loadTopicUnreadMessages()),
             reducer = ChannelsState::reduce
         ).doOnNext { lastState = it }
 
     override fun attachView(view: ChannelsView) {
         super.attachView(view)
 
-        channelsState.observeOn(AndroidSchedulers.mainThread())
+        channelsState.observeOn(AndroidSchedulers.mainThread()).startWith(lastState)
             .subscribe(view::render)
             .disposeOnFinish()
 
@@ -44,36 +44,26 @@ class ChannelsPresenter(
             .disposeOnFinish()
     }
 
-    override fun detachView(isFinishing: Boolean) {
-        super.detachView(isFinishing)
-        if (isFinishing) {
-            lastState = ChannelsState()
-        }
-    }
-
     private fun loadStreams(): ChannelsSideEffect {
         return { actions, _ ->
             actions.ofType(ChannelsAction.LoadStreams::class.java)
                 .switchMap {
                     getStreams()
-                        .onErrorReturn { error -> ChannelsAction.ErrorLoadStreams(error) }
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(ChannelsUiEffect.ActionError(error))
+                            ChannelsAction.LoadStreamsStop
+                        }
                 }
         }
     }
 
-    private fun searchStreams(): ChannelsSideEffect {
-        return { actions, state ->
-            actions.ofType(ChannelsAction.SearchStreams::class.java)
-                .map { action -> action.copy(query = action.query.toLowerCase(Locale.getDefault()).trim()) }
+    private fun filterStreams(): ChannelsSideEffect {
+        return { actions, _ ->
+            actions.ofType(ChannelsAction.FilterStreams::class.java)
+                .map { action -> action.query.toLowerCase(Locale.getDefault()).trim() }
                 .distinctUntilChanged()
                 .debounce(500, TimeUnit.MILLISECONDS)
-                .switchMap {
-                    searchStreams(state().filterQuery)
-                        .onErrorReturn { error ->
-                            uiEffectsRelay.accept(ChannelsUiEffect.ActionError(error))
-                            ChannelsAction.SearchStreamsStop
-                        }
-                }
+                .switchMap { Observable.just(ChannelsAction.StreamsFiltered) }
         }
     }
 
@@ -82,7 +72,10 @@ class ChannelsPresenter(
             actions.ofType(ChannelsAction.ExpandTopics::class.java)
                 .switchMap { action ->
                     loadTopics(action.streamId, action.streamName)
-                        .onErrorReturn { error -> ChannelsAction.ErrorLoadStreams(error) }
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(ChannelsUiEffect.ActionError(error))
+                            ChannelsAction.FilterStreamsStop
+                        }
                 }
         }
     }
@@ -90,6 +83,8 @@ class ChannelsPresenter(
     private fun loadTopicUnreadMessages(): ChannelsSideEffect {
         return { actions, _ ->
             actions.ofType(ChannelsAction.TopicsLoaded::class.java)
+                .distinctUntilChanged()
+                .debounce(1000, TimeUnit.MILLISECONDS)
                 .flatMapIterable { it.topics }
                 .flatMap { topic ->
                     getTopicUnreadMessageCount(topic.streamName, topic.name)
@@ -108,13 +103,6 @@ class ChannelsPresenter(
             .map { items -> ChannelsAction.StreamsLoaded(streams = items) }
     }
 
-    private fun searchStreams(query: String): Observable<ChannelsAction> {
-        return channelsInteractor.loadStreams(query)
-            .subscribeOn(Schedulers.io())
-            .toObservable()
-            .map { items -> ChannelsAction.StreamsFound(streams = items) }
-    }
-
     private fun loadTopics(streamId: Int, streamName: String): Observable<ChannelsAction> {
         return channelsInteractor.loadTopics(streamId, streamName)
             .subscribeOn(Schedulers.io())
@@ -126,6 +114,6 @@ class ChannelsPresenter(
         return channelsInteractor.getTopicUnreadMessageCount(streamName, topicName)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { unreadMessageCount -> ChannelsAction.TopicUnreadMessagesLoaded(streamName, topicName, unreadMessageCount) }
+            .map { unreadMessageCounter -> ChannelsAction.TopicUnreadMessagesLoaded(unreadMessageCounter) }
     }
 }

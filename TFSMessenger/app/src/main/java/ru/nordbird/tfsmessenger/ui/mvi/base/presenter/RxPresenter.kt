@@ -7,9 +7,10 @@ abstract class RxPresenter<V> protected constructor(viewClass: Class<V>) : BaseP
     private val disposables = CompositeDisposable()
 
     override fun detachView(isFinishing: Boolean) {
-        if (isFinishing) {
-            disposables.clear()
-        }
+        disposables.clear()
+//        if (isFinishing) {
+//            disposables.dispose()
+//        }
         super.detachView(isFinishing)
     }
 

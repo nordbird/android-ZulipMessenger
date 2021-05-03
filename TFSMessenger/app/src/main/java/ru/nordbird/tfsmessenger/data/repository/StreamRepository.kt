@@ -16,49 +16,45 @@ class StreamRepository(
     private val nwStreamMapper = StreamNwToStreamDbMapper()
     private val dbStreamMapper = StreamDbToStreamMapper()
 
-    fun getStreams(query: String = ""): Flowable<List<Stream>> {
+    fun getStreams(): Flowable<List<Stream>> {
         return Single.concat(
-            getDatabaseStreams(query),
-            getNetworkStreams(query)
+            getDatabaseStreams(),
+            getNetworkStreams()
         )
             .map { dbStreamMapper.transform(it) }
     }
 
-    fun getSubscriptions(query: String = ""): Flowable<List<Stream>> {
+    fun getSubscriptions(): Flowable<List<Stream>> {
         return Single.concat(
-            getDatabaseSubscriptions(query),
-            getNetworkSubscriptions(query)
+            getDatabaseSubscriptions(),
+            getNetworkSubscriptions()
         )
             .map { dbStreamMapper.transform(it) }
     }
 
-    private fun getNetworkStreams(query: String = ""): Single<List<StreamDb>> {
+    private fun getNetworkStreams(): Single<List<StreamDb>> {
         return apiService.getStreams()
             .map { response ->
-                response.streams
-                    .map { nwStreamMapper.transform(it) }
+                nwStreamMapper.transform(response.streams)
             }
             .doOnSuccess { saveStreamsToDatabase(it) }
-            .map { streams -> streams.filter { it.name.contains(query, true) } }
     }
 
-    private fun getDatabaseStreams(query: String = ""): Single<List<StreamDb>> {
-        return streamDao.getStreams(query)
+    private fun getDatabaseStreams(): Single<List<StreamDb>> {
+        return streamDao.getStreams()
     }
 
-    private fun getNetworkSubscriptions(query: String = ""): Single<List<StreamDb>> {
+    private fun getNetworkSubscriptions(): Single<List<StreamDb>> {
         return apiService.getSubscriptions()
             .map { response ->
-                response.subscriptions
-                    .map { nwStreamMapper.transform(it) }
-                    .onEach { it.subscribed = true }
+                nwStreamMapper.transform(response.subscriptions)
+                    .map { stream -> stream.copy(subscribed = true) }
             }
             .doOnSuccess { saveSubscriptionsToDatabase(it) }
-            .map { streams -> streams.filter { it.name.contains(query, true) } }
     }
 
-    private fun getDatabaseSubscriptions(query: String = ""): Single<List<StreamDb>> {
-        return streamDao.getSubscriptions(query)
+    private fun getDatabaseSubscriptions(): Single<List<StreamDb>> {
+        return streamDao.getSubscriptions()
     }
 
     private fun saveStreamsToDatabase(streams: List<StreamDb>) {

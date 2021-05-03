@@ -28,14 +28,14 @@ class PeoplePresenter(
     private val peopleState: Observable<PeopleState>
         get() = inputRelay.reduxStore(
             initialState = lastState,
-            sideEffects = listOf(loadUsers(), searchUsers()),
+            sideEffects = listOf(loadUsers(), filterUsers(), loadUserPresence()),
             reducer = PeopleState::reduce
         ).doOnNext { lastState = it }
 
     override fun attachView(view: PeopleView) {
         super.attachView(view)
 
-        peopleState.observeOn(AndroidSchedulers.mainThread())
+        peopleState.observeOn(AndroidSchedulers.mainThread()).startWith(lastState)
             .subscribe(view::render)
             .disposeOnFinish()
 
@@ -44,35 +44,38 @@ class PeoplePresenter(
             .disposeOnFinish()
     }
 
-    override fun detachView(isFinishing: Boolean) {
-        super.detachView(isFinishing)
-        if (isFinishing) {
-            lastState = PeopleState()
-        }
-    }
-
     private fun loadUsers(): PeopleSideEffect {
         return { actions, _ ->
             actions.ofType(PeopleAction.LoadUsers::class.java)
                 .switchMap {
                     getUsers()
-                        .onErrorReturn { error -> PeopleAction.ErrorLoadUsers(error) }
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(PeopleUiEffect.ActionError(error))
+                            PeopleAction.LoadUsersStop
+                        }
                 }
         }
     }
 
-    private fun searchUsers(): PeopleSideEffect {
-        return { actions, state ->
+    private fun filterUsers(): PeopleSideEffect {
+        return { actions, _ ->
             actions.ofType(PeopleAction.SearchUsers::class.java)
-                .map { action -> action.copy(query = action.query.toLowerCase(Locale.getDefault()).trim()) }
+                .map { action -> action.query.toLowerCase(Locale.getDefault()).trim() }
                 .distinctUntilChanged()
                 .debounce(500, TimeUnit.MILLISECONDS)
-                .switchMap {
-                    searchUsers(state().filterQuery)
-                        .onErrorReturn { error ->
-                            uiEffectsRelay.accept(PeopleUiEffect.SearchUsersError(error))
-                            PeopleAction.SearchUsersStop
-                        }
+                .switchMap { Observable.just(PeopleAction.UsersFiltered) }
+        }
+    }
+
+    private fun loadUserPresence(): PeopleSideEffect {
+        return { actions, _ ->
+            actions.ofType(PeopleAction.UsersLoaded::class.java)
+                .distinctUntilChanged()
+                .debounce(1000, TimeUnit.MILLISECONDS)
+                .flatMapIterable { it.users }
+                .flatMap { user ->
+                    getUserPresence(user.id)
+                        .onErrorReturnItem(PeopleAction.LoadUserPresenceStop)
                 }
         }
     }
@@ -84,11 +87,10 @@ class PeoplePresenter(
             .map { items -> PeopleAction.UsersLoaded(users = items) }
     }
 
-    private fun searchUsers(query: String): Observable<PeopleAction> {
-        return peopleInteractor.loadUsers(query)
+    private fun getUserPresence(userId: Int): Observable<PeopleAction> {
+        return peopleInteractor.loadUserPresence(userId)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { items -> PeopleAction.UsersFound(users = items) }
+            .map { presence -> PeopleAction.UserPresenceLoaded(presence) }
     }
-
 }

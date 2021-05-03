@@ -17,8 +17,5 @@ data class UserDb(
     val email: String,
 
     @ColumnInfo(name = "avatar_url")
-    val avatar_url: String,
-
-    @ColumnInfo(name = "timestamp")
-    var timestamp: Int
+    val avatar_url: String
 )

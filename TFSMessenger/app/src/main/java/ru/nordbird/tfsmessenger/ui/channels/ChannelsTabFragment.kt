@@ -92,7 +92,6 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
     override fun render(state: ChannelsState) {
         lastState = state
         adapter.items = state.items
-        state.error?.let { throwable -> showError(throwable) }
     }
 
     override fun handleUiEffect(uiEffect: ChannelsUiEffect) {
@@ -149,7 +148,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
     }
 
     private fun filterStreams(query: String) {
-        getPresenter().input.accept(ChannelsAction.SearchStreams(query))
+        getPresenter().input.accept(ChannelsAction.FilterStreams(query))
     }
 
     private fun onReloadClick() {

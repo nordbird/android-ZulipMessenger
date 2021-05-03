@@ -10,9 +10,9 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
 class TopicUi(
     val name: String,
+    val streamName: String,
     val color: Int,
-    var messageCount: Int,
-    var streamName: String,
+    val messageCount: Int,
     override val viewType: Int = R.layout.item_topic
 ) : ViewTyped {
 

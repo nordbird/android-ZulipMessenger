@@ -1,40 +1,40 @@
 package ru.nordbird.tfsmessenger.ui.people
 
+import ru.nordbird.tfsmessenger.data.model.Presence
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserShimmerUi
+import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
 data class PeopleState(
     val filterQuery: String = "",
-    val items: List<ViewTyped> = emptyList(),
-    val error: Throwable? = null,
+    val items: List<ViewTyped> = listOf(UserShimmerUi(), UserShimmerUi(), UserShimmerUi()),
+    val users: List<UserUi> = emptyList(),
+    val presences: List<Presence> = emptyList(),
     val needScroll: Boolean = false
 )
 
 internal fun PeopleState.reduce(peopleAction: PeopleAction): PeopleState {
     return when (peopleAction) {
         PeopleAction.LoadUsers -> {
-            val list = if (items.isEmpty()) listOf(UserShimmerUi(), UserShimmerUi(), UserShimmerUi()) else items
+            val list = if (users.isEmpty()) listOf(UserShimmerUi(), UserShimmerUi(), UserShimmerUi()) else items
             copy(
                 items = list,
-                error = null,
                 needScroll = false
             )
         }
 
         is PeopleAction.UsersLoaded -> {
-            val list = peopleAction.users.filter { it.name.contains(filterQuery, true) }
             copy(
-                items = list,
-                error = null
+                users = peopleAction.users,
+                items = combineItems(peopleAction.users, presences, filterQuery)
             )
         }
 
-        is PeopleAction.ErrorLoadUsers -> {
-            val list = if (items.filterNot { it is UserShimmerUi }.isEmpty()) listOf(ErrorUi()) else items
+        PeopleAction.LoadUsersStop -> {
+            val list = if (users.isEmpty()) listOf(ErrorUi()) else items
             copy(
-                items = list,
-                error = peopleAction.error
+                items = list
             )
         }
 
@@ -42,14 +42,32 @@ internal fun PeopleState.reduce(peopleAction: PeopleAction): PeopleState {
             filterQuery = peopleAction.query
         )
 
-        is PeopleAction.UsersFound -> {
+        PeopleAction.UsersFiltered -> {
             copy(
-                items = peopleAction.users,
-                error = null,
+                items = combineItems(users, presences, filterQuery),
                 needScroll = true
             )
         }
 
-        PeopleAction.SearchUsersStop -> this
+        PeopleAction.FilterUsersStop -> this
+
+        is PeopleAction.UserPresenceLoaded -> {
+            val list = listOf(peopleAction.presence) + presences
+            val presenceList = list.distinctBy { it.userId }
+            copy(
+                presences = presenceList,
+                items = combineItems(users, presenceList, filterQuery),
+                needScroll = false,
+            )
+        }
+
+        PeopleAction.LoadUserPresenceStop -> this
+    }
+}
+
+private fun combineItems(users: List<UserUi>, presences: List<Presence>, filterQuery: String): List<ViewTyped> {
+    return users.filter { it.name.contains(filterQuery, true) }.sortedBy { it.name }.map { user ->
+        val presence = presences.firstOrNull { it.userId == user.id }
+        if (presence != null) UserUi(user.id, user.name, user.email, user.avatar, presence.timestamp_sec) else user
     }
 }

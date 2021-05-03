@@ -2,7 +2,6 @@ package ru.nordbird.tfsmessenger.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 @Serializable
 data class UserNw(
@@ -17,8 +16,5 @@ data class UserNw(
     val email: String,
 
     @SerialName("avatar_url")
-    val avatar_url: String,
-
-    @Transient
-    val timestamp: Int = 0
+    val avatar_url: String
 )

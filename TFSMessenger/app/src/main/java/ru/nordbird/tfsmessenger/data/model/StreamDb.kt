@@ -14,5 +14,5 @@ data class StreamDb(
     val name: String,
 
     @ColumnInfo(name = "subscribed")
-    var subscribed: Boolean = false
+    val subscribed: Boolean = false
 )

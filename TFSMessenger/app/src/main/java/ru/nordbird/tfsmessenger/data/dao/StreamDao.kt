@@ -7,11 +7,11 @@ import ru.nordbird.tfsmessenger.data.model.StreamDb
 @Dao
 interface StreamDao {
 
-    @Query("SELECT * FROM streams WHERE name LIKE '%' || :query || '%'")
-    fun getStreams(query: String = ""): Single<List<StreamDb>>
+    @Query("SELECT * FROM streams")
+    fun getStreams(): Single<List<StreamDb>>
 
-    @Query("SELECT * FROM streams WHERE subscribed = 1 and name LIKE '%' || :query || '%'")
-    fun getSubscriptions(query: String = ""): Single<List<StreamDb>>
+    @Query("SELECT * FROM streams WHERE subscribed = 1")
+    fun getSubscriptions(): Single<List<StreamDb>>
 
     @Query("SELECT * FROM streams WHERE id = :streamId")
     fun getById(streamId: Int): Single<StreamDb>

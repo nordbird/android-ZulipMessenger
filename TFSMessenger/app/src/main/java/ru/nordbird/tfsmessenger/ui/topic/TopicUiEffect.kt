@@ -4,5 +4,7 @@ import java.io.InputStream
 
 sealed class TopicUiEffect{
 
+    class LoadMessagesError(val error: Throwable): TopicUiEffect()
+
     class DownloadFile(val stream: InputStream) : TopicUiEffect()
 }

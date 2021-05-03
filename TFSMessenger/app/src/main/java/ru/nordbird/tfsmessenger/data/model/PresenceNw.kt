@@ -4,7 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PresenceResponse(
-    @SerialName("presence")
-    val presence: Map<String, PresenceNw> = emptyMap()
+data class PresenceNw(
+
+    @SerialName("timestamp")
+    val timestamp_sec: Long,
+
+    @SerialName("status")
+    val status: String
 )
+

@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.ui.people
 
+import ru.nordbird.tfsmessenger.data.model.Presence
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
 sealed class PeopleAction {
@@ -8,12 +9,16 @@ sealed class PeopleAction {
 
     data class UsersLoaded(val users: List<UserUi>) : PeopleAction()
 
-    data class ErrorLoadUsers(val error: Throwable) : PeopleAction()
+    object LoadUsersStop : PeopleAction()
 
     data class SearchUsers(val query: String) : PeopleAction()
 
-    data class UsersFound(val users: List<UserUi>) : PeopleAction()
+    object UsersFiltered : PeopleAction()
 
-    object SearchUsersStop : PeopleAction()
+    object FilterUsersStop : PeopleAction()
+
+    data class UserPresenceLoaded(val presence: Presence) : PeopleAction()
+
+    object LoadUserPresenceStop : PeopleAction()
 
 }

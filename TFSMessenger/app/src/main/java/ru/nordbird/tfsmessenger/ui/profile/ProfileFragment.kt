@@ -76,30 +76,31 @@ class ProfileFragment : MviFragment<ProfileView, ProfilePresenter>(), ProfileVie
         getPresenter().input.accept(ProfileAction.LoadProfile(userId))
     }
 
-    private fun setupUser(user: UserUi?) {
-        if (user == null) return
-
-        binding.tvProfileName.text = user.name
-        val (text, color) = when (user.presence) {
-            UserPresence.ACTIVE -> {
-                getText(R.string.profile_active) to ContextCompat.getColor(requireContext(), R.color.color_green)
-            }
-            UserPresence.IDLE -> {
-                getText(R.string.profile_idle) to ContextCompat.getColor(requireContext(), R.color.color_orange)
-            }
-            else -> {
-                getText(R.string.profile_offline) to ContextCompat.getColor(requireContext(), R.color.color_red)
-            }
-        }
-        binding.tvProfileOnline.text = text
-        binding.tvProfileOnline.setTextColor(color)
-
-        Glide.with(this).load(user.avatar).into(binding.ivProfileAvatar)
-        binding.sflProfile.hideShimmer()
-    }
-
     override fun render(state: ProfileState) {
-        setupUser(state.item)
+        if (state.item == null) return
+
+        binding.tvProfileName.text = state.item.name
+        if (state.presence != null) {
+            binding.tvProfileOnline.visibility = View.VISIBLE
+            val (text, color) = when (state.item.presence) {
+                UserPresence.ACTIVE -> {
+                    getText(R.string.profile_active) to ContextCompat.getColor(requireContext(), R.color.color_green)
+                }
+                UserPresence.IDLE -> {
+                    getText(R.string.profile_idle) to ContextCompat.getColor(requireContext(), R.color.color_orange)
+                }
+                else -> {
+                    getText(R.string.profile_offline) to ContextCompat.getColor(requireContext(), R.color.color_red)
+                }
+            }
+            binding.tvProfileOnline.text = text
+            binding.tvProfileOnline.setTextColor(color)
+        } else {
+            binding.tvProfileOnline.visibility = View.GONE
+        }
+
+        Glide.with(this).load(state.item.avatar).into(binding.ivProfileAvatar)
+        binding.sflProfile.hideShimmer()
     }
 
     override fun handleUiEffect(uiEffect: ProfileUiEffect) {

@@ -5,26 +5,27 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 
 data class TopicState(
+    val streamName: String = "",
+    val topicName: String = "",
     val oldestMessageId: Int = Int.MAX_VALUE,
     val items: List<ViewTyped> = listOf(TopicShimmerUi(), TopicShimmerUi()),
     val messages: List<MessageUi> = emptyList(),
-    val error: Throwable? = null,
-    val isLoading: Boolean = false,
     val needScroll: Boolean = false
 )
 
 internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
     return when (topicAction) {
-        is TopicAction.FirstLoadMessages -> copy(
-            needScroll = true,
-            isLoading = true,
-            error = null
-        )
+        is TopicAction.FirstLoadMessages -> {
+            val topicChanged = (topicAction.streamName != streamName || topicAction.topicName != topicName)
+            copy(
+                oldestMessageId = if (topicChanged) Int.MAX_VALUE else oldestMessageId,
+                messages = if (topicChanged) emptyList() else messages,
+                needScroll = true
+            )
+        }
 
         is TopicAction.NextLoadMessages -> copy(
-            needScroll = false,
-            isLoading = true,
-            error = null
+            needScroll = false
         )
 
         is TopicAction.MessagesLoaded -> {
@@ -34,15 +35,11 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
             copy(
                 oldestMessageId = minId,
                 items = mapper.transform(list),
-                messages = list,
-                isLoading = false
+                messages = list
             )
         }
 
-        is TopicAction.ErrorLoadMessages -> copy(
-            error = topicAction.error,
-            isLoading = false
-        )
+        TopicAction.LoadMessagesStop -> this
 
         is TopicAction.SendMessage -> copy(
             needScroll = true

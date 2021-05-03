@@ -7,8 +7,8 @@ import ru.nordbird.tfsmessenger.data.model.UserDb
 @Dao
 interface UserDao {
 
-    @Query("SELECT * FROM users WHERE full_name LIKE '%' || :query || '%'")
-    fun getUsers(query: String = ""): Single<List<UserDb>>
+    @Query("SELECT * FROM users")
+    fun getUsers(): Single<List<UserDb>>
 
     @Query("SELECT * FROM users WHERE id = :userId")
     fun getById(userId: Int): Single<UserDb>

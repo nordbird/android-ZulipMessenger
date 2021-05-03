@@ -18,11 +18,11 @@ class TopicToTopicUiMapper : Mapper<List<Topic>, List<TopicUi>> {
     )
 
     override fun transform(data: List<Topic>): List<TopicUi> {
-        return data.map { TopicUi(it.name, getColor(it), 0, it.streamName) }
+        return data.map { TopicUi(it.name, it.streamName, getColor(it.name), 0) }
     }
 
-    private fun getColor(it: Topic): Int {
-        val index = if (it.name.isEmpty()) 0 else it.name[0].toByte() % topicColors.size
+    private fun getColor(name: String): Int {
+        val index = name.sumBy { it.toInt() } % topicColors.size
         return topicColors[index]
     }
 

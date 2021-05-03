@@ -8,10 +8,12 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomViewTarget
 import com.bumptech.glide.request.transition.Transition
 import ru.nordbird.tfsmessenger.R
+import ru.nordbird.tfsmessenger.extensions.SECOND
 import ru.nordbird.tfsmessenger.ui.custom.CircleImageView
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
+import java.util.*
 
 enum class UserPresence {
     ACTIVE,
@@ -24,7 +26,7 @@ class UserUi(
     val name: String,
     val email: String,
     val avatar: String,
-    val presence: UserPresence,
+    private val timestamp_sec: Long,
     override val viewType: Int = R.layout.item_user
 ) : ViewTyped {
 
@@ -32,6 +34,20 @@ class UserUi(
 
     override fun asString() = "$name $email ${presence.ordinal}"
 
+    val presence: UserPresence
+        get() {
+            val now = Date().time / SECOND
+            return when (now - timestamp_sec) {
+                in 0..ACTIVE_MAX_TIME_SEC -> UserPresence.ACTIVE
+                in ACTIVE_MAX_TIME_SEC + 1..IDLE_MAX_TIME_SEC -> UserPresence.IDLE
+                else -> UserPresence.OFFLINE
+            }
+        }
+
+    companion object {
+        private const val ACTIVE_MAX_TIME_SEC = 600
+        private const val IDLE_MAX_TIME_SEC = 1800
+    }
 }
 
 class UserViewHolder(

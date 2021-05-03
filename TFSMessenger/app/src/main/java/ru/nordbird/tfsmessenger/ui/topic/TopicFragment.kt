@@ -11,6 +11,7 @@ import android.provider.OpenableColumns
 import android.view.*
 import android.widget.TableRow
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
@@ -36,6 +37,7 @@ import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
 import java.io.FileNotFoundException
 import java.io.InputStream
 
@@ -158,12 +160,12 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
     override fun render(state: TopicState) {
         lastState = state
         adapter.items = state.items
-        state.error?.let { throwable -> showError(throwable) }
     }
 
     override fun handleUiEffect(uiEffect: TopicUiEffect) {
         when (uiEffect) {
             is TopicUiEffect.DownloadFile -> saveFile(uiEffect.stream)
+            is TopicUiEffect.LoadMessagesError -> showError(uiEffect.error)
         }
     }
 

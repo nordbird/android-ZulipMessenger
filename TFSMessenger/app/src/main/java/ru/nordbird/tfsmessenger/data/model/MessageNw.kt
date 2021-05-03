@@ -26,6 +26,6 @@ data class MessageNw(
     val timestamp_sec: Long,
 
     @SerialName("reactions")
-    var reactions: List<Reaction> = listOf()
+    val reactions: List<Reaction> = listOf()
 
 )

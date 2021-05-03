@@ -1,7 +1,6 @@
 package ru.nordbird.tfsmessenger.data.repository
 
 import io.reactivex.Flowable
-import io.reactivex.Observable
 import io.reactivex.Single
 import ru.nordbird.tfsmessenger.data.api.ZulipService
 import ru.nordbird.tfsmessenger.data.dao.TopicDao
@@ -27,14 +26,10 @@ class TopicRepository(
 
     private fun getNetworkStreamTopics(streamId: Int, streamName: String): Single<List<TopicDb>> {
         return apiService.getStreamTopics(streamId)
-            .flatMapObservable { response ->
-                Observable.fromIterable(response.topics
-                    .map { nwTopicMapper.transform(it) })
+            .map { response ->
+                nwTopicMapper.transform(response.topics)
+                    .map { topic -> topic.copy(streamName = streamName) }
             }
-            .map { topic ->
-                topic.copy(streamName = streamName)
-            }
-            .toList()
             .doOnSuccess { saveTopicsToDatabase(it) }
     }
 

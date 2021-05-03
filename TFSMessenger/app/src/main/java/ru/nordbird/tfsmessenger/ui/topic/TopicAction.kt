@@ -11,7 +11,7 @@ sealed class TopicAction {
 
     data class MessagesLoaded(val newMessages: List<MessageUi>) : TopicAction()
 
-    data class ErrorLoadMessages(val error: Throwable) : TopicAction()
+    object LoadMessagesStop : TopicAction()
 
     data class SendMessage(val streamName: String, val topicName: String, val content: String) : TopicAction()
 

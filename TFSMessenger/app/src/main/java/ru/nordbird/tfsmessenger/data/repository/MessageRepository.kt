@@ -37,7 +37,7 @@ class MessageRepository(
 
     fun getUnreadMessageCount(streamName: String, topicName: String): Single<Int> {
         val query = MessageQuery.getUnreadMessages(streamName, topicName)
-        return apiService.getMessages(query).map { it.messages.size }
+        return apiService.getMessages(query).map { response -> response.messages.size }
     }
 
     fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {

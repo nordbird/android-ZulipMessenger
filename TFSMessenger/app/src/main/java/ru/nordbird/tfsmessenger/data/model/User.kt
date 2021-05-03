@@ -4,6 +4,5 @@ data class User(
     val id: Int,
     val full_name: String,
     val email: String,
-    val avatar_url: String,
-    var timestamp: Int = 0
+    val avatar_url: String
 )

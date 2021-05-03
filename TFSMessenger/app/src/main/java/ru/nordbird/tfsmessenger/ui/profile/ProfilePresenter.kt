@@ -10,6 +10,7 @@ import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.RxPresenter
 import ru.nordbird.tfsmessenger.domain.PeopleInteractor
+import java.util.concurrent.TimeUnit
 
 private typealias PeopleSideEffect = SideEffect<ProfileState, out ProfileAction>
 
@@ -25,7 +26,7 @@ class ProfilePresenter(
 
     private val peopleState: Observable<ProfileState> = inputRelay.reduxStore(
         initialState = ProfileState(),
-        sideEffects = listOf(loadUser()),
+        sideEffects = listOf(loadUser(), loadUserPresence()),
         reducer = ProfileState::reduce
     )
 
@@ -40,11 +41,26 @@ class ProfilePresenter(
     }
 
     private fun loadUser(): PeopleSideEffect {
-        return { actions, state ->
+        return { actions, _ ->
             actions.ofType(ProfileAction.LoadProfile::class.java)
                 .switchMap {
-                    getUser(state().userId)
-                        .onErrorReturn { error -> ProfileAction.ErrorLoadProfile(error) }
+                    getUser(it.userId)
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(ProfileUiEffect.LoadUserError(error))
+                            ProfileAction.LoadProfileStop
+                        }
+                }
+        }
+    }
+
+    private fun loadUserPresence(): PeopleSideEffect {
+        return { actions, _ ->
+            actions.ofType(ProfileAction.ProfileLoaded::class.java)
+                .distinctUntilChanged()
+                .debounce(500, TimeUnit.MILLISECONDS)
+                .switchMap { action ->
+                    getUserPresence(action.item.id)
+                        .onErrorReturnItem(ProfileAction.LoadPresenceStop)
                 }
         }
     }
@@ -56,4 +72,10 @@ class ProfilePresenter(
             .map { item -> ProfileAction.ProfileLoaded(item = item) }
     }
 
+    private fun getUserPresence(userId: Int): Observable<ProfileAction> {
+        return peopleInteractor.loadUserPresence(userId)
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { presence -> ProfileAction.PresenceLoaded(presence) }
+    }
 }

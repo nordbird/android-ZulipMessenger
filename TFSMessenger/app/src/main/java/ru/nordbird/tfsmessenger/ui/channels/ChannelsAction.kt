@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.ui.channels
 
+import ru.nordbird.tfsmessenger.data.model.UnreadCounter
 import ru.nordbird.tfsmessenger.ui.recycler.holder.StreamUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TopicUi
 
@@ -9,13 +10,13 @@ sealed class ChannelsAction {
 
     data class StreamsLoaded(val streams: List<StreamUi>) : ChannelsAction()
 
-    data class ErrorLoadStreams(val error: Throwable) : ChannelsAction()
+    object LoadStreamsStop : ChannelsAction()
 
-    data class SearchStreams(val query: String) : ChannelsAction()
+    data class FilterStreams(val query: String) : ChannelsAction()
 
-    data class StreamsFound(val streams: List<StreamUi>) : ChannelsAction()
+    object StreamsFiltered : ChannelsAction()
 
-    object SearchStreamsStop : ChannelsAction()
+    object FilterStreamsStop : ChannelsAction()
 
     data class ExpandTopics(val streamId: Int, val streamName: String) : ChannelsAction()
 
@@ -23,7 +24,7 @@ sealed class ChannelsAction {
 
     data class TopicsLoaded(val topics: List<TopicUi>) : ChannelsAction()
 
-    data class TopicUnreadMessagesLoaded(val streamName: String, val topicName: String, val unreadMessageCount: Int) : ChannelsAction()
+    data class TopicUnreadMessagesLoaded(val unreadMessageCounter: UnreadCounter) : ChannelsAction()
 
     object LoadTopicUnreadMessagesStop : ChannelsAction()
 }

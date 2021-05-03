@@ -114,12 +114,11 @@ class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
     override fun render(state: PeopleState) {
         lastState = state
         adapter.items = state.items
-        state.error?.let { throwable -> showError(throwable) }
     }
 
     override fun handleUiEffect(uiEffect: PeopleUiEffect) {
         when (uiEffect) {
-            is PeopleUiEffect.SearchUsersError -> {
+            is PeopleUiEffect.ActionError -> {
                 showError(uiEffect.error)
             }
         }

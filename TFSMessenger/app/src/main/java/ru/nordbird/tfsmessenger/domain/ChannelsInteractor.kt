@@ -5,6 +5,7 @@ import io.reactivex.Single
 import ru.nordbird.tfsmessenger.data.mapper.StreamToStreamUiMapper
 import ru.nordbird.tfsmessenger.data.mapper.TopicToTopicUiMapper
 import ru.nordbird.tfsmessenger.data.model.Stream
+import ru.nordbird.tfsmessenger.data.model.UnreadCounter
 import ru.nordbird.tfsmessenger.data.repository.MessageRepository
 import ru.nordbird.tfsmessenger.data.repository.StreamRepository
 import ru.nordbird.tfsmessenger.data.repository.TopicRepository
@@ -22,11 +23,10 @@ class ChannelsInteractor(
     private val streamMapper = StreamToStreamUiMapper()
     private val topicMapper = TopicToTopicUiMapper()
 
-    fun loadStreams(query: String = ""): Flowable<List<StreamUi>> {
-        return getStreamsFun(query)
+    fun loadStreams(): Flowable<List<StreamUi>> {
+        return getStreamsFun()
             .map { streams ->
                 streamMapper.transform(streams)
-                    .sortedBy { it.name }
             }
     }
 
@@ -34,18 +34,20 @@ class ChannelsInteractor(
         return topicRepository.getStreamTopics(streamId, streamName)
             .map { topics ->
                 topicMapper.transform(topics)
-                    .sortedBy { it.name }
             }
     }
 
-    fun getTopicUnreadMessageCount(streamName: String, topicName: String): Single<Int> {
+    fun getTopicUnreadMessageCount(streamName: String, topicName: String): Single<UnreadCounter> {
         return messageRepository.getUnreadMessageCount(streamName, topicName)
+            .map { count ->
+                UnreadCounter(streamName, topicName, count)
+            }
     }
 
-    private fun getStreamsFun(query: String = ""): Flowable<List<Stream>> {
+    private fun getStreamsFun(): Flowable<List<Stream>> {
         return when (tabType) {
-            ChannelsTabType.ALL -> streamRepository.getStreams(query)
-            ChannelsTabType.SUBSCRIBED -> streamRepository.getSubscriptions(query)
+            ChannelsTabType.ALL -> streamRepository.getStreams()
+            ChannelsTabType.SUBSCRIBED -> streamRepository.getSubscriptions()
         }
     }
 }
