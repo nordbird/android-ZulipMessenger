@@ -76,4 +76,7 @@ dependencies {
     implementation "androidx.room:room-rxjava2:$roomVersion"
 
     implementation "com.freeletics.rxredux:rxredux:$RxReduxVersion"
+
+    implementation "com.google.dagger:dagger:$daggerVersion"
+    kapt "com.google.dagger:dagger-compiler:$daggerVersion"
 }

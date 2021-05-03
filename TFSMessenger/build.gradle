@@ -52,4 +52,6 @@ ext {
     roomVersion = '2.3.0'
 
     RxReduxVersion = '1.0.1'
+
+    daggerVersion = '2.27'
 }
