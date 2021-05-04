@@ -7,7 +7,7 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
-import ru.nordbird.tfsmessenger.domain.TopicInteractor
+import ru.nordbird.tfsmessenger.domain.base.TopicInteractor
 import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.RxPresenter
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
 import java.io.InputStream

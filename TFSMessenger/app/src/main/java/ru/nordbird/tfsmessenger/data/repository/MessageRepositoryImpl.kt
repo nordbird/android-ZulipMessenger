@@ -12,13 +12,14 @@ import ru.nordbird.tfsmessenger.data.dao.MessageDao
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
 import ru.nordbird.tfsmessenger.data.mapper.MessageNwToMessageDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
+import ru.nordbird.tfsmessenger.data.repository.base.MessageRepository
 import java.io.InputStream
 import java.util.*
 
-class MessageRepository(
+class MessageRepositoryImpl(
     private val apiService: ZulipService,
     private val messageDao: MessageDao
-) {
+) : MessageRepository {
     companion object {
         private const val MESSAGES_MAX_COUNT = 50
     }
@@ -27,7 +28,7 @@ class MessageRepository(
     private val dbMessageMapper = MessageDbToMessageMapper(ZulipAuth.BASE_URL)
     private var maxId = 0
 
-    fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Flowable<List<Message>> {
+    override fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Flowable<List<Message>> {
         return Single.concat(
             getDatabaseMessages(streamName, topicName, lastMessageId, count),
             getNetworkMessages(streamName, topicName, lastMessageId, count)
@@ -35,12 +36,12 @@ class MessageRepository(
             .map { dbMessageMapper.transform(it) }
     }
 
-    fun getUnreadMessageCount(streamName: String, topicName: String): Single<Int> {
+    override fun getUnreadMessageCount(streamName: String, topicName: String): Single<Int> {
         val query = MessageQuery.getUnreadMessages(streamName, topicName)
         return apiService.getMessages(query).map { response -> response.messages.size }
     }
 
-    fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {
+    override fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {
         val messageId = ++maxId
         val message = MessageDb(messageId, streamName, topicName, senderId, "", "", text, Date().time, localId = messageId)
 
@@ -61,7 +62,7 @@ class MessageRepository(
             .onErrorReturnItem(emptyList())
     }
 
-    fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>> {
+    override fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>> {
         val bytes = stream?.use { it.readBytes() } ?: return Flowable.fromArray(emptyList())
 
         val requestBody: RequestBody = RequestBody.create(MediaType.parse("*/*"), bytes)
@@ -73,7 +74,7 @@ class MessageRepository(
             }
     }
 
-    fun downloadFile(url: String): Single<InputStream> {
+    override fun downloadFile(url: String): Single<InputStream> {
         return apiService.downloadFile(url).map { it.byteStream() }
     }
 

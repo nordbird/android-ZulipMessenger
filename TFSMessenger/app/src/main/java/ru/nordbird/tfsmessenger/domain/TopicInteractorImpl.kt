@@ -7,15 +7,16 @@ import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.emojiSet.Emoji
 import ru.nordbird.tfsmessenger.data.mapper.MessageToMessageUiMapper
 import ru.nordbird.tfsmessenger.data.model.Message
-import ru.nordbird.tfsmessenger.data.repository.MessageRepository
-import ru.nordbird.tfsmessenger.data.repository.ReactionRepository
+import ru.nordbird.tfsmessenger.data.repository.base.MessageRepository
+import ru.nordbird.tfsmessenger.data.repository.base.ReactionRepository
+import ru.nordbird.tfsmessenger.domain.base.TopicInteractor
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
 import java.io.InputStream
 
-class TopicInteractor(
+class TopicInteractorImpl(
     private val messageRepository: MessageRepository,
     private val reactionRepository: ReactionRepository
-) {
+) : TopicInteractor {
 
     companion object {
         private const val COUNT_MESSAGES_PER_REQUEST = 20
@@ -23,17 +24,17 @@ class TopicInteractor(
 
     private val messageMapper = MessageToMessageUiMapper(ZulipAuth.AUTH_ID)
 
-    fun loadMessages(streamName: String, topicName: String, messageId: Int): Flowable<List<MessageUi>> {
+    override fun loadMessages(streamName: String, topicName: String, messageId: Int): Flowable<List<MessageUi>> {
         return messageRepository.getMessages(streamName, topicName, messageId, COUNT_MESSAGES_PER_REQUEST)
             .map { messageMapper.transform(it) }
     }
 
-    fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<MessageUi>> {
+    override fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<MessageUi>> {
         return messageRepository.addMessage(streamName, topicName, ZulipAuth.AUTH_ID, text)
             .map { messageMapper.transform(it) }
     }
 
-    fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<MessageUi>> {
+    override fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<MessageUi>> {
         val clickedReaction = EMOJI_SET.firstOrNull { it.getCodeString() == reactionCode } ?: Emoji("", "", 0)
         val isSelectedReaction = message.reactions.firstOrNull { it.userIdList.contains(currentUserId) && it.name == clickedReaction.name } != null
 
@@ -45,12 +46,12 @@ class TopicInteractor(
             .map { messageMapper.transform(it) }
     }
 
-    fun sendFile(streamName: String, topicName: String, name: String, stream: InputStream?): Flowable<List<MessageUi>> {
+    override fun sendFile(streamName: String, topicName: String, name: String, stream: InputStream?): Flowable<List<MessageUi>> {
         return messageRepository.sendFile(streamName, topicName, ZulipAuth.AUTH_ID, name, stream)
             .map { messageMapper.transform(it) }
     }
 
-    fun downloadFile(url: String): Single<InputStream> {
+    override fun downloadFile(url: String): Single<InputStream> {
         return messageRepository.downloadFile(url)
     }
 

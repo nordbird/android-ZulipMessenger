@@ -7,16 +7,17 @@ import ru.nordbird.tfsmessenger.data.dao.TopicDao
 import ru.nordbird.tfsmessenger.data.mapper.TopicDbToTopicMapper
 import ru.nordbird.tfsmessenger.data.mapper.TopicNwToTopicDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
+import ru.nordbird.tfsmessenger.data.repository.base.TopicRepository
 
-class TopicRepository(
+class TopicRepositoryImpl(
     private val apiService: ZulipService,
     private val topicDao: TopicDao
-) {
+) : TopicRepository {
 
     private val nwTopicMapper = TopicNwToTopicDbMapper()
     private val dbTopicMapper = TopicDbToTopicMapper()
 
-    fun getStreamTopics(streamId: Int, streamName: String): Flowable<List<Topic>> {
+    override fun getStreamTopics(streamId: Int, streamName: String): Flowable<List<Topic>> {
         return Single.concat(
             getDatabaseStreamTopics(streamName),
             getNetworkStreamTopics(streamId, streamName)

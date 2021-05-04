@@ -7,16 +7,17 @@ import ru.nordbird.tfsmessenger.data.dao.StreamDao
 import ru.nordbird.tfsmessenger.data.mapper.StreamDbToStreamMapper
 import ru.nordbird.tfsmessenger.data.mapper.StreamNwToStreamDbMapper
 import ru.nordbird.tfsmessenger.data.model.*
+import ru.nordbird.tfsmessenger.data.repository.base.StreamRepository
 
-class StreamRepository(
+class StreamRepositoryImpl(
     private val apiService: ZulipService,
     private val streamDao: StreamDao
-) {
+) : StreamRepository {
 
     private val nwStreamMapper = StreamNwToStreamDbMapper()
     private val dbStreamMapper = StreamDbToStreamMapper()
 
-    fun getStreams(): Flowable<List<Stream>> {
+    override fun getStreams(): Flowable<List<Stream>> {
         return Single.concat(
             getDatabaseStreams(),
             getNetworkStreams()
@@ -24,7 +25,7 @@ class StreamRepository(
             .map { dbStreamMapper.transform(it) }
     }
 
-    fun getSubscriptions(): Flowable<List<Stream>> {
+    override fun getSubscriptions(): Flowable<List<Stream>> {
         return Single.concat(
             getDatabaseSubscriptions(),
             getNetworkSubscriptions()

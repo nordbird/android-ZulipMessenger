@@ -7,14 +7,15 @@ import ru.nordbird.tfsmessenger.data.api.ZulipService
 import ru.nordbird.tfsmessenger.data.dao.MessageDao
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
 import ru.nordbird.tfsmessenger.data.model.*
+import ru.nordbird.tfsmessenger.data.repository.base.ReactionRepository
 
-class ReactionRepository(
+class ReactionRepositoryImpl(
     private val apiService: ZulipService,
     private val messageDao: MessageDao
-) {
+) : ReactionRepository {
     private val dbMessageMapper = MessageDbToMessageMapper(ZulipAuth.BASE_URL)
 
-    fun addReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
+    override fun addReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
         return Single.concat(
             addDatabaseReaction(messageId, currentUserId, reactionCode, reactionName),
             apiService.addMessageReaction(messageId, reactionName).flatMap { response ->
@@ -29,7 +30,7 @@ class ReactionRepository(
             .onErrorReturnItem(emptyList())
     }
 
-    fun removeReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
+    override fun removeReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
         return Single.concat(
             removeDatabaseReaction(messageId, currentUserId, reactionName),
             apiService.removeMessageReaction(messageId, reactionName).flatMap { response ->

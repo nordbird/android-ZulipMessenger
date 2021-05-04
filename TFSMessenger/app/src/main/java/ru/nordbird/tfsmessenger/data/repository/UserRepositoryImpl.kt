@@ -9,16 +9,17 @@ import ru.nordbird.tfsmessenger.data.mapper.UserNwToUserDbMapper
 import ru.nordbird.tfsmessenger.data.model.Presence
 import ru.nordbird.tfsmessenger.data.model.User
 import ru.nordbird.tfsmessenger.data.model.UserDb
+import ru.nordbird.tfsmessenger.data.repository.base.UserRepository
 
-class UserRepository(
+class UserRepositoryImpl(
     private val apiService: ZulipService,
     private val userDao: UserDao
-) {
+) : UserRepository {
 
     private val nwUserMapper = UserNwToUserDbMapper()
     private val dbUserMapper = UserDbToUserMapper()
 
-    fun getUsers(): Flowable<List<User>> {
+    override fun getUsers(): Flowable<List<User>> {
         return Single.concat(
             getDatabaseUsers(),
             getNetworkUsers()
@@ -26,7 +27,7 @@ class UserRepository(
             .map { dbUserMapper.transform(it) }
     }
 
-    fun getUser(id: Int): Flowable<User> {
+    override fun getUser(id: Int): Flowable<User> {
         return Single.concat(
             getDatabaseUser(id),
             getNetworkUser(id)
@@ -34,7 +35,7 @@ class UserRepository(
             .map { dbUserMapper.transform(listOf(it)).first() }
     }
 
-    fun getUserPresence(userId: Int): Single<Presence> {
+    override fun getUserPresence(userId: Int): Single<Presence> {
         return apiService.getUserPresence(userId)
             .map { response ->
                 Presence(userId, response.presence.maxOfOrNull { it.value.timestamp_sec } ?: 0)

@@ -9,7 +9,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.RxPresenter
-import ru.nordbird.tfsmessenger.domain.PeopleInteractor
+import ru.nordbird.tfsmessenger.domain.base.PeopleInteractor
 import java.util.concurrent.TimeUnit
 
 private typealias PeopleSideEffect = SideEffect<ProfileState, out ProfileAction>
