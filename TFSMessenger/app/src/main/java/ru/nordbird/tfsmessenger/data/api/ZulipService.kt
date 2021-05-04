@@ -47,4 +47,13 @@ interface ZulipService {
     @Streaming
     @GET
     fun downloadFile(@Url url: String): Single<ResponseBody>
+
+    @POST("register")
+    fun registerEventQueue(@QueryMap queryMap: Map<String, String>): Single<EventResponse>
+
+    @DELETE("events")
+    fun deleteEventQueue(@Query("queue_id") queueId: String): Single<BaseResponse>
+
+    @GET("events")
+    fun getEvents(@Query("queue_id") queueId: String, @Query("last_event_id") lastEventId: String = "-1"): Single<EventResponse>
 }

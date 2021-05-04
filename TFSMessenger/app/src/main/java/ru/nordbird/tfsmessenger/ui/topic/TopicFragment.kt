@@ -104,6 +104,8 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        getPresenter().input.accept(TopicAction.RegisterEventQueue(streamName, topicName))
+
         initUI()
         initToolbar()
         loadMessages()
@@ -119,8 +121,9 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
         compositeDisposable.clear()
+        getPresenter().input.accept(TopicAction.DeleteEventQueue)
+        super.onDestroyView()
     }
 
     private fun initUI() {
@@ -160,7 +163,7 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
     override fun handleUiEffect(uiEffect: TopicUiEffect) {
         when (uiEffect) {
             is TopicUiEffect.DownloadFile -> saveFile(uiEffect.stream)
-            is TopicUiEffect.LoadMessagesError -> showError(uiEffect.error)
+            is TopicUiEffect.ActionError -> showError(uiEffect.error)
         }
     }
 

@@ -9,6 +9,8 @@ interface TopicInteractor {
 
     fun loadMessages(streamName: String, topicName: String, messageId: Int): Flowable<List<MessageUi>>
 
+    fun loadMessagesByEvent(streamName: String, topicName: String, messageId: Int, queueId: String): Single<List<MessageUi>>
+
     fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<MessageUi>>
 
     fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<MessageUi>>

@@ -29,6 +29,12 @@ class TopicInteractorImpl(
             .map { messageMapper.transform(it) }
     }
 
+    override fun loadMessagesByEvent(streamName: String, topicName: String, messageId: Int, queueId: String): Single<List<MessageUi>> {
+        if (queueId.isEmpty()) return Single.just(emptyList())
+        return messageRepository.getTopicMessagesByEvent(streamName, topicName, messageId, queueId)
+            .map { messageMapper.transform(it) }
+    }
+
     override fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<MessageUi>> {
         return messageRepository.addMessage(streamName, topicName, ZulipAuth.AUTH_ID, text)
             .map { messageMapper.transform(it) }

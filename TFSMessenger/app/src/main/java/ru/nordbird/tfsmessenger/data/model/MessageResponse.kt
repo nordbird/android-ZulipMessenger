@@ -15,5 +15,3 @@ data class MessageResponse(
     @SerialName("result")
     val result: String
 )
-
-const val RESPONSE_RESULT_SUCCESS = "success"

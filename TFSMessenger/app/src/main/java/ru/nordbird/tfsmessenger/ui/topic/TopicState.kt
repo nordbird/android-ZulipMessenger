@@ -10,7 +10,8 @@ data class TopicState(
     val oldestMessageId: Int = Int.MAX_VALUE,
     val items: List<ViewTyped> = listOf(TopicShimmerUi(), TopicShimmerUi()),
     val messages: List<MessageUi> = emptyList(),
-    val needScroll: Boolean = false
+    val needScroll: Boolean = false,
+    val queueId: String = ""
 )
 
 internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
@@ -26,9 +27,7 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
             )
         }
 
-        is TopicAction.NextLoadMessages -> copy(
-            needScroll = false
-        )
+        is TopicAction.NextLoadMessages -> copy(needScroll = false)
 
         is TopicAction.MessagesLoaded -> {
             val mapper = MessageUiToViewTypedMapper()
@@ -41,23 +40,31 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
             )
         }
 
-        TopicAction.LoadMessagesStop -> this
+        is TopicAction.MessagesUpdated -> {
+            val mapper = MessageUiToViewTypedMapper()
+            val list = combineMessages(messages, topicAction.newMessages)
+            val minId = minOf(oldestMessageId, topicAction.newMessages.minOfOrNull { it.id } ?: oldestMessageId)
+            copy(
+                oldestMessageId = minId,
+                items = mapper.transform(list),
+                messages = list,
+                needScroll = false
+            )
+        }
 
-        is TopicAction.SendMessage -> copy(
-            needScroll = true
-        )
+        TopicAction.LoadMessagesStop, TopicAction.EventQueueStop -> this
 
-        is TopicAction.UpdateReaction -> copy(
-            needScroll = false
-        )
+        is TopicAction.SendMessage -> copy(needScroll = true)
 
-        is TopicAction.SendFile -> copy(
-            needScroll = true
-        )
+        is TopicAction.UpdateReaction -> copy(needScroll = false)
 
+        is TopicAction.SendFile -> copy(needScroll = true)
         is TopicAction.DownloadFile -> this
-
         is TopicAction.FileDownloaded -> this
+
+        is TopicAction.RegisterEventQueue -> this
+        is TopicAction.EventQueueRegistered -> copy(queueId = topicAction.queueId)
+        TopicAction.DeleteEventQueue -> copy(queueId = "")
     }
 }
 

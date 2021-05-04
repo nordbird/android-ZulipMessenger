@@ -5,11 +5,21 @@ import java.io.InputStream
 
 sealed class TopicAction {
 
+    data class RegisterEventQueue(val streamName: String, val topicName: String): TopicAction()
+
+    data class EventQueueRegistered(val queueId: String) : TopicAction()
+
+    object DeleteEventQueue : TopicAction()
+
+    object EventQueueStop : TopicAction()
+
     data class FirstLoadMessages(val streamName: String, val topicName: String) : TopicAction()
 
     data class NextLoadMessages(val streamName: String, val topicName: String) : TopicAction()
 
     data class MessagesLoaded(val newMessages: List<MessageUi>) : TopicAction()
+
+    data class MessagesUpdated(val newMessages: List<MessageUi>) : TopicAction()
 
     object LoadMessagesStop : TopicAction()
 

@@ -30,10 +30,12 @@ class GlobalDI private constructor(context: Context) {
     val subscriptionPresenter by lazy { ChannelsPresenter(subscriptionInteractor) }
     val streamPresenter by lazy { ChannelsPresenter(streamInteractor) }
 
+    private val eventRepository by lazy { EventRepositoryImpl(ZulipServiceImpl.getApi()) }
+
     private val messageRepository by lazy { MessageRepositoryImpl(ZulipServiceImpl.getApi(), AppDatabaseImpl.messageDao()) }
     private val reactionRepository by lazy { ReactionRepositoryImpl(ZulipServiceImpl.getApi(), AppDatabaseImpl.messageDao()) }
     private val topicInteractor by lazy { TopicInteractorImpl(messageRepository, reactionRepository) }
-    val topicPresenter by lazy { TopicPresenter(topicInteractor) }
+    val topicPresenter by lazy { TopicPresenter(topicInteractor, eventRepository) }
 
     companion object {
 

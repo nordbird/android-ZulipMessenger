@@ -6,7 +6,7 @@ import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import ru.nordbird.tfsmessenger.data.api.MessageQuery
-import ru.nordbird.tfsmessenger.data.api.ZulipAuth
+import ru.nordbird.tfsmessenger.data.api.ZulipConst
 import ru.nordbird.tfsmessenger.data.api.ZulipService
 import ru.nordbird.tfsmessenger.data.dao.MessageDao
 import ru.nordbird.tfsmessenger.data.mapper.MessageDbToMessageMapper
@@ -25,7 +25,7 @@ class MessageRepositoryImpl(
     }
 
     private val nwMessageMapper = MessageNwToMessageDbMapper()
-    private val dbMessageMapper = MessageDbToMessageMapper(ZulipAuth.BASE_URL)
+    private val dbMessageMapper = MessageDbToMessageMapper(ZulipConst.BASE_URL)
     private var maxId = 0
 
     override fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Flowable<List<Message>> {
@@ -41,6 +41,18 @@ class MessageRepositoryImpl(
         return apiService.getMessages(query).map { response -> response.messages.size }
     }
 
+    override fun getTopicMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>> {
+        val query = MessageQuery.getNewMessages(streamName, topicName, lastMessageId)
+
+        return apiService.getEvents(queueId).flatMap { apiService.getMessages(query) }.map { response ->
+            nwMessageMapper.transform(response.messages)
+                .map { message -> message.copy(streamName = streamName, topicName = topicName) }
+        }
+            .doOnSuccess { messages -> maxId = maxOf(maxId, messages.maxOfOrNull { it.id } ?: 0) }
+            .doOnSuccess { saveToDatabase(streamName, topicName, it) }
+            .map { dbMessageMapper.transform(it) }
+    }
+
     override fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {
         val messageId = ++maxId
         val message = MessageDb(messageId, streamName, topicName, senderId, "", "", text, Date().time, localId = messageId)
@@ -48,7 +60,7 @@ class MessageRepositoryImpl(
         return Flowable.concat(
             Flowable.fromCallable { listOf(saveToDatabase(message)) },
             addNetworkMessage(streamName, topicName, text).toFlowable().flatMap { response ->
-                if (response.result == RESPONSE_RESULT_SUCCESS) {
+                if (response.result == ZulipConst.RESPONSE_RESULT_SUCCESS) {
                     Single.concat(
                         Single.fromCallable { listOf(replaceMessage(message, response.id)) },
                         getNetworkMessages(streamName, topicName, response.id, 1)
@@ -69,7 +81,7 @@ class MessageRepositoryImpl(
         val fileToUpload = MultipartBody.Part.createFormData("file", name, requestBody)
         return apiService.uploadFile(fileToUpload).toFlowable()
             .flatMap {
-                val content = "[$name](${ZulipAuth.BASE_URL}${it.uri})"
+                val content = "[$name](${ZulipConst.BASE_URL}${it.uri})"
                 addMessage(streamName, topicName, senderId, content)
             }
     }

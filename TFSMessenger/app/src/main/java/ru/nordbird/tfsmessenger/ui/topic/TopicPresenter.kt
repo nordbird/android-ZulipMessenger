@@ -7,6 +7,7 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
+import ru.nordbird.tfsmessenger.data.repository.base.EventRepository
 import ru.nordbird.tfsmessenger.domain.base.TopicInteractor
 import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.RxPresenter
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
@@ -15,7 +16,8 @@ import java.io.InputStream
 private typealias TopicSideEffect = SideEffect<TopicState, out TopicAction>
 
 class TopicPresenter(
-    private val topicInteractor: TopicInteractor
+    private val topicInteractor: TopicInteractor,
+    private val eventRepository: EventRepository
 ) : RxPresenter<TopicView>(TopicView::class.java) {
 
     val input: Consumer<TopicAction> get() = inputRelay
@@ -28,7 +30,18 @@ class TopicPresenter(
     private val topicState: Observable<TopicState>
         get() = inputRelay.reduxStore(
             initialState = lastState,
-            sideEffects = listOf(firstLoadMessages(), nextLoadMessages(), sendMessage(), updateReaction(), sendFile(), downloadFile()),
+            sideEffects = listOf(
+                firstLoadMessages(),
+                nextLoadMessages(),
+                sendMessage(),
+                updateReaction(),
+                sendFile(),
+                downloadFile(),
+                loadMessagesByEvent(),
+                registerEventQueue(),
+                deleteEventQueue(),
+                resetLoadAction()
+            ),
             reducer = TopicState::reduce
         ).doOnNext { lastState = it }
 
@@ -50,7 +63,7 @@ class TopicPresenter(
                 .switchMap { action ->
                     loadMessages(action.streamName, action.topicName, 0)
                         .onErrorReturn { error ->
-                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
                         }
                 }
@@ -63,10 +76,56 @@ class TopicPresenter(
                 .switchMap { action ->
                     loadMessages(action.streamName, action.topicName, state().oldestMessageId)
                         .onErrorReturn { error ->
-                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
                         }
                 }
+        }
+    }
+
+    private fun registerEventQueue(): TopicSideEffect {
+        return { actions, _ ->
+            actions.ofType(TopicAction.RegisterEventQueue::class.java)
+                .switchMap { action ->
+                    registerEventQueue(action.streamName, action.topicName)
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
+                            TopicAction.EventQueueStop
+                        }
+                }
+        }
+    }
+
+    private fun deleteEventQueue(): TopicSideEffect {
+        return { actions, state ->
+            actions.ofType(TopicAction.DeleteEventQueue::class.java)
+                .switchMap {
+                    deleteEventQueue(state().queueId)
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
+                            TopicAction.EventQueueStop
+                        }
+                }
+        }
+    }
+
+    private fun loadMessagesByEvent(): TopicSideEffect {
+        return { actions, state ->
+            actions.ofType(TopicAction.MessagesLoaded::class.java)
+                .switchMap {
+                    loadMessagesByEvent(state().streamName, state().topicName, state().oldestMessageId, state().queueId)
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
+                            TopicAction.LoadMessagesStop
+                        }
+                }
+        }
+    }
+
+    private fun resetLoadAction(): TopicSideEffect {
+        return { actions, _ ->
+            actions.ofType(TopicAction.MessagesUpdated::class.java)
+                .map { TopicAction.MessagesLoaded(it.newMessages) }
         }
     }
 
@@ -76,7 +135,7 @@ class TopicPresenter(
                 .switchMap { action ->
                     sendMessage(action.streamName, action.topicName, action.content)
                         .onErrorReturn { error ->
-                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
                         }
                 }
@@ -89,7 +148,7 @@ class TopicPresenter(
                 .switchMap { action ->
                     updateReaction(action.message, action.currentUserId, action.reactionCode)
                         .onErrorReturn { error ->
-                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
                         }
                 }
@@ -102,7 +161,7 @@ class TopicPresenter(
                 .switchMap { action ->
                     sendFile(action.streamName, action.topicName, action.name, action.stream)
                         .onErrorReturn { error ->
-                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
                         }
                 }
@@ -115,11 +174,25 @@ class TopicPresenter(
                 .switchMap { action ->
                     downloadFile(action.url)
                         .onErrorReturn { error ->
-                            uiEffectsRelay.accept(TopicUiEffect.LoadMessagesError(error))
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
                         }
                 }
         }
+    }
+
+    private fun registerEventQueue(streamName: String, topicName: String): Observable<TopicAction> {
+        return eventRepository.registerTopicEventQueue(streamName, topicName)
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { queue -> TopicAction.EventQueueRegistered(queue) }
+    }
+
+    private fun deleteEventQueue(queueId: String): Observable<TopicAction> {
+        return eventRepository.deleteEventQueue(queueId)
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { TopicAction.EventQueueStop }
     }
 
     private fun loadMessages(streamName: String, topicName: String, messageId: Int): Observable<TopicAction> {
@@ -127,6 +200,13 @@ class TopicPresenter(
             .subscribeOn(Schedulers.io())
             .toObservable()
             .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
+    }
+
+    private fun loadMessagesByEvent(streamName: String, topicName: String, messageId: Int, queueId: String): Observable<TopicAction> {
+        return topicInteractor.loadMessagesByEvent(streamName, topicName, messageId, queueId)
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { items -> TopicAction.MessagesUpdated(newMessages = items) }
     }
 
     private fun sendMessage(streamName: String, topicName: String, content: String): Observable<TopicAction> {

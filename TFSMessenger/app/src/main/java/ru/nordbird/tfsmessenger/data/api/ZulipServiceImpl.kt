@@ -8,7 +8,8 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth.AUTH_EMAIL
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth.AUTH_KEY
-import ru.nordbird.tfsmessenger.data.api.ZulipAuth.BASE_URL
+import ru.nordbird.tfsmessenger.data.api.ZulipConst.BASE_URL
+import java.util.concurrent.TimeUnit
 
 object ZulipServiceImpl {
     private const val BASE_URL_API = "$BASE_URL/api/v1/"
@@ -17,6 +18,9 @@ object ZulipServiceImpl {
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(HeaderInterceptor(AUTH_EMAIL, AUTH_KEY))
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
     private val retrofit: Retrofit = Retrofit.Builder()
