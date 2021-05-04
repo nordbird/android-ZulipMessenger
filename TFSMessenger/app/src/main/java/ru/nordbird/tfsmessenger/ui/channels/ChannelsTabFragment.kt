@@ -46,8 +46,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
     private val holderFactory = TfsHolderFactory(clickListener = clickListener)
     private val diffUtilCallback = DiffUtilCallback<ViewTyped>()
     private val adapter = Adapter(holderFactory, diffUtilCallback)
-
-    private var lastState: ChannelsState = ChannelsState()
+    private var needScroll: Boolean = false
 
     override fun getPresenter(): ChannelsPresenter {
         return when (tabType) {
@@ -90,7 +89,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
     }
 
     override fun render(state: ChannelsState) {
-        lastState = state
+        needScroll = state.needScroll
         adapter.items = state.items
     }
 
@@ -117,7 +116,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
         getPresenter().input.accept(ChannelsAction.LoadStreams)
 
         val disposable = adapter.updateAction.subscribe {
-            if (lastState.needScroll) {
+            if (needScroll) {
                 binding.rvStreams.layoutManager?.scrollToPosition(0)
             }
         }

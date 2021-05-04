@@ -56,14 +56,11 @@ class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lastState = lastState.copy(filterQuery = savedInstanceState?.getString(STATE_LAST_QUERY, "") ?: "")
         setHasOptionsMenu(true)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentPeopleBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -83,7 +80,19 @@ class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
         val searchDisposable = searchObservable.map { PeopleAction.SearchUsers(it) }.subscribe(getPresenter().input)
         compositeDisposable.add(searchDisposable)
 
+        if (lastState.filterQuery.isNotBlank()) {
+            val query = lastState.filterQuery
+            searchItem.expandActionView()
+            searchView.setQuery(query, true)
+            searchView.clearFocus()
+        }
+
         super.onCreateOptionsMenu(menu, inflater)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(STATE_LAST_QUERY, lastState.filterQuery)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onDestroyView() {
@@ -139,6 +148,10 @@ class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
 
     interface PeopleFragmentListener {
         fun onOpenUserProfile(userId: Int)
+    }
+
+    companion object {
+        private const val STATE_LAST_QUERY = "state_last_query"
     }
 
 }

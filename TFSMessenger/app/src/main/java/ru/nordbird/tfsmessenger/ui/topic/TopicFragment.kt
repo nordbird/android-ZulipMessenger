@@ -11,7 +11,6 @@ import android.provider.OpenableColumns
 import android.view.*
 import android.widget.TableRow
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
@@ -37,10 +36,8 @@ import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
-import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
 import java.io.FileNotFoundException
 import java.io.InputStream
-
 
 class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
 
@@ -54,6 +51,7 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
     private var topicColor: Int = 0
 
     private var isTextMode = false
+    private var needScroll: Boolean = false
     private val currentUserId = ZulipAuth.AUTH_ID
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
@@ -85,8 +83,6 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
     private val diffUtilCallback = DiffUtilCallback<ViewTyped>()
     private val adapter = Adapter(holderFactory, diffUtilCallback)
 
-    private var lastState: TopicState = TopicState()
-
     override fun getPresenter(): TopicPresenter = GlobalDI.INSTANCE.topicPresenter
 
     override fun getMviView(): TopicView = this
@@ -103,7 +99,6 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentTopicBinding.inflate(inflater, container, false)
-
         return binding.root
     }
 
@@ -111,7 +106,7 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
         super.onViewCreated(view, savedInstanceState)
         initUI()
         initToolbar()
-        updateMessages()
+        loadMessages()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -150,7 +145,7 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
         }
 
         val disposable = adapter.updateAction.subscribe {
-            if (lastState.needScroll) {
+            if (needScroll) {
                 binding.rvChat.layoutManager?.scrollToPosition(0)
             }
         }
@@ -158,7 +153,7 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
     }
 
     override fun render(state: TopicState) {
-        lastState = state
+        needScroll = state.needScroll
         adapter.items = state.items
     }
 
@@ -195,7 +190,7 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
         Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
     }
 
-    private fun updateMessages() {
+    private fun loadMessages() {
         getPresenter().input.accept(TopicAction.FirstLoadMessages(streamName, topicName))
     }
 
@@ -255,7 +250,7 @@ class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
     }
 
     private fun onReloadClick() {
-        updateMessages()
+        loadMessages()
     }
 
     private fun setRecyclerViewScrollListener(linearLayoutManager: LinearLayoutManager) {

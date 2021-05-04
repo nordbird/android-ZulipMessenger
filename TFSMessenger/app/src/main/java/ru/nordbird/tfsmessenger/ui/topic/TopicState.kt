@@ -18,9 +18,11 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         is TopicAction.FirstLoadMessages -> {
             val topicChanged = (topicAction.streamName != streamName || topicAction.topicName != topicName)
             copy(
+                streamName = topicAction.streamName,
+                topicName = topicAction.topicName,
                 oldestMessageId = if (topicChanged) Int.MAX_VALUE else oldestMessageId,
                 messages = if (topicChanged) emptyList() else messages,
-                needScroll = true
+                needScroll = topicChanged
             )
         }
 

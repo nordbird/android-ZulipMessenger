@@ -8,30 +8,24 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import com.google.android.material.tabs.TabLayoutMediator
+import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment.Companion.REQUEST_FILTER_QUERY
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment.Companion.REQUEST_FILTER_QUERY_KEY
-
+import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
 
 class ChannelsFragment : Fragment() {
 
     private var _binding: FragmentChannelsBinding? = null
     private val binding get() = _binding!!
     private lateinit var activityListener: ChannelsFragmentListener
+    private val compositeDisposable = CompositeDisposable()
+    private var lastQuery: String = ""
 
     private val channelsTabs = listOf(ChannelsTabType.SUBSCRIBED, ChannelsTabType.ALL)
     private val tabConfigurationStrategy = TabLayoutMediator.TabConfigurationStrategy { tab, position ->
         tab.text = resources.getString(channelsTabs[position].resId)
-    }
-    private val searchListener = object : SearchView.OnQueryTextListener {
-        override fun onQueryTextSubmit(query: String?): Boolean {
-            return sendFilterQuery(query)
-        }
-
-        override fun onQueryTextChange(newText: String?): Boolean {
-            return sendFilterQuery(newText)
-        }
     }
 
     override fun onAttach(context: Context) {
@@ -45,6 +39,7 @@ class ChannelsFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lastQuery = savedInstanceState?.getString(STATE_LAST_QUERY, "") ?: ""
         setHasOptionsMenu(true)
         childFragmentManager.setFragmentResultListener(REQUEST_OPEN_TOPIC, this) { _, bundle ->
             activityListener.onOpenTopic(bundle)
@@ -53,22 +48,41 @@ class ChannelsFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentChannelsBinding.inflate(inflater, container, false)
-        initUI()
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        initUI()
+        initToolbar()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.menu_search, menu)
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem?.actionView as SearchView
-        searchView.setOnQueryTextListener(searchListener)
+
+        val searchDisposable = RxSearchObservable.fromView(searchView).subscribe(::sendFilterQuery)
+        compositeDisposable.add(searchDisposable)
+
+        if (lastQuery.isNotBlank()) {
+            val query = lastQuery
+            searchItem.expandActionView()
+            searchView.setQuery(query, true)
+            searchView.clearFocus()
+        }
 
         super.onCreateOptionsMenu(menu, inflater)
     }
 
-    override fun onStart() {
-        super.onStart()
-        initToolbar()
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(STATE_LAST_QUERY, lastQuery)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        compositeDisposable.clear()
     }
 
     private fun initToolbar() {
@@ -78,7 +92,8 @@ class ChannelsFragment : Fragment() {
         }
     }
 
-    private fun sendFilterQuery(query: String?): Boolean {
+    private fun sendFilterQuery(query: String): Boolean {
+        lastQuery = query
         val requestKey = REQUEST_FILTER_QUERY + channelsTabs[binding.viewPager.currentItem]
         childFragmentManager.setFragmentResult(
             requestKey,
@@ -98,6 +113,7 @@ class ChannelsFragment : Fragment() {
     }
 
     companion object {
+        private const val STATE_LAST_QUERY = "state_last_query"
 
         const val REQUEST_OPEN_TOPIC = "request_open_topic"
         const val REQUEST_OPEN_TOPIC_STREAM_NAME = "stream_name"
