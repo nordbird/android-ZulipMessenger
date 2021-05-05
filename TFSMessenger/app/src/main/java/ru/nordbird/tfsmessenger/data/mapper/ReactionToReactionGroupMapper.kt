@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.data.mapper
 
+import ru.nordbird.tfsmessenger.data.mapper.base.Mapper
 import ru.nordbird.tfsmessenger.data.model.Reaction
 import ru.nordbird.tfsmessenger.data.model.ReactionGroup
 

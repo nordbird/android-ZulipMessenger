@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.data.mapper
 
 import android.graphics.Color
+import ru.nordbird.tfsmessenger.data.mapper.base.Mapper
 import ru.nordbird.tfsmessenger.data.model.Topic
 import ru.nordbird.tfsmessenger.ui.recycler.holder.TopicUi
 

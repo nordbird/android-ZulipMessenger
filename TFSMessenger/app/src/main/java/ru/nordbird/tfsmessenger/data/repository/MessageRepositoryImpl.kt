@@ -25,7 +25,7 @@ class MessageRepositoryImpl(
     }
 
     private val nwMessageMapper = MessageNwToMessageDbMapper()
-    private val dbMessageMapper = MessageDbToMessageMapper(ZulipConst.BASE_URL)
+    private val dbMessageMapper = MessageDbToMessageMapper(ZulipConst.BASE_URL, ZulipConst.UPLOAD_PATH)
     private var maxId = 0
 
     override fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Flowable<List<Message>> {

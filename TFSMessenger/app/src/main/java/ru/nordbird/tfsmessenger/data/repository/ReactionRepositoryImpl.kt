@@ -13,7 +13,7 @@ class ReactionRepositoryImpl(
     private val apiService: ZulipService,
     private val messageDao: MessageDao
 ) : ReactionRepository {
-    private val dbMessageMapper = MessageDbToMessageMapper(ZulipConst.BASE_URL)
+    private val dbMessageMapper = MessageDbToMessageMapper(ZulipConst.BASE_URL, ZulipConst.UPLOAD_PATH)
 
     override fun addReaction(messageId: Int, currentUserId: Int, reactionCode: Int, reactionName: String): Flowable<List<Message>> {
         return Single.concat(

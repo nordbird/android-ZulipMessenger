@@ -33,4 +33,16 @@
         <item name="android:textSize">24sp</item>
     </style>
 
+    <style name="AttachmentStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">7dp</item>
+        <item name="android:background">@drawable/message_bg</item>
+        <item name="android:drawablePadding">8dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="drawableStartCompat">@drawable/ic_baseline_get_app_24</item>
+    </style>
+
 </resources>

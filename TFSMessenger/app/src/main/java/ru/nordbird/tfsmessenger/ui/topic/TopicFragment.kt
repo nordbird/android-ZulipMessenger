@@ -62,6 +62,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
             when (holder.itemViewType) {
                 R.layout.item_message_in, R.layout.item_message_out -> onMessageClick(holder, view, clickType)
+                R.layout.item_attachment_in, R.layout.item_attachment_out -> onAttachmentClick(holder)
                 R.layout.item_error -> onReloadClick()
             }
         }
@@ -246,7 +247,6 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
                 updateReaction(message, reactionView.reactionCode)
             }
             MessageVHClickType.ADD_REACTION_CLICK -> showReactionChooser(message)
-            MessageVHClickType.GET_ATTACHMENT_CLICK -> downloadAttachment(message)
         }
     }
 
@@ -258,6 +258,11 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     private fun onReloadClick() {
         loadMessages()
+    }
+
+    private fun onAttachmentClick(holder: BaseViewHolder<*>) {
+        val attachment = adapter.items[holder.absoluteAdapterPosition] as AttachmentUi
+        getPresenter().input.accept(TopicAction.DownloadFile(attachment.url))
     }
 
     private fun setRecyclerViewScrollListener(linearLayoutManager: LinearLayoutManager) {
@@ -283,10 +288,6 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         } catch (ex: FileNotFoundException) {
             Snackbar.make(binding.root, getString(R.string.error_file_not_found), Snackbar.LENGTH_SHORT).show()
         }
-    }
-
-    private fun downloadAttachment(message: MessageUi) {
-        getPresenter().input.accept(TopicAction.DownloadFile(message.link))
     }
 
     private fun saveFile(it: InputStream) {

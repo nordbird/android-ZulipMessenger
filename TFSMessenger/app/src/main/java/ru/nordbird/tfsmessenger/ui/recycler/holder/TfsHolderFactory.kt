@@ -14,6 +14,7 @@ class TfsHolderFactory(
             R.layout.item_error -> ErrorViewHolder(view, clickListener)
             R.layout.item_message_in -> MessageInViewHolder(view, currentUserId, clickListener)
             R.layout.item_message_out -> MessageOutViewHolder(view, currentUserId, clickListener)
+            R.layout.item_attachment_in, R.layout.item_attachment_out -> AttachmentViewHolder(view, clickListener)
             R.layout.item_separator_date -> SeparatorDateViewHolder(view)
             R.layout.item_stream -> StreamViewHolder(view, clickListener)
             R.layout.item_topic -> TopicViewHolder(view, clickListener)

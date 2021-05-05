@@ -7,7 +7,7 @@ data class Message(
     val avatar_url: String,
     val content: String,
     val timestamp_ms: Long,
-    val reactions: List<Reaction> = listOf(),
+    val reactions: List<Reaction> = emptyList(),
     val localId: Int = 0,
-    val link: String = ""
+    val attachments: List<Attachment> = emptyList()
 )

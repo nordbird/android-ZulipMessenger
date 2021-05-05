@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.data.mapper
 
+import ru.nordbird.tfsmessenger.data.mapper.base.Mapper
 import ru.nordbird.tfsmessenger.data.model.*
 
 class UserDbToUserMapper : Mapper<List<UserDb>, List<User>> {

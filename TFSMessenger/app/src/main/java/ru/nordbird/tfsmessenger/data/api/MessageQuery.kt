@@ -22,7 +22,8 @@ object MessageQuery {
             "anchor" to anchor,
             "num_before" to count.toString(),
             "num_after" to MESSAGE_COUNT_ZERO,
-            "narrow" to Json.encodeToString(narrow)
+            "narrow" to Json.encodeToString(narrow),
+            "apply_markdown" to "false"
         )
     }
 
@@ -52,7 +53,8 @@ object MessageQuery {
             "anchor" to anchor,
             "num_before" to MESSAGE_COUNT_ZERO,
             "num_after" to MESSAGE_COUNT_MAX,
-            "narrow" to Json.encodeToString(narrow)
+            "narrow" to Json.encodeToString(narrow),
+            "apply_markdown" to "false"
         )
     }
 
