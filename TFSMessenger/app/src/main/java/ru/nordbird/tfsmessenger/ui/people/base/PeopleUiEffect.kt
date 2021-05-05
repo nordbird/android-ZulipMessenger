@@ -1,4 +1,4 @@
-package ru.nordbird.tfsmessenger.ui.people
+package ru.nordbird.tfsmessenger.ui.people.base
 
 sealed class PeopleUiEffect {
 

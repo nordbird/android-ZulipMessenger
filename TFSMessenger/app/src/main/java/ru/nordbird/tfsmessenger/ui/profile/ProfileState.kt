@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.ui.profile
 
 import ru.nordbird.tfsmessenger.data.model.Presence
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfileAction
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
 
 data class ProfileState(

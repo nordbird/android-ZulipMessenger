@@ -8,17 +8,20 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.domain.base.ChannelsInteractor
-import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.RxPresenter
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsAction
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsPresenter
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsUiEffect
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsView
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 private typealias ChannelsSideEffect = SideEffect<ChannelsState, out ChannelsAction>
 
-class ChannelsPresenter(
+class ChannelsPresenterImpl(
     private val channelsInteractor: ChannelsInteractor
-) : RxPresenter<ChannelsView>(ChannelsView::class.java) {
+) : ChannelsPresenter() {
 
-    val input: Consumer<ChannelsAction> get() = inputRelay
+    override val input: Consumer<ChannelsAction> get() = inputRelay
 
     private val inputRelay: PublishRelay<ChannelsAction> = PublishRelay.create()
     private val uiEffectsRelay: PublishRelay<ChannelsUiEffect> = PublishRelay.create()

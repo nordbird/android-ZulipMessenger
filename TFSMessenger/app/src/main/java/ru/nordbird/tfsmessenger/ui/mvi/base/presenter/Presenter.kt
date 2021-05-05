@@ -1,8 +1,12 @@
 package ru.nordbird.tfsmessenger.ui.mvi.base.presenter
 
-interface Presenter<View> {
+import io.reactivex.functions.Consumer
+
+interface Presenter<View, Action> {
 
     fun attachView(view: View)
 
     fun detachView(isFinishing: Boolean)
+
+    val input: Consumer<Action> get() = error("provide action input $this")
 }

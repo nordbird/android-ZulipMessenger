@@ -1,4 +1,4 @@
-package ru.nordbird.tfsmessenger.ui.topic
+package ru.nordbird.tfsmessenger.ui.topic.base
 
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
 import java.io.InputStream

@@ -15,9 +15,13 @@ import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.databinding.FragmentProfileBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfileAction
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfilePresenter
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfileUiEffect
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfileView
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserPresence
 
-class ProfileFragment : MviFragment<ProfileView, ProfilePresenter>(), ProfileView {
+class ProfileFragment : MviFragment<ProfileView, ProfileAction, ProfilePresenter>(), ProfileView {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!

@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.ui.channels
 
 import ru.nordbird.tfsmessenger.data.model.UnreadCounter
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsAction
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.StreamShimmerUi

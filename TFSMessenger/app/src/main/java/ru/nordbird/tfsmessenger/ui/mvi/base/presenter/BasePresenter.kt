@@ -3,9 +3,9 @@ package ru.nordbird.tfsmessenger.ui.mvi.base.presenter
 import androidx.annotation.CallSuper
 import ru.nordbird.tfsmessenger.utils.reflection.ReflectionUtils
 
-abstract class BasePresenter<View> protected constructor(
+abstract class BasePresenter<View, Action> protected constructor(
     viewClass: Class<View>
-) : Presenter<View> {
+) : Presenter<View, Action> {
 
     private val stubView: View = ReflectionUtils.createStub(viewClass)
     private var realView: View? = null

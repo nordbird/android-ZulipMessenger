@@ -1,4 +1,4 @@
-package ru.nordbird.tfsmessenger.ui.profile
+package ru.nordbird.tfsmessenger.ui.profile.base
 
 sealed class ProfileUiEffect {
 

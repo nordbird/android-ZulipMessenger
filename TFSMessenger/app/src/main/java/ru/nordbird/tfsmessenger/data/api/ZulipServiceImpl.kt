@@ -13,23 +13,21 @@ import java.util.concurrent.TimeUnit
 
 object ZulipServiceImpl {
     private const val BASE_URL_API = "$BASE_URL/api/v1/"
-
-    private val contentType = MediaType.get("application/json")
+    private const val TIMEOUT: Long = 60
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(HeaderInterceptor(AUTH_EMAIL, AUTH_KEY))
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
+        .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
+        .readTimeout(TIMEOUT, TimeUnit.SECONDS)
         .build()
 
     private val retrofit: Retrofit = Retrofit.Builder()
         .client(client)
         .baseUrl(BASE_URL_API)
-        .addConverterFactory(Json { ignoreUnknownKeys = true }.asConverterFactory(contentType))
+        .addConverterFactory(Json { ignoreUnknownKeys = true }.asConverterFactory(MediaType.get("application/json")))
         .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
         .build()
-
 
     private val zulipService = retrofit.create(ZulipService::class.java)
 

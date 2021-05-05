@@ -36,10 +36,14 @@ import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicAction
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicPresenter
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicUiEffect
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicView
 import java.io.FileNotFoundException
 import java.io.InputStream
 
-class TopicFragment : MviFragment<TopicView, TopicPresenter>(), TopicView {
+class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), TopicView {
 
     private var _binding: FragmentTopicBinding? = null
     private val binding get() = _binding!!

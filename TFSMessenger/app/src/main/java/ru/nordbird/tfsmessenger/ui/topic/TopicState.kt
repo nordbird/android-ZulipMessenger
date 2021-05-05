@@ -3,6 +3,7 @@ package ru.nordbird.tfsmessenger.ui.topic
 import ru.nordbird.tfsmessenger.data.mapper.MessageUiToViewTypedMapper
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicAction
 
 data class TopicState(
     val streamName: String = "",

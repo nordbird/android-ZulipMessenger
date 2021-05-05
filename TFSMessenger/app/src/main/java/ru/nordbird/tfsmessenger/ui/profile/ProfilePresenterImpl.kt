@@ -8,20 +8,23 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
-import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.RxPresenter
 import ru.nordbird.tfsmessenger.domain.base.PeopleInteractor
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfileAction
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfilePresenter
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfileUiEffect
+import ru.nordbird.tfsmessenger.ui.profile.base.ProfileView
 import java.util.concurrent.TimeUnit
 
 private typealias PeopleSideEffect = SideEffect<ProfileState, out ProfileAction>
 
-class ProfilePresenter(
+class ProfilePresenterImpl(
     private val peopleInteractor: PeopleInteractor
-) : RxPresenter<ProfileView>(ProfileView::class.java) {
+) : ProfilePresenter() {
+
+    override val input: Consumer<ProfileAction> get() = inputRelay
 
     private val inputRelay: Relay<ProfileAction> = PublishRelay.create()
     private val uiEffectsRelay = PublishRelay.create<ProfileUiEffect>()
-
-    val input: Consumer<ProfileAction> get() = inputRelay
     private val uiEffectsInput: Observable<ProfileUiEffect> get() = uiEffectsRelay
 
     private val peopleState: Observable<ProfileState> = inputRelay.reduxStore(

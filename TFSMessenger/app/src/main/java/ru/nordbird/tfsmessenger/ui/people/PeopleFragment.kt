@@ -11,12 +11,15 @@ import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentPeopleBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
+import ru.nordbird.tfsmessenger.ui.people.base.PeopleAction
+import ru.nordbird.tfsmessenger.ui.people.base.PeopleUiEffect
+import ru.nordbird.tfsmessenger.ui.people.base.PeopleView
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
 
-class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
+class PeopleFragment : MviFragment<PeopleView, PeopleAction, PeoplePresenterImpl>(), PeopleView {
 
     private var _binding: FragmentPeopleBinding? = null
     private val binding get() = _binding!!
@@ -41,7 +44,7 @@ class PeopleFragment : MviFragment<PeopleView, PeoplePresenter>(), PeopleView {
 
     private var lastState: PeopleState = PeopleState()
 
-    override fun getPresenter(): PeoplePresenter = GlobalDI.INSTANCE.peoplePresenter
+    override fun getPresenter(): PeoplePresenterImpl = GlobalDI.INSTANCE.peoplePresenter
 
     override fun getMviView(): PeopleView = this
 

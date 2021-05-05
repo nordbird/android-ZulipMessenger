@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger.ui.people
 
 import ru.nordbird.tfsmessenger.data.model.Presence
+import ru.nordbird.tfsmessenger.ui.people.base.PeopleAction
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 import ru.nordbird.tfsmessenger.ui.recycler.holder.ErrorUi
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserShimmerUi

@@ -3,7 +3,7 @@ package ru.nordbird.tfsmessenger.ui.mvi.base.presenter
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 
-abstract class RxPresenter<V> protected constructor(viewClass: Class<V>) : BasePresenter<V>(viewClass) {
+abstract class RxPresenter<V, Action> protected constructor(viewClass: Class<V>) : BasePresenter<V, Action>(viewClass) {
     private val disposables = CompositeDisposable()
 
     override fun detachView(isFinishing: Boolean) {

@@ -9,18 +9,21 @@ import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.repository.base.EventRepository
 import ru.nordbird.tfsmessenger.domain.base.TopicInteractor
-import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.RxPresenter
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicAction
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicPresenter
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicUiEffect
+import ru.nordbird.tfsmessenger.ui.topic.base.TopicView
 import java.io.InputStream
 
 private typealias TopicSideEffect = SideEffect<TopicState, out TopicAction>
 
-class TopicPresenter(
+class TopicPresenterImpl(
     private val topicInteractor: TopicInteractor,
     private val eventRepository: EventRepository
-) : RxPresenter<TopicView>(TopicView::class.java) {
+) : TopicPresenter() {
 
-    val input: Consumer<TopicAction> get() = inputRelay
+    override val input: Consumer<TopicAction> get() = inputRelay
 
     private val inputRelay: PublishRelay<TopicAction> = PublishRelay.create()
     private val uiEffectsRelay: PublishRelay<TopicUiEffect> = PublishRelay.create()

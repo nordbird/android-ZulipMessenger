@@ -2,7 +2,7 @@ package ru.nordbird.tfsmessenger.ui.mvi.base
 
 import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.Presenter
 
-interface MviViewCallback<View, P : Presenter<View>> {
+interface MviViewCallback<View, Action, P : Presenter<View, Action>> {
 
     fun getPresenter(): P
 

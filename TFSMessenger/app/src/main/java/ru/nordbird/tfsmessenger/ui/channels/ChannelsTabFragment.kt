@@ -18,12 +18,15 @@ import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_O
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsAction
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsUiEffect
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsView
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 
-class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), ChannelsView {
+class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPresenterImpl>(), ChannelsView {
 
     private var _binding: FragmentChannelsTabBinding? = null
     private val binding get() = _binding!!
@@ -48,7 +51,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsPresenter>(), Chan
     private val adapter = Adapter(holderFactory, diffUtilCallback)
     private var needScroll: Boolean = false
 
-    override fun getPresenter(): ChannelsPresenter {
+    override fun getPresenter(): ChannelsPresenterImpl {
         return when (tabType) {
             ChannelsTabType.ALL -> GlobalDI.INSTANCE.streamPresenter
             ChannelsTabType.SUBSCRIBED -> GlobalDI.INSTANCE.subscriptionPresenter

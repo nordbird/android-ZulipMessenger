@@ -2,11 +2,11 @@ package ru.nordbird.tfsmessenger.ui.mvi.base
 
 import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.Presenter
 
-class MviHelper<View, P : Presenter<View>>(
-    private val callback: MviViewCallback<View, P>
+class MviHelper<View, Action, P : Presenter<View, Action>>(
+    private val callback: MviViewCallback<View, Action, P>
 ) {
 
-    private lateinit var presenter: Presenter<View>
+    private lateinit var presenter: Presenter<View, Action>
 
     fun create() {
         presenter = callback.getPresenter()

@@ -8,17 +8,20 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.domain.base.PeopleInteractor
-import ru.nordbird.tfsmessenger.ui.mvi.base.presenter.RxPresenter
+import ru.nordbird.tfsmessenger.ui.people.base.PeopleAction
+import ru.nordbird.tfsmessenger.ui.people.base.PeoplePresenter
+import ru.nordbird.tfsmessenger.ui.people.base.PeopleUiEffect
+import ru.nordbird.tfsmessenger.ui.people.base.PeopleView
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 private typealias PeopleSideEffect = SideEffect<PeopleState, out PeopleAction>
 
-class PeoplePresenter(
+class PeoplePresenterImpl(
     private val peopleInteractor: PeopleInteractor
-) : RxPresenter<PeopleView>(PeopleView::class.java) {
+) : PeoplePresenter() {
 
-    val input: Consumer<PeopleAction> get() = inputRelay
+    override val input: Consumer<PeopleAction> get() = inputRelay
 
     private val inputRelay: PublishRelay<PeopleAction> = PublishRelay.create()
     private val uiEffectsRelay: PublishRelay<PeopleUiEffect> = PublishRelay.create()

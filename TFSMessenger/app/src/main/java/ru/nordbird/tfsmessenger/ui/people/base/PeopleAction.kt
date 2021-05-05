@@ -1,4 +1,4 @@
-package ru.nordbird.tfsmessenger.ui.people
+package ru.nordbird.tfsmessenger.ui.people.base
 
 import ru.nordbird.tfsmessenger.data.model.Presence
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserUi
