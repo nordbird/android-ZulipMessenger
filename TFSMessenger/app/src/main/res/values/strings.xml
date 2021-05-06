@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name">TFS Messenger</string>
-    <string name="message_text">Привет! Это тестовое сообщение, отвечать на него не обязательно</string>
-    <string name="message_user">Darrell Steward</string>
     <string name="input_message_hint">Написать…</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_channels">Channels</string>
@@ -11,16 +9,16 @@
     <string name="tab_channels_subscribed">Subscribed</string>
     <string name="tab_channels_all">All streams</string>
     <string name="item_topic_count">%d mes</string>
+    <string name="topic_name">Topic: #%s</string>
     <string name="profile_button_logout">Log out</string>
     <string name="profile_active">online</string>
     <string name="profile_idle">idle</string>
     <string name="profile_offline">offline</string>
-    <string name="profile_status">In a meeting</string>
     <string name="error_button_reload">Reload</string>
-    <string name="default_error_tilte">Something went wrong</string>
+    <string name="default_error_title">Something went wrong</string>
     <string name="error_select_file">Please install a File Manager</string>
     <string name="title_select_file">Select a File to Upload</string>
-    <string name="error_file_not_found">File Not Found...</string>
+    <string name="error_file_not_found">File Not Found</string>
     <string name="info_file_downloaded">File downloaded</string>
     <string name="error_connection_lost">Connection lost. Please check your Internet connection</string>
 </resources>

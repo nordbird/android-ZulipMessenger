@@ -87,13 +87,13 @@ class ProfileFragment : MviFragment<ProfileView, ProfileAction, ProfilePresenter
             binding.tvProfileOnline.visibility = View.VISIBLE
             val (text, color) = when (state.item.presence) {
                 UserPresence.ACTIVE -> {
-                    getText(R.string.profile_active) to ContextCompat.getColor(requireContext(), R.color.color_green)
+                    getText(R.string.profile_active) to ContextCompat.getColor(requireContext(), R.color.color_profile_online)
                 }
                 UserPresence.IDLE -> {
-                    getText(R.string.profile_idle) to ContextCompat.getColor(requireContext(), R.color.color_orange)
+                    getText(R.string.profile_idle) to ContextCompat.getColor(requireContext(), R.color.color_profile_idle)
                 }
                 else -> {
-                    getText(R.string.profile_offline) to ContextCompat.getColor(requireContext(), R.color.color_red)
+                    getText(R.string.profile_offline) to ContextCompat.getColor(requireContext(), R.color.color_profile_offline)
                 }
             }
             binding.tvProfileOnline.text = text

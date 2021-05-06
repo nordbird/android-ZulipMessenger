@@ -10,39 +10,39 @@
         android:id="@+id/civ_avatar"
         android:layout_width="@dimen/avatar_size"
         android:layout_height="@dimen/avatar_size"
-        android:layout_marginStart="12dp"
-        app:civ_avatar="@drawable/avatar" />
+        android:layout_marginStart="12dp" />
 
     <LinearLayout
         android:id="@+id/ll_messageBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:background="@drawable/message_bg"
+        android:layout_marginStart="9dp"
+        android:layout_marginEnd="@dimen/message_in_margin_right"
+        android:background="@drawable/message_in_bg"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/tv_author"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:textColor="@color/teal_700"
-            android:textSize="20sp"
-            tools:text="@string/message_user" />
+            android:layout_marginStart="13dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="13dp"
+            android:textColor="@color/message_sender_color"
+            android:textSize="14sp"
+            tools:text="@tools:sample/full_names" />
 
         <TextView
             android:id="@+id/tv_message"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="13dp"
             android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="20dp"
+            android:layout_marginEnd="13dp"
+            android:layout_marginBottom="10dp"
+            android:textColor="@color/message_text_color"
             android:textSize="@dimen/message_text_size"
-            tools:text="@string/message_text" />
+            tools:text="@tools:sample/lorem/random" />
 
     </LinearLayout>
 
@@ -50,9 +50,9 @@
         android:id="@+id/fbl_reaction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="62dp"
+        android:layout_marginStart="9dp"
+        android:layout_marginTop="7dp"
+        android:layout_marginEnd="@dimen/message_in_margin_right"
         app:fbl_btnAddBackground="@drawable/reaction_view_bg"
         app:fbl_btnAddIcon="@drawable/ic_baseline_add_24">
 

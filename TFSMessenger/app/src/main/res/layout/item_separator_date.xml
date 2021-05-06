@@ -2,21 +2,22 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:layout_marginTop="7dp"
+    android:layout_marginBottom="7dp">
 
     <TextView
         android:id="@+id/tv_separator_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
         android:background="@drawable/separator_date_bg"
         android:paddingStart="20dp"
+        android:paddingTop="3dp"
         android:paddingEnd="20dp"
-        android:paddingTop="5dp"
-        android:paddingBottom="5dp"
-        android:textColor="@color/black"
-        tools:text="16 Декабря" />
+        android:paddingBottom="3dp"
+        android:textColor="@color/separator_date_text_color"
+        android:textSize="14sp"
+        tools:text="16 Дек" />
 
 </FrameLayout>

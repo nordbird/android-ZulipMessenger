@@ -132,7 +132,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     }
 
     private fun initUI() {
-        binding.tvTopicTitle.text = topicName
+        binding.tvTopicTitle.text = getString(R.string.topic_name, topicName)
         val linearLayoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, true)
         binding.rvChat.adapter = adapter
         binding.rvChat.layoutManager = linearLayoutManager

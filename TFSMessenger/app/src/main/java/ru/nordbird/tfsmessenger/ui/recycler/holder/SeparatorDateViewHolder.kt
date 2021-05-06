@@ -14,8 +14,7 @@ class SeparatorDateUi(
     override val viewType: Int = R.layout.item_separator_date
 ) : ViewTyped {
 
-    override val uid: String
-        get() = date.toZeroTime().format("dd.MM.yy")
+    override val uid: String = date.toZeroTime().format("dd.MM.yy")
 
     override fun asString() = uid
 }
@@ -27,7 +26,9 @@ class SeparatorDateViewHolder(
     private val dateView: TextView = view.findViewById(R.id.tv_separator_date)
 
     override fun bind(item: SeparatorDateUi) {
-        dateView.text = item.date.format("dd MMMM")
+        val date = item.date.format("dd MMMM")
+        val text = date.substring(0, 3) + date.substring(3, 6).capitalize(Locale.getDefault())
+        dateView.text = text
     }
 
 }

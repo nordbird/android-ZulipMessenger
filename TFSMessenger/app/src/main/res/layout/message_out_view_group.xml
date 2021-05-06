@@ -10,23 +10,24 @@
         android:id="@+id/tv_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="62dp"
-        android:layout_marginEnd="12dp"
-        android:background="@drawable/message_bg"
-        android:paddingStart="10dp"
+        android:layout_marginStart="@dimen/message_out_margin_left"
+        android:layout_marginEnd="@dimen/message_out_margin_right"
+        android:background="@drawable/message_out_bg"
+        android:paddingStart="16dp"
         android:paddingTop="10dp"
-        android:paddingEnd="10dp"
+        android:paddingEnd="16dp"
         android:paddingBottom="10dp"
+        android:textColor="@color/message_text_color"
         android:textSize="@dimen/message_text_size"
-        tools:text="Привет" />
+        tools:text="@tools:sample/lorem/random" />
 
     <ru.nordbird.tfsmessenger.ui.custom.FlexBoxLayout
         android:id="@+id/fbl_reaction"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="62dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginStart="@dimen/message_out_margin_left"
+        android:layout_marginTop="7dp"
+        android:layout_marginEnd="@dimen/message_out_margin_right"
         android:gravity="end"
         app:fbl_btnAddBackground="@drawable/reaction_view_bg"
         app:fbl_btnAddIcon="@drawable/ic_baseline_add_24">

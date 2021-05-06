@@ -32,7 +32,7 @@ class ErrorViewHolder(
     }
 
     override fun bind(item: ErrorUi) {
-        titleView.setText(item.title ?: R.string.default_error_tilte)
+        titleView.setText(item.title ?: R.string.default_error_title)
         super.bind(item)
     }
 

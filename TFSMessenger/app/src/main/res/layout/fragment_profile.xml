@@ -31,7 +31,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:src="@drawable/avatar" />
+                tools:src="@tools:sample/avatars" />
 
             <TextView
                 android:id="@+id/tv_profile_name"
@@ -45,44 +45,24 @@
                 app:layout_constraintTop_toBottomOf="@id/iv_profile_avatar"
                 tools:text="Darrell Steward" />
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/tv_profile_online"
                 android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:orientation="horizontal"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:textColor="@color/color_profile_online"
+                android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_profile_name">
-
-                <TextView
-                    android:id="@+id/tv_profile_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical|end"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:textColor="@color/color_profile_status"
-                    android:textSize="20sp"
-                    android:visibility="gone"
-                    tools:text="In a meeting" />
-
-                <TextView
-                    android:id="@+id/tv_profile_online"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical|start"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:textColor="@color/color_profile_online"
-                    android:textSize="16sp"
-                    tools:text="online" />
-            </LinearLayout>
+                app:layout_constraintTop_toBottomOf="@id/tv_profile_name"
+                tools:text="online" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_logout"
                 android:layout_width="185dp"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="65dp"
-                android:background="@drawable/button_logout"
+                android:background="@drawable/button_default"
                 android:text="@string/profile_button_logout"
                 android:textColor="@color/black"
                 android:textSize="20sp"
@@ -91,6 +71,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
+
     </com.facebook.shimmer.ShimmerFrameLayout>
 
 </LinearLayout>

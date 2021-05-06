@@ -9,6 +9,8 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:popupTheme="@style/Theme.TFSMessenger.PopupOverlay" />
+        android:background="@color/toolbar_bg_color"
+        app:popupTheme="@style/Theme.TFSMessenger.PopupOverlay"
+        app:titleTextAppearance="@style/Toolbar.TitleText" />
 
 </com.google.android.material.appbar.AppBarLayout>
