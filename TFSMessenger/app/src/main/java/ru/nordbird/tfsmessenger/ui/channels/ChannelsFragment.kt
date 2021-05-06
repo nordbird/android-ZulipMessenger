@@ -7,10 +7,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import io.reactivex.disposables.CompositeDisposable
+import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsBinding
+import ru.nordbird.tfsmessenger.extensions.isFinishing
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment.Companion.REQUEST_FILTER_QUERY
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment.Companion.REQUEST_FILTER_QUERY_KEY
 import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
@@ -26,6 +29,11 @@ class ChannelsFragment : Fragment() {
     private val channelsTabs = listOf(ChannelsTabType.SUBSCRIBED, ChannelsTabType.ALL)
     private val tabConfigurationStrategy = TabLayoutMediator.TabConfigurationStrategy { tab, position ->
         tab.text = resources.getString(channelsTabs[position].resId)
+    }
+    private val tabChangeListener = object : ViewPager2.OnPageChangeCallback() {
+        override fun onPageSelected(position: Int) {
+            sendFilterQuery(lastQuery)
+        }
     }
 
     override fun onAttach(context: Context) {
@@ -85,6 +93,11 @@ class ChannelsFragment : Fragment() {
         compositeDisposable.clear()
     }
 
+    override fun onDetach() {
+        if (isFinishing()) App.instance.clearChannelsComponent()
+        super.onDetach()
+    }
+
     private fun initToolbar() {
         with(activity as AppCompatActivity) {
             setSupportActionBar(binding.appbar.toolbar)
@@ -105,6 +118,7 @@ class ChannelsFragment : Fragment() {
     private fun initUI() {
         val adapter = ChannelsFragmentStateAdapter(this, channelsTabs)
         binding.viewPager.adapter = adapter
+        binding.viewPager.registerOnPageChangeCallback(tabChangeListener)
         TabLayoutMediator(binding.tabs, binding.viewPager, tabConfigurationStrategy).attach()
     }
 

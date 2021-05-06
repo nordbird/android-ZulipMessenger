@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.ui.channels
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,28 +12,35 @@ import androidx.fragment.app.setFragmentResultListener
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
+import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
-import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
-import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsAction
-import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsPresenter
-import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsUiEffect
-import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsView
+import ru.nordbird.tfsmessenger.ui.channels.base.*
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import javax.inject.Inject
+import javax.inject.Named
 
 class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPresenter>(), ChannelsView {
 
     private var _binding: FragmentChannelsTabBinding? = null
     private val binding get() = _binding!!
+
+    @Inject
+    @Named(STREAMS_CHANNELS_PRESENTER)
+    lateinit var streamsChannelsPresenter: ChannelsPresenter
+
+    @Inject
+    @Named(SUBSCRIPTIONS_CHANNELS_PRESENTER)
+    lateinit var subscriptionsChannelsPresenter: ChannelsPresenter
 
     private var tabType: ChannelsTabType = ChannelsTabType.ALL
     private val compositeDisposable = CompositeDisposable()
@@ -54,14 +62,19 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     private val adapter = Adapter(holderFactory, diffUtilCallback)
     private var needScroll: Boolean = false
 
-    override fun getPresenter(): ChannelsPresenterImpl {
+    override fun getPresenter(): ChannelsPresenter {
         return when (tabType) {
-            ChannelsTabType.ALL -> GlobalDI.INSTANCE.streamPresenter
-            ChannelsTabType.SUBSCRIBED -> GlobalDI.INSTANCE.subscriptionPresenter
+            ChannelsTabType.ALL -> streamsChannelsPresenter
+            ChannelsTabType.SUBSCRIBED -> subscriptionsChannelsPresenter
         }
     }
 
     override fun getMviView(): ChannelsView = this
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        App.instance.provideChannelsComponent().inject(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

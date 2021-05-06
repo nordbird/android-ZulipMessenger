@@ -3,6 +3,7 @@ package ru.nordbird.tfsmessenger.ui.topic
 import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -22,13 +23,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
+import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.model.TopicColorType
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
-import ru.nordbird.tfsmessenger.di.GlobalDI
+import ru.nordbird.tfsmessenger.extensions.isFinishing
 import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
@@ -45,11 +47,15 @@ import ru.nordbird.tfsmessenger.ui.topic.base.TopicUiEffect
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicView
 import java.io.FileNotFoundException
 import java.io.InputStream
+import javax.inject.Inject
 
 class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), TopicView {
 
     private var _binding: FragmentTopicBinding? = null
     private val binding get() = _binding!!
+
+    @Inject
+    lateinit var topicPresenter: TopicPresenter
 
     private val compositeDisposable = CompositeDisposable()
 
@@ -91,9 +97,14 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     private val diffUtilCallback = DiffUtilCallback<ViewTyped>()
     private val adapter = Adapter(holderFactory, diffUtilCallback)
 
-    override fun getPresenter(): TopicPresenter = GlobalDI.INSTANCE.topicPresenter
+    override fun getPresenter(): TopicPresenter = topicPresenter
 
     override fun getMviView(): TopicView = this
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        App.instance.provideTopicComponent().inject(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,6 +144,11 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         compositeDisposable.clear()
         getPresenter().input.accept(TopicAction.DeleteEventQueue)
         super.onDestroyView()
+    }
+
+    override fun onDetach() {
+        if (isFinishing()) App.instance.clearTopicComponent()
+        super.onDetach()
     }
 
     private fun initUI() {

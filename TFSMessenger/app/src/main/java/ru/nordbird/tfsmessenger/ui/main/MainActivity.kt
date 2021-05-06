@@ -9,13 +9,14 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import io.reactivex.disposables.CompositeDisposable
+import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
-import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment
 import ru.nordbird.tfsmessenger.ui.people.PeopleFragment
 import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ID
 import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
+import javax.inject.Inject
 
 class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener {
 
@@ -25,10 +26,14 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var navController: NavController
     private var statusBarColor: Int = 0
-    private val connectionObservable: RxConnectionObservable = GlobalDI.INSTANCE.connectionState
+
+    @Inject
+    lateinit var connectionObservable: RxConnectionObservable
+
     private val compositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        (application as App).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
