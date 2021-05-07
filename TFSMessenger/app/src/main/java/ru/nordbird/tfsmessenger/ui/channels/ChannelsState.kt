@@ -19,7 +19,7 @@ data class ChannelsState(
 
 internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState {
     return when (channelsAction) {
-        ChannelsAction.LoadStreams -> {
+        ChannelsAction.LoadStreams, ChannelsAction.LoadSubscriptions -> {
             val list = if (streams.isEmpty()) listOf(StreamShimmerUi(), StreamShimmerUi(), StreamShimmerUi()) else items
             copy(
                 items = list,
@@ -96,7 +96,7 @@ private fun combineItems(
     return streams.filter { it.name.contains(filterQuery, true) }.sortedBy { it.name }.flatMap { stream ->
         val topicList = topics.filter { it.streamName == stream.name }.sortedBy { it.name }.map { topic ->
             val counter = counters.firstOrNull { it.streamName == topic.streamName && it.topicName == topic.name }
-            if (counter != null) TopicUi(topic.name, topic.streamName, topic.color, counter.count) else topic
+            if (counter != null) TopicUi(topic.name, topic.streamName, topic.colorType, counter.count) else topic
         }
         val newStream = StreamUi(stream.id, stream.name, topicList.isNotEmpty())
         listOf(newStream) + topicList

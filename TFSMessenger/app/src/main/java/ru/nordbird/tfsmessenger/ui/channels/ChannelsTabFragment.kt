@@ -19,6 +19,7 @@ import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_O
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsAction
+import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsPresenter
 import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsUiEffect
 import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsView
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
@@ -26,7 +27,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 
-class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPresenterImpl>(), ChannelsView {
+class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPresenter>(), ChannelsView {
 
     private var _binding: FragmentChannelsTabBinding? = null
     private val binding get() = _binding!!
@@ -79,6 +80,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
         super.onViewCreated(view, savedInstanceState)
 
         initUI()
+        loadStreams()
 
         val requestKey = REQUEST_FILTER_QUERY + tabType
         setFragmentResultListener(requestKey) { _, bundle ->
@@ -116,8 +118,6 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
         binding.rvStreams.adapter = adapter
         binding.rvStreams.addItemDecoration(divider)
 
-        getPresenter().input.accept(ChannelsAction.LoadStreams)
-
         val disposable = adapter.updateAction.subscribe {
             if (needScroll) {
                 binding.rvStreams.layoutManager?.scrollToPosition(0)
@@ -149,12 +149,19 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
         )
     }
 
+    private fun loadStreams() {
+        when (tabType) {
+            ChannelsTabType.ALL -> getPresenter().input.accept(ChannelsAction.LoadStreams)
+            ChannelsTabType.SUBSCRIBED -> getPresenter().input.accept(ChannelsAction.LoadSubscriptions)
+        }
+    }
+
     private fun filterStreams(query: String) {
         getPresenter().input.accept(ChannelsAction.FilterStreams(query))
     }
 
     private fun onReloadClick() {
-        getPresenter().input.accept(ChannelsAction.LoadStreams)
+        loadStreams()
     }
 
     private fun getStream(streamName: String): StreamUi? {

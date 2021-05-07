@@ -25,8 +25,8 @@ class GlobalDI private constructor(context: Context) {
 
     private val streamRepository by lazy { StreamRepositoryImpl(ZulipServiceImpl.getApi(), AppDatabaseImpl.streamDao()) }
     private val topicRepository by lazy { TopicRepositoryImpl(ZulipServiceImpl.getApi(), AppDatabaseImpl.topicDao()) }
-    private val subscriptionInteractor by lazy { ChannelsInteractorImpl(ChannelsTabType.SUBSCRIBED, streamRepository, topicRepository, messageRepository) }
-    private val streamInteractor by lazy { ChannelsInteractorImpl(ChannelsTabType.ALL, streamRepository, topicRepository, messageRepository) }
+    private val subscriptionInteractor by lazy { ChannelsInteractorImpl(streamRepository, topicRepository, messageRepository) }
+    private val streamInteractor by lazy { ChannelsInteractorImpl(streamRepository, topicRepository, messageRepository) }
     val subscriptionPresenter by lazy { ChannelsPresenterImpl(subscriptionInteractor) }
     val streamPresenter by lazy { ChannelsPresenterImpl(streamInteractor) }
 

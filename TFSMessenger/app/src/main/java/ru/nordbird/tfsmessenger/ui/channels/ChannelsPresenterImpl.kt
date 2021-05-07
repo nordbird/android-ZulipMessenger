@@ -31,7 +31,7 @@ class ChannelsPresenterImpl(
     private val channelsState: Observable<ChannelsState>
         get() = inputRelay.reduxStore(
             initialState = lastState,
-            sideEffects = listOf(loadStreams(), filterStreams(), expandTopics(), loadTopicUnreadMessages()),
+            sideEffects = listOf(loadStreams(), loadSubscriptions(), filterStreams(), expandTopics(), loadTopicUnreadMessages()),
             reducer = ChannelsState::reduce
         ).doOnNext { lastState = it }
 
@@ -52,6 +52,19 @@ class ChannelsPresenterImpl(
             actions.ofType(ChannelsAction.LoadStreams::class.java)
                 .switchMap {
                     getStreams()
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(ChannelsUiEffect.ActionError(error))
+                            ChannelsAction.LoadStreamsStop
+                        }
+                }
+        }
+    }
+
+    private fun loadSubscriptions(): ChannelsSideEffect {
+        return { actions, _ ->
+            actions.ofType(ChannelsAction.LoadSubscriptions::class.java)
+                .switchMap {
+                    getSubscriptions()
                         .onErrorReturn { error ->
                             uiEffectsRelay.accept(ChannelsUiEffect.ActionError(error))
                             ChannelsAction.LoadStreamsStop
@@ -101,6 +114,13 @@ class ChannelsPresenterImpl(
 
     private fun getStreams(): Observable<ChannelsAction> {
         return channelsInteractor.loadStreams()
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { items -> ChannelsAction.StreamsLoaded(streams = items) }
+    }
+
+    private fun getSubscriptions(): Observable<ChannelsAction> {
+        return channelsInteractor.loadSubscriptions()
             .subscribeOn(Schedulers.io())
             .toObservable()
             .map { items -> ChannelsAction.StreamsLoaded(streams = items) }

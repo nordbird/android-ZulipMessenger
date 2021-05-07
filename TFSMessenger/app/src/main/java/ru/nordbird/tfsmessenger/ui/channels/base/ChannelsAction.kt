@@ -8,6 +8,8 @@ sealed class ChannelsAction {
 
     object LoadStreams : ChannelsAction()
 
+    object LoadSubscriptions : ChannelsAction()
+
     data class StreamsLoaded(val streams: List<StreamUi>) : ChannelsAction()
 
     object LoadStreamsStop : ChannelsAction()

@@ -10,6 +10,8 @@ interface ChannelsInteractor {
 
     fun loadStreams(): Flowable<List<StreamUi>>
 
+    fun loadSubscriptions(): Flowable<List<StreamUi>>
+
     fun loadTopics(streamId: Int, streamName: String): Flowable<List<TopicUi>>
 
     fun getTopicUnreadMessageCount(streamName: String, topicName: String): Single<UnreadCounter>
