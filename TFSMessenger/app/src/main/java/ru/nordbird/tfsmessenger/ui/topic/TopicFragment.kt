@@ -25,10 +25,11 @@ import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
+import ru.nordbird.tfsmessenger.data.model.TopicColorType
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
@@ -52,7 +53,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     private var streamName: String = ""
     private var topicName: String = ""
-    private var topicColor: Int = 0
+    private var colorType: TopicColorType = TopicColorType.TOPIC1
 
     private var isTextMode = false
     private var needScroll: Boolean = false
@@ -98,11 +99,12 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         arguments?.let {
             streamName = it.getString(REQUEST_OPEN_TOPIC_STREAM_NAME, "")
             topicName = it.getString(REQUEST_OPEN_TOPIC_NAME, "")
-            topicColor = it.getInt(REQUEST_OPEN_TOPIC_COLOR)
+            colorType = TopicColorType.valueOf(it.getString(REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME, ""))
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        requireContext().theme.applyStyle(colorType.style, true)
         _binding = FragmentTopicBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -182,8 +184,9 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
             supportActionBar?.title = streamName
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
         }
-        binding.appbar.toolbar.setBackgroundColor(topicColor)
-        activity?.window?.statusBarColor = topicColor
+        val color = ContextCompat.getColor(requireContext(), colorType.color)
+        binding.appbar.toolbar.setBackgroundColor(color)
+        activity?.window?.statusBarColor = color
     }
 
     private fun updateUI() {

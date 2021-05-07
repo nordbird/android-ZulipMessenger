@@ -3,7 +3,9 @@ package ru.nordbird.tfsmessenger.ui.recycler.holder
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import ru.nordbird.tfsmessenger.R
+import ru.nordbird.tfsmessenger.data.model.TopicColorType
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
@@ -11,7 +13,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 class TopicUi(
     val name: String,
     val streamName: String,
-    val color: Int,
+    val colorType: TopicColorType,
     val messageCount: Int,
     override val viewType: Int = R.layout.item_topic
 ) : ViewTyped {
@@ -39,7 +41,8 @@ class TopicViewHolder(
 
     override fun bind(item: TopicUi) {
         nameView.text = item.name
-        topicBox.setBackgroundColor(item.color)
+        val color = ContextCompat.getColor(topicBox.context, item.colorType.color)
+        topicBox.setBackgroundColor(color)
         countView.text = countView.resources.getString(R.string.item_topic_count, item.messageCount)
 
         super.bind(item)

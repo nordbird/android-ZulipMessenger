@@ -15,7 +15,7 @@ import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsAction
@@ -144,7 +144,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
             bundleOf(
                 REQUEST_OPEN_TOPIC_STREAM_NAME to stream.name,
                 REQUEST_OPEN_TOPIC_NAME to topic.name,
-                REQUEST_OPEN_TOPIC_COLOR to topic.color
+                REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME to topic.colorType.name
             )
         )
     }

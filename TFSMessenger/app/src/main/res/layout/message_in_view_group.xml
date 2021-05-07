@@ -28,7 +28,7 @@
             android:layout_marginStart="13dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="13dp"
-            android:textColor="@color/message_sender_color"
+            android:textColor="?attr/topic_main_color"
             android:textSize="14sp"
             tools:text="@tools:sample/full_names" />
 

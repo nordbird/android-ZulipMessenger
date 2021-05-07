@@ -29,8 +29,16 @@
     <color name="default_bg_color">#FFFFFFFF</color>
     <color name="user_name_text_color">#FF000000</color>
     <color name="user_email_text_color">#FF000000</color>
-    <color name="message_sender_color">#FF2A9D8F</color>
     <color name="message_text_color">#FF000000</color>
     <color name="topic_edit_bg_color">#FFFFFFFF</color>
-    <color name="message_out_bg_color">#E8F5E9</color>
+
+    <color name="topic1_color">#7BC862</color>
+    <color name="topic2_color">#E17076</color>
+    <color name="topic3_color">#FAA774</color>
+    <color name="topic4_color">#6EC9CB</color>
+    <color name="topic5_color">#65AADD</color>
+    <color name="topic6_color">#A695E7</color>
+    <color name="topic7_color">#EE7AAE</color>
+    <color name="topic8_color">#2196F3</color>
+
 </resources>
