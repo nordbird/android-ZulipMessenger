@@ -11,8 +11,6 @@ interface MessageRepository {
 
     fun getTopicMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>>
 
-    fun getUnreadMessageCount(streamName: String, topicName: String): Single<Int>
-
     fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>>
 
     fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>>

@@ -2,6 +2,7 @@ package ru.nordbird.tfsmessenger.data.repository
 
 import io.reactivex.Flowable
 import io.reactivex.Single
+import ru.nordbird.tfsmessenger.data.api.MessageQuery
 import ru.nordbird.tfsmessenger.data.api.ZulipService
 import ru.nordbird.tfsmessenger.data.dao.TopicDao
 import ru.nordbird.tfsmessenger.data.mapper.TopicDbToTopicMapper
@@ -23,6 +24,11 @@ class TopicRepositoryImpl(
             getNetworkStreamTopics(streamId, streamName)
         )
             .map { dbTopicMapper.transform(it) }
+    }
+
+    override fun getUnreadMessageCount(streamName: String, topicName: String): Single<Int> {
+        val query = MessageQuery.getUnreadMessages(streamName, topicName)
+        return apiService.getMessages(query).map { response -> response.messages.size }
     }
 
     private fun getNetworkStreamTopics(streamId: Int, streamName: String): Single<List<TopicDb>> {

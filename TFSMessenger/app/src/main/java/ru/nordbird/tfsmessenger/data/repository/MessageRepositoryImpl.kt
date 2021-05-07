@@ -36,11 +36,6 @@ class MessageRepositoryImpl(
             .map { dbMessageMapper.transform(it) }
     }
 
-    override fun getUnreadMessageCount(streamName: String, topicName: String): Single<Int> {
-        val query = MessageQuery.getUnreadMessages(streamName, topicName)
-        return apiService.getMessages(query).map { response -> response.messages.size }
-    }
-
     override fun getTopicMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>> {
         val query = MessageQuery.getNewMessages(streamName, topicName, lastMessageId)
 

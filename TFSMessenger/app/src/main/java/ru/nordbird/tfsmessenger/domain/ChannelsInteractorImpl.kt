@@ -5,7 +5,6 @@ import io.reactivex.Single
 import ru.nordbird.tfsmessenger.data.mapper.StreamToStreamUiMapper
 import ru.nordbird.tfsmessenger.data.mapper.TopicToTopicUiMapper
 import ru.nordbird.tfsmessenger.data.model.UnreadCounter
-import ru.nordbird.tfsmessenger.data.repository.base.MessageRepository
 import ru.nordbird.tfsmessenger.data.repository.base.StreamRepository
 import ru.nordbird.tfsmessenger.data.repository.base.TopicRepository
 import ru.nordbird.tfsmessenger.domain.base.ChannelsInteractor
@@ -14,8 +13,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.holder.TopicUi
 
 class ChannelsInteractorImpl(
     private val streamRepository: StreamRepository,
-    private val topicRepository: TopicRepository,
-    private val messageRepository: MessageRepository
+    private val topicRepository: TopicRepository
 ) : ChannelsInteractor {
 
     private val streamMapper = StreamToStreamUiMapper()
@@ -43,7 +41,7 @@ class ChannelsInteractorImpl(
     }
 
     override fun getTopicUnreadMessageCount(streamName: String, topicName: String): Single<UnreadCounter> {
-        return messageRepository.getUnreadMessageCount(streamName, topicName)
+        return topicRepository.getUnreadMessageCount(streamName, topicName)
             .map { count ->
                 UnreadCounter(streamName, topicName, count)
             }
