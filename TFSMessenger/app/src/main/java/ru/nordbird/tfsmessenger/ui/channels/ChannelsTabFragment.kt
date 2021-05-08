@@ -33,6 +33,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
 
     private var _binding: FragmentChannelsTabBinding? = null
     private val binding get() = _binding!!
+    private lateinit var activityListener: ChannelsTabFragmentListener
 
     @Inject
     @Named(STREAMS_CHANNELS_PRESENTER)
@@ -48,7 +49,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
             when (holder.itemViewType) {
-                R.layout.item_stream -> onStreamClick(holder)
+                R.layout.item_stream -> onStreamClick(holder, clickType)
                 R.layout.item_topic -> onTopicClick(holder)
                 R.layout.item_error -> onReloadClick()
             }
@@ -74,6 +75,12 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     override fun onAttach(context: Context) {
         super.onAttach(context)
         App.instance.provideChannelsComponent().inject(this)
+
+        if (context is ChannelsTabFragmentListener) {
+            activityListener = context
+        } else {
+            throw RuntimeException("$context must implement ChannelsTabFragmentListener")
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,8 +111,8 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
         compositeDisposable.clear()
+        super.onDestroyView()
     }
 
     override fun render(state: ChannelsState) {
@@ -142,13 +149,25 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
         compositeDisposable.add(disposable)
     }
 
-    private fun onStreamClick(holder: BaseViewHolder<*>) {
+    private fun onStreamClick(holder: BaseViewHolder<*>, clickType: ViewHolderClickType?) {
         val stream = adapter.items[holder.absoluteAdapterPosition] as StreamUi
-        if (stream.topicExpanded) {
-            getPresenter().input.accept(ChannelsAction.CollapseTopics(stream.name))
-        } else {
-            getPresenter().input.accept(ChannelsAction.ExpandTopics(stream.id, stream.name))
+
+        when (clickType) {
+            StreamVHClickType.TOGGLE_TOPICS_CLICK -> {
+                if (stream.topicExpanded) {
+                    getPresenter().input.accept(ChannelsAction.CollapseTopics(stream.name))
+                } else {
+                    getPresenter().input.accept(ChannelsAction.ExpandTopics(stream.id, stream.name))
+                }
+            }
+            StreamVHClickType.OPEN_STREAM_CLICK -> openStream(stream.name)
         }
+    }
+
+    private fun openStream(streamName: String) {
+        activityListener.onOpenStream(
+            bundleOf(REQUEST_OPEN_TOPIC_STREAM_NAME to streamName)
+        )
     }
 
     private fun onTopicClick(holder: BaseViewHolder<*>) {
@@ -182,6 +201,12 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
 
     private fun getStream(streamName: String): StreamUi? {
         return adapter.items.filterIsInstance<StreamUi>().firstOrNull { it.name == streamName }
+    }
+
+    interface ChannelsTabFragmentListener {
+
+        fun onOpenStream(bundle: Bundle)
+        
     }
 
     companion object {

@@ -31,7 +31,7 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         is TopicAction.NextLoadMessages -> copy(needScroll = false)
 
         is TopicAction.MessagesLoaded -> {
-            val mapper = MessageUiToViewTypedMapper()
+            val mapper = MessageUiToViewTypedMapper(topicName.isNotEmpty())
             val list = combineMessages(messages, topicAction.newMessages)
             val minId = minOf(oldestMessageId, topicAction.newMessages.minOfOrNull { it.id } ?: oldestMessageId)
             copy(
@@ -42,7 +42,7 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         }
 
         is TopicAction.MessagesUpdated -> {
-            val mapper = MessageUiToViewTypedMapper()
+            val mapper = MessageUiToViewTypedMapper(topicName.isNotEmpty())
             val list = combineMessages(messages, topicAction.newMessages)
             val minId = minOf(oldestMessageId, topicAction.newMessages.minOfOrNull { it.id } ?: oldestMessageId)
             copy(

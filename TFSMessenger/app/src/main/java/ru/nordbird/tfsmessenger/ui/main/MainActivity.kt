@@ -13,12 +13,14 @@ import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment
 import ru.nordbird.tfsmessenger.ui.people.PeopleFragment
 import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ID
 import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
 import javax.inject.Inject
 
-class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener {
+class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener,
+    ChannelsTabFragment.ChannelsTabFragmentListener {
 
     val rootView: View get() = binding.root
 
@@ -60,7 +62,8 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
 
     private fun onDestinationChanged(fragmentId: Int) {
         when (fragmentId) {
-            R.id.navigation_topic, R.id.navigation_profile_another, R.id.navigation_new_stream -> {
+            R.id.navigation_topic, R.id.navigation_stream,
+            R.id.navigation_profile_another, R.id.navigation_new_stream -> {
                 binding.navView.visibility = View.GONE
             }
             else -> {
@@ -89,5 +92,9 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
             R.id.navigation_profile_another,
             bundleOf(PARAM_USER_ID to userId)
         )
+    }
+
+    override fun onOpenStream(bundle: Bundle) {
+        navController.navigate(R.id.navigation_stream, bundle)
     }
 }

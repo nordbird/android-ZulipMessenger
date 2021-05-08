@@ -9,7 +9,7 @@ interface MessageRepository {
 
     fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Flowable<List<Message>>
 
-    fun getTopicMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>>
+    fun getMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>>
 
     fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>>
 

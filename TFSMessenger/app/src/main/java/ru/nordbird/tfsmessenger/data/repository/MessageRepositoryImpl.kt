@@ -36,12 +36,12 @@ class MessageRepositoryImpl(
             .map { dbMessageMapper.transform(it) }
     }
 
-    override fun getTopicMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>> {
+    override fun getMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>> {
         val query = MessageQuery.getNewMessages(streamName, topicName, lastMessageId)
 
         return apiService.getEvents(queueId).flatMap { apiService.getMessages(query) }.map { response ->
             nwMessageMapper.transform(response.messages)
-                .map { message -> message.copy(streamName = streamName, topicName = topicName) }
+                .map { message -> message.copy(streamName = streamName) }
         }
             .doOnSuccess { messages -> maxId = maxOf(maxId, messages.maxOfOrNull { it.id } ?: 0) }
             .doOnSuccess { saveToDatabase(streamName, topicName, it) }
@@ -90,14 +90,18 @@ class MessageRepositoryImpl(
 
         return apiService.getMessages(query).map { response ->
             nwMessageMapper.transform(response.messages)
-                .map { message -> message.copy(streamName = streamName, topicName = topicName) }
+                .map { message -> message.copy(streamName = streamName) }
         }
             .doOnSuccess { messages -> maxId = maxOf(maxId, messages.maxOfOrNull { it.id } ?: 0) }
             .doOnSuccess { saveToDatabase(streamName, topicName, it) }
     }
 
     private fun getDatabaseMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
-        return messageDao.getTopicMessages(streamName, topicName, lastMessageId, count)
+        return if (topicName.isNotEmpty()) {
+            messageDao.getTopicMessages(streamName, topicName, lastMessageId, count)
+        } else {
+            messageDao.getStreamMessages(streamName, lastMessageId, count)
+        }
     }
 
     private fun addNetworkMessage(streamName: String, topicName: String, text: String): Single<MessageResponse> {
@@ -114,7 +118,9 @@ class MessageRepositoryImpl(
 
     private fun saveToDatabase(streamName: String, topicName: String, messages: List<MessageDb>) {
         messageDao.insertAll(messages)
-        messageDao.deleteOverLimit(streamName, topicName, MESSAGES_MAX_COUNT)
+        if (topicName.isNotEmpty()) {
+            messageDao.deleteOverLimit(streamName, topicName, MESSAGES_MAX_COUNT)
+        }
     }
 
     private fun saveToDatabase(message: MessageDb): MessageDb {

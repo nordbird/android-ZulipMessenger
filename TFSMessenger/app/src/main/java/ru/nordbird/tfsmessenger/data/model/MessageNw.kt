@@ -2,7 +2,6 @@ package ru.nordbird.tfsmessenger.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 @Serializable
 data class MessageNw(
@@ -26,6 +25,9 @@ data class MessageNw(
     val timestamp_sec: Long,
 
     @SerialName("reactions")
-    val reactions: List<Reaction> = listOf()
+    val reactions: List<Reaction>,
+
+    @SerialName("subject")
+    val topicName: String
 
 )

@@ -15,7 +15,7 @@ class MessageDbToMessageMapper(
     override fun transform(data: List<MessageDb>): List<Message> {
         return data.map {
             val (content, attachments) = getAttachments(it.content)
-            Message(it.id, it.authorId, it.authorName, it.avatar_url, content, it.timestamp_ms, it.reactions, it.localId, attachments)
+            Message(it.id, it.topicName, it.authorId, it.authorName, it.avatar_url, content, it.timestamp_ms, it.reactions, it.localId, attachments)
         }
     }
 

@@ -31,7 +31,7 @@ class TopicInteractorImpl(
 
     override fun loadMessagesByEvent(streamName: String, topicName: String, messageId: Int, queueId: String): Single<List<MessageUi>> {
         if (queueId.isEmpty()) return Single.just(emptyList())
-        return messageRepository.getTopicMessagesByEvent(streamName, topicName, messageId, queueId)
+        return messageRepository.getMessagesByEvent(streamName, topicName, messageId, queueId)
             .map { messageMapper.transform(it) }
     }
 

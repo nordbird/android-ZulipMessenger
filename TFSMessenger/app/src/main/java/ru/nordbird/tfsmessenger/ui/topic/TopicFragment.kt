@@ -109,11 +109,15 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+
+        var colorTypeName = ""
         arguments?.let {
             streamName = it.getString(REQUEST_OPEN_TOPIC_STREAM_NAME, "")
             topicName = it.getString(REQUEST_OPEN_TOPIC_NAME, "")
-            colorType = TopicColorType.valueOf(it.getString(REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME, ""))
+            colorTypeName = it.getString(REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME, "")
+
         }
+        if (colorTypeName.isNotEmpty()) colorType = TopicColorType.valueOf(colorTypeName)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -152,7 +156,11 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     }
 
     private fun initUI() {
-        binding.tvTopicTitle.text = getString(R.string.topic_name, topicName)
+        if (isSingleTopic()) {
+            binding.tvTopicTitle.text = getString(R.string.topic_name, topicName)
+        } else {
+            binding.tvTopicTitle.visibility = View.GONE
+        }
         val linearLayoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, true)
         binding.rvChat.adapter = adapter
         binding.rvChat.layoutManager = linearLayoutManager
@@ -202,17 +210,16 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
             supportActionBar?.title = streamName
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
         }
-        val color = ContextCompat.getColor(requireContext(), colorType.color)
-        binding.appbar.toolbar.setBackgroundColor(color)
-        activity?.window?.statusBarColor = color
+        if (isSingleTopic()) {
+            val color = ContextCompat.getColor(requireContext(), colorType.color)
+            binding.appbar.toolbar.setBackgroundColor(color)
+            activity?.window?.statusBarColor = color
+        }
     }
 
     private fun updateUI() {
-        if (isTextMode) {
-            binding.ibSend.setImageResource(R.drawable.ic_baseline_send_24)
-        } else {
-            binding.ibSend.setImageResource(R.drawable.ic_baseline_add_24)
-        }
+        val icon = if (isTextMode) R.drawable.ic_baseline_send_24 else R.drawable.ic_baseline_add_24
+        binding.ibSend.setImageResource(icon)
     }
 
     private fun showError(throwable: Throwable) {
@@ -350,6 +357,8 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         }
         return result
     }
+
+    private fun isSingleTopic(): Boolean = topicName.isNotEmpty()
 
     companion object {
         private const val REACTION_SHEET_ROWS = 10

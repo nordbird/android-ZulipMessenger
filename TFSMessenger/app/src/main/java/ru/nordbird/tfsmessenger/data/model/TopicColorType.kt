@@ -15,3 +15,8 @@ enum class TopicColorType(
     TOPIC7(R.style.Topic7Style, R.color.topic7_color),
     TOPIC8(R.style.Topic8Style, R.color.topic8_color)
 }
+
+fun getColorType(name: String): TopicColorType {
+    val index = name.sumBy { it.toInt() } % TopicColorType.values().size
+    return TopicColorType.values()[index]
+}
