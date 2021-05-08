@@ -16,4 +16,6 @@ interface ChannelsInteractor {
 
     fun getTopicUnreadMessageCount(streamName: String, topicName: String): Single<UnreadCounter>
 
+    fun createStream(streamName: String): Single<Boolean>
+
 }

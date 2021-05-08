@@ -9,4 +9,6 @@
     <dimen name="message_in_margin_right">24dp</dimen>
     <dimen name="message_out_margin_left">70dp</dimen>
     <dimen name="message_out_margin_right">12dp</dimen>
+    <dimen name="fragment_horizontal_margin">16dp</dimen>
+    <dimen name="fragment_vertical_margin">16dp</dimen>
 </resources>

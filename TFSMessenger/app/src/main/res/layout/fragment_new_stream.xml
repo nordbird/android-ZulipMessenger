@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".ui.channels.NewStreamFragment">
+
+    <include
+        android:id="@+id/appbar"
+        layout="@layout/appbar_layout" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/ti_stream_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/fragment_horizontal_margin"
+        android:layout_marginTop="@dimen/fragment_vertical_margin"
+        android:layout_marginEnd="@dimen/fragment_horizontal_margin">
+
+        <EditText
+            android:id="@+id/et_stream_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:hint="@string/stream_new_name_hint"
+            android:inputType="textPersonName"
+            android:textSize="@dimen/default_text_size"
+            tools:text="General" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_create"
+        android:layout_width="185dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/button_default"
+        android:gravity="center"
+        android:text="@string/button_create_stream"
+        android:textColor="@color/black"
+        android:textSize="20sp" />
+
+</LinearLayout>

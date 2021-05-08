@@ -20,4 +20,5 @@
     <color name="user_email_text_color">#FFA1A1A1</color>
     <color name="message_text_color">#FFFAFAFA</color>
     <color name="topic_edit_bg_color">#FF282828</color>
+    <color name="default_button_bg_color">#1B1B1B</color>
 </resources>

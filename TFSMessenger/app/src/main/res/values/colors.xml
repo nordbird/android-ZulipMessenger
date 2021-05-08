@@ -31,6 +31,7 @@
     <color name="user_email_text_color">#FF000000</color>
     <color name="message_text_color">#FF000000</color>
     <color name="topic_edit_bg_color">#FFFFFFFF</color>
+    <color name="default_button_bg_color">#FF9800</color>
 
     <color name="topic1_color">#7BC862</color>
     <color name="topic2_color">#E17076</color>

@@ -60,7 +60,9 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
 
     private fun onDestinationChanged(fragmentId: Int) {
         when (fragmentId) {
-            R.id.navigation_topic, R.id.navigation_profile_another -> binding.navView.visibility = View.GONE
+            R.id.navigation_topic, R.id.navigation_profile_another, R.id.navigation_new_stream -> {
+                binding.navView.visibility = View.GONE
+            }
             else -> {
                 binding.navView.visibility = View.VISIBLE
                 window.statusBarColor = statusBarColor
@@ -76,6 +78,10 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
 
     override fun onOpenTopic(bundle: Bundle) {
         navController.navigate(R.id.navigation_topic, bundle)
+    }
+
+    override fun onCreateNewStream() {
+        navController.navigate(R.id.navigation_new_stream)
     }
 
     override fun onOpenUserProfile(userId: Int) {

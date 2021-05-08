@@ -33,6 +33,7 @@ class ChannelsFragment : Fragment() {
     private val tabChangeListener = object : ViewPager2.OnPageChangeCallback() {
         override fun onPageSelected(position: Int) {
             sendFilterQuery(lastQuery)
+            binding.fabNewStream.visibility = if (channelsTabs[position] == ChannelsTabType.ALL) View.VISIBLE else View.GONE
         }
     }
 
@@ -120,10 +121,17 @@ class ChannelsFragment : Fragment() {
         binding.viewPager.adapter = adapter
         binding.viewPager.registerOnPageChangeCallback(tabChangeListener)
         TabLayoutMediator(binding.tabs, binding.viewPager, tabConfigurationStrategy).attach()
+        binding.fabNewStream.setOnClickListener { createNewStream() }
+    }
+
+    private fun createNewStream() {
+        activityListener.onCreateNewStream()
     }
 
     interface ChannelsFragmentListener {
         fun onOpenTopic(bundle: Bundle)
+
+        fun onCreateNewStream()
     }
 
     companion object {

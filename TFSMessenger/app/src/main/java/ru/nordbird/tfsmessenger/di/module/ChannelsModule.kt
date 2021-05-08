@@ -13,7 +13,9 @@ import ru.nordbird.tfsmessenger.di.scope.ChannelsScope
 import ru.nordbird.tfsmessenger.domain.ChannelsInteractorImpl
 import ru.nordbird.tfsmessenger.domain.base.ChannelsInteractor
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsPresenterImpl
+import ru.nordbird.tfsmessenger.ui.channels.NewStreamPresenterImpl
 import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsPresenter
+import ru.nordbird.tfsmessenger.ui.channels.base.NEW_STREAM_CHANNELS_PRESENTER
 import ru.nordbird.tfsmessenger.ui.channels.base.STREAMS_CHANNELS_PRESENTER
 import ru.nordbird.tfsmessenger.ui.channels.base.SUBSCRIPTIONS_CHANNELS_PRESENTER
 import javax.inject.Named
@@ -54,6 +56,13 @@ class ChannelsModule {
     @Named(SUBSCRIPTIONS_CHANNELS_PRESENTER)
     fun provideSubscriptionsChannelsPresenter(channelsInteractor: ChannelsInteractor): ChannelsPresenter {
         return ChannelsPresenterImpl(channelsInteractor)
+    }
+
+    @ChannelsScope
+    @Provides
+    @Named(NEW_STREAM_CHANNELS_PRESENTER)
+    fun provideNewStreamPresenter(channelsInteractor: ChannelsInteractor): ChannelsPresenter {
+        return NewStreamPresenterImpl(channelsInteractor)
     }
 
 }

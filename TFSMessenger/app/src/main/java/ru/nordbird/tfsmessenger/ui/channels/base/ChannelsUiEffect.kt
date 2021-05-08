@@ -4,4 +4,6 @@ sealed class ChannelsUiEffect {
 
     class ActionError(val error: Throwable) : ChannelsUiEffect()
 
+    object StreamCreated : ChannelsUiEffect()
+
 }

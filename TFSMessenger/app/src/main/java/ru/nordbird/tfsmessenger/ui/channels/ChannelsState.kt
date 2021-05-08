@@ -84,6 +84,7 @@ internal fun ChannelsState.reduce(channelsAction: ChannelsAction): ChannelsState
         }
 
         ChannelsAction.LoadTopicUnreadMessagesStop -> this
+        is ChannelsAction.CreateStream -> this
     }
 }
 
