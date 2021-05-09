@@ -10,7 +10,6 @@ import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentPeopleBinding
-import ru.nordbird.tfsmessenger.extensions.isFinishing
 import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
@@ -110,11 +109,6 @@ class PeopleFragment : MviFragment<PeopleView, PeopleAction, PeoplePresenter>(),
     override fun onDestroyView() {
         super.onDestroyView()
         compositeDisposable.clear()
-    }
-
-    override fun onDetach() {
-        if (isFinishing()) App.instance.clearPeopleComponent()
-        super.onDetach()
     }
 
     private fun initToolbar() {

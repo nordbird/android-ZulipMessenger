@@ -14,7 +14,10 @@ import ru.nordbird.tfsmessenger.di.scope.TopicScope
 import ru.nordbird.tfsmessenger.domain.TopicInteractorImpl
 import ru.nordbird.tfsmessenger.domain.base.TopicInteractor
 import ru.nordbird.tfsmessenger.ui.topic.TopicPresenterImpl
+import ru.nordbird.tfsmessenger.ui.topic.base.SINGLE_TOPIC_PRESENTER
+import ru.nordbird.tfsmessenger.ui.topic.base.STREAM_TOPIC_PRESENTER
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicPresenter
+import javax.inject.Named
 
 @Module
 class TopicModule {
@@ -48,7 +51,18 @@ class TopicModule {
 
     @TopicScope
     @Provides
+    @Named(SINGLE_TOPIC_PRESENTER)
     fun provideTopicPresenter(
+        topicInteractor: TopicInteractor,
+        eventRepository: EventRepository
+    ): TopicPresenter {
+        return TopicPresenterImpl(topicInteractor, eventRepository)
+    }
+
+    @TopicScope
+    @Provides
+    @Named(STREAM_TOPIC_PRESENTER)
+    fun provideStreamPresenter(
         topicInteractor: TopicInteractor,
         eventRepository: EventRepository
     ): TopicPresenter {

@@ -15,7 +15,6 @@ import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.databinding.FragmentProfileBinding
-import ru.nordbird.tfsmessenger.extensions.isFinishing
 import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
@@ -84,11 +83,6 @@ class ProfileFragment : MviFragment<ProfileView, ProfileAction, ProfilePresenter
     override fun onDestroyView() {
         super.onDestroyView()
         compositeDisposable.clear()
-    }
-
-    override fun onDetach() {
-        if (isFinishing()) App.instance.clearPeopleComponent()
-        super.onDetach()
     }
 
     private fun initUI() {

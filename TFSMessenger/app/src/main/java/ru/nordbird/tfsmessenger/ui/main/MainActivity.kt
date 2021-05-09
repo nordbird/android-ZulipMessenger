@@ -16,11 +16,12 @@ import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment
 import ru.nordbird.tfsmessenger.ui.people.PeopleFragment
 import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ID
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment
 import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
 import javax.inject.Inject
 
 class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener,
-    ChannelsTabFragment.ChannelsTabFragmentListener {
+    ChannelsTabFragment.ChannelsTabFragmentListener, TopicFragment.TopicFragmentListener {
 
     val rootView: View get() = binding.root
 
@@ -60,7 +61,7 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
         compositeDisposable.add(disposable)
     }
 
-    private fun onDestinationChanged(fragmentId: Int) {
+    private fun updateUI(fragmentId: Int) {
         when (fragmentId) {
             R.id.navigation_topic, R.id.navigation_stream,
             R.id.navigation_profile_another, R.id.navigation_new_stream -> {
@@ -68,7 +69,27 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
             }
             else -> {
                 binding.navView.visibility = View.VISIBLE
-                window.statusBarColor = statusBarColor
+            }
+        }
+
+        if (fragmentId != R.id.navigation_topic) {
+            window.statusBarColor = statusBarColor
+        }
+    }
+
+    private fun onDestinationChanged(fragmentId: Int) {
+        updateUI(fragmentId)
+        manageDI(fragmentId)
+    }
+
+    private fun manageDI(fragmentId: Int) {
+        when (fragmentId) {
+            R.id.navigation_channels -> {
+                App.instance.clearPeopleComponent()
+                App.instance.clearTopicComponent()
+            }
+            R.id.navigation_people, R.id.navigation_profile_another, R.id.navigation_profile -> {
+                App.instance.clearChannelsComponent()
             }
         }
     }

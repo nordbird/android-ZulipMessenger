@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.setFragmentResultListener
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.snackbar.Snackbar
@@ -15,17 +14,15 @@ import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
-import ru.nordbird.tfsmessenger.extensions.userMessage
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.channels.base.*
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_COLOR_TYPE_NAME
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_NAME
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_STREAM_NAME
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -35,13 +32,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     private val binding get() = _binding!!
     private lateinit var activityListener: ChannelsTabFragmentListener
 
-    @Inject
-    @Named(STREAMS_CHANNELS_PRESENTER)
-    lateinit var streamsChannelsPresenter: ChannelsPresenter
-
-    @Inject
-    @Named(SUBSCRIPTIONS_CHANNELS_PRESENTER)
-    lateinit var subscriptionsChannelsPresenter: ChannelsPresenter
+    lateinit var channelsPresenter: ChannelsPresenter
 
     private var tabType: ChannelsTabType = ChannelsTabType.ALL
     private val compositeDisposable = CompositeDisposable()
@@ -63,19 +54,12 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     private val adapter = Adapter(holderFactory, diffUtilCallback)
     private var needScroll: Boolean = false
 
-    override fun getPresenter(): ChannelsPresenter {
-        return when (tabType) {
-            ChannelsTabType.ALL -> streamsChannelsPresenter
-            ChannelsTabType.SUBSCRIBED -> subscriptionsChannelsPresenter
-        }
-    }
+    override fun getPresenter(): ChannelsPresenter = channelsPresenter
 
     override fun getMviView(): ChannelsView = this
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        App.instance.provideChannelsComponent().inject(this)
-
         if (context is ChannelsTabFragmentListener) {
             activityListener = context
         } else {
@@ -89,6 +73,10 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
         when (arguments?.getInt(ARG_TAB_TYPE)) {
             ChannelsTabType.ALL.ordinal -> tabType = ChannelsTabType.ALL
             ChannelsTabType.SUBSCRIBED.ordinal -> tabType = ChannelsTabType.SUBSCRIBED
+        }
+        channelsPresenter = when (tabType) {
+            ChannelsTabType.ALL -> App.instance.provideChannelsComponent().provideStreamsChannelsPresenter()
+            ChannelsTabType.SUBSCRIBED -> App.instance.provideChannelsComponent().provideSubscriptionsChannelsPresenter()
         }
     }
 
@@ -166,7 +154,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
 
     private fun openStream(streamName: String) {
         activityListener.onOpenStream(
-            bundleOf(REQUEST_OPEN_TOPIC_STREAM_NAME to streamName)
+            bundleOf(OPEN_TOPIC_STREAM_NAME to streamName)
         )
     }
 
@@ -174,12 +162,11 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
         val topic = adapter.items[holder.absoluteAdapterPosition] as TopicUi
         val stream = getStream(topic.streamName) ?: return
 
-        setFragmentResult(
-            REQUEST_OPEN_TOPIC,
+        activityListener.onOpenTopic(
             bundleOf(
-                REQUEST_OPEN_TOPIC_STREAM_NAME to stream.name,
-                REQUEST_OPEN_TOPIC_NAME to topic.name,
-                REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME to topic.colorType.name
+                OPEN_TOPIC_STREAM_NAME to stream.name,
+                OPEN_TOPIC_NAME to topic.name,
+                OPEN_TOPIC_COLOR_TYPE_NAME to topic.colorType.name
             )
         )
     }
@@ -206,7 +193,8 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     interface ChannelsTabFragmentListener {
 
         fun onOpenStream(bundle: Bundle)
-        
+
+        fun onOpenTopic(bundle: Bundle)
     }
 
     companion object {

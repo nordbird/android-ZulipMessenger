@@ -10,10 +10,8 @@ import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import io.reactivex.disposables.CompositeDisposable
-import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsBinding
-import ru.nordbird.tfsmessenger.extensions.isFinishing
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment.Companion.REQUEST_FILTER_QUERY
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment.Companion.REQUEST_FILTER_QUERY_KEY
 import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
@@ -32,7 +30,7 @@ class ChannelsFragment : Fragment() {
     }
     private val tabChangeListener = object : ViewPager2.OnPageChangeCallback() {
         override fun onPageSelected(position: Int) {
-            sendFilterQuery(lastQuery)
+            if (lastQuery.isNotEmpty()) sendFilterQuery(lastQuery)
             binding.fabNewStream.visibility = if (channelsTabs[position] == ChannelsTabType.ALL) View.VISIBLE else View.GONE
         }
     }
@@ -50,9 +48,6 @@ class ChannelsFragment : Fragment() {
         super.onCreate(savedInstanceState)
         lastQuery = savedInstanceState?.getString(STATE_LAST_QUERY, "") ?: ""
         setHasOptionsMenu(true)
-        childFragmentManager.setFragmentResultListener(REQUEST_OPEN_TOPIC, this) { _, bundle ->
-            activityListener.onOpenTopic(bundle)
-        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -94,11 +89,6 @@ class ChannelsFragment : Fragment() {
         compositeDisposable.clear()
     }
 
-    override fun onDetach() {
-        if (isFinishing()) App.instance.clearChannelsComponent()
-        super.onDetach()
-    }
-
     private fun initToolbar() {
         with(activity as AppCompatActivity) {
             setSupportActionBar(binding.appbar.toolbar)
@@ -129,18 +119,12 @@ class ChannelsFragment : Fragment() {
     }
 
     interface ChannelsFragmentListener {
-        fun onOpenTopic(bundle: Bundle)
 
         fun onCreateNewStream()
     }
 
     companion object {
         private const val STATE_LAST_QUERY = "state_last_query"
-
-        const val REQUEST_OPEN_TOPIC = "request_open_topic"
-        const val REQUEST_OPEN_TOPIC_STREAM_NAME = "stream_name"
-        const val REQUEST_OPEN_TOPIC_NAME = "topic_name"
-        const val REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME = "topic_color"
     }
 
 }

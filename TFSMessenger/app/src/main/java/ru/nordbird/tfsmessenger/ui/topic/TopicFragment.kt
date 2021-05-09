@@ -17,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -30,11 +31,6 @@ import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.model.TopicColorType
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
-import ru.nordbird.tfsmessenger.extensions.isFinishing
-import ru.nordbird.tfsmessenger.extensions.userMessage
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
@@ -53,6 +49,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     private var _binding: FragmentTopicBinding? = null
     private val binding get() = _binding!!
+    private lateinit var activityListener: TopicFragmentListener
 
     @Inject
     lateinit var topicPresenter: TopicPresenter
@@ -70,6 +67,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
             when (holder.itemViewType) {
+                R.layout.item_separator_topic -> onTopicClick(holder)
                 R.layout.item_message_in, R.layout.item_message_out -> onMessageClick(holder, view, clickType)
                 R.layout.item_attachment_in, R.layout.item_attachment_out -> onAttachmentClick(holder)
                 R.layout.item_error -> onReloadClick()
@@ -103,7 +101,11 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        App.instance.provideTopicComponent().inject(this)
+        if (context is TopicFragmentListener) {
+            activityListener = context
+        } else {
+            throw RuntimeException("$context must implement TopicFragmentListener")
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,12 +114,18 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
         var colorTypeName = ""
         arguments?.let {
-            streamName = it.getString(REQUEST_OPEN_TOPIC_STREAM_NAME, "")
-            topicName = it.getString(REQUEST_OPEN_TOPIC_NAME, "")
-            colorTypeName = it.getString(REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME, "")
+            streamName = it.getString(OPEN_TOPIC_STREAM_NAME, "")
+            topicName = it.getString(OPEN_TOPIC_NAME, "")
+            colorTypeName = it.getString(OPEN_TOPIC_COLOR_TYPE_NAME, "")
 
         }
         if (colorTypeName.isNotEmpty()) colorType = TopicColorType.valueOf(colorTypeName)
+
+        topicPresenter = if (isSingleTopic()) {
+            App.instance.provideTopicComponent().provideTopicPresenter()
+        } else {
+            App.instance.provideTopicComponent().provideStreamPresenter()
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -148,11 +156,6 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         compositeDisposable.clear()
         getPresenter().input.accept(TopicAction.DeleteEventQueue)
         super.onDestroyView()
-    }
-
-    override fun onDetach() {
-        if (isFinishing()) App.instance.clearTopicComponent()
-        super.onDetach()
     }
 
     private fun initUI() {
@@ -213,7 +216,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         if (isSingleTopic()) {
             val color = ContextCompat.getColor(requireContext(), colorType.color)
             binding.appbar.toolbar.setBackgroundColor(color)
-            activity?.window?.statusBarColor = color
+            requireActivity().window.statusBarColor = color
         }
     }
 
@@ -294,6 +297,17 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         getPresenter().input.accept(TopicAction.DownloadFile(attachment.url))
     }
 
+    private fun onTopicClick(holder: BaseViewHolder<*>) {
+        val topicSeparator = adapter.items[holder.absoluteAdapterPosition] as SeparatorTopicUi
+        activityListener.onOpenTopic(
+            bundleOf(
+                OPEN_TOPIC_STREAM_NAME to streamName,
+                OPEN_TOPIC_NAME to topicSeparator.name,
+                OPEN_TOPIC_COLOR_TYPE_NAME to topicSeparator.colorType.name
+            )
+        )
+    }
+
     private fun setRecyclerViewScrollListener(linearLayoutManager: LinearLayoutManager) {
         val scrollListener = object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -360,10 +374,20 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     private fun isSingleTopic(): Boolean = topicName.isNotEmpty()
 
+    interface TopicFragmentListener {
+
+        fun onOpenTopic(bundle: Bundle)
+
+    }
+
     companion object {
         private const val REACTION_SHEET_ROWS = 10
         private const val REACTION_SHEET_COLS = 10
         private const val ITEM_THRESHOLD = 5
         private const val DEFAULT_FILE_NAME = "NoName"
+
+        const val OPEN_TOPIC_STREAM_NAME = "stream_name"
+        const val OPEN_TOPIC_NAME = "topic_name"
+        const val OPEN_TOPIC_COLOR_TYPE_NAME = "topic_color_type_name"
     }
 }
