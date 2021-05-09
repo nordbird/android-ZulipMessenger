@@ -19,6 +19,8 @@ import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
 
 class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener {
 
+    val rootView: View get() = binding.root
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var navController: NavController

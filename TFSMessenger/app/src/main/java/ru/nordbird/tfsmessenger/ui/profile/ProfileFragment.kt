@@ -14,6 +14,8 @@ import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.databinding.FragmentProfileBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
+import ru.nordbird.tfsmessenger.extensions.userMessage
+import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.profile.base.ProfileAction
 import ru.nordbird.tfsmessenger.ui.profile.base.ProfilePresenter
@@ -128,7 +130,8 @@ class ProfileFragment : MviFragment<ProfileView, ProfileAction, ProfilePresenter
     }
 
     private fun showError(throwable: Throwable) {
-        Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
+        val view = (requireActivity() as MainActivity).rootView
+        Snackbar.make(view, throwable.userMessage(requireContext()), Snackbar.LENGTH_SHORT).show()
     }
 
     companion object {

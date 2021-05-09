@@ -14,6 +14,7 @@ import io.reactivex.disposables.CompositeDisposable
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
+import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
@@ -22,6 +23,7 @@ import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsAction
 import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsPresenter
 import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsUiEffect
 import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsView
+import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
@@ -107,7 +109,8 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     }
 
     private fun showError(throwable: Throwable) {
-        Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
+        val view = (requireActivity() as MainActivity).rootView
+        Snackbar.make(view, throwable.userMessage(requireContext()), Snackbar.LENGTH_SHORT).show()
     }
 
     private fun initUI() {

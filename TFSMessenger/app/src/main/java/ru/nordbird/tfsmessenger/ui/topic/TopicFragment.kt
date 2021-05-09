@@ -29,10 +29,12 @@ import ru.nordbird.tfsmessenger.data.model.TopicColorType
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
 import ru.nordbird.tfsmessenger.di.GlobalDI
+import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
+import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
@@ -198,7 +200,8 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     }
 
     private fun showError(throwable: Throwable) {
-        Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
+        val view = (requireActivity() as MainActivity).rootView
+        Snackbar.make(view, throwable.userMessage(requireContext()), Snackbar.LENGTH_SHORT).show()
     }
 
     private fun loadMessages() {
