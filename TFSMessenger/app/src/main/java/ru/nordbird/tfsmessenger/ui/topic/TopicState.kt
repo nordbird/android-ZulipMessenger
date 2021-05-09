@@ -53,7 +53,7 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
             )
         }
 
-        TopicAction.LoadMessagesStop, TopicAction.EventQueueStop -> this
+        TopicAction.LoadMessagesStop, TopicAction.EventQueueStop, TopicAction.LoadTopicsStop -> this
 
         is TopicAction.SendMessage -> copy(needScroll = true)
 
@@ -66,6 +66,8 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         is TopicAction.RegisterEventQueue -> this
         is TopicAction.EventQueueRegistered -> copy(queueId = topicAction.queueId)
         TopicAction.DeleteEventQueue -> copy(queueId = "")
+
+        is TopicAction.LoadTopics -> this
     }
 }
 

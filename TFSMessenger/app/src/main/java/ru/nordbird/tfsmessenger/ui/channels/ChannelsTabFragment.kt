@@ -23,9 +23,8 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_COLOR_TYPE_NAME
 import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_NAME
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_STREAM_ID
 import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_STREAM_NAME
-import javax.inject.Inject
-import javax.inject.Named
 
 class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPresenter>(), ChannelsView {
 
@@ -149,13 +148,16 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
                     getPresenter().input.accept(ChannelsAction.ExpandTopics(stream.id, stream.name))
                 }
             }
-            StreamVHClickType.OPEN_STREAM_CLICK -> openStream(stream.name)
+            StreamVHClickType.OPEN_STREAM_CLICK -> openStream(stream)
         }
     }
 
-    private fun openStream(streamName: String) {
+    private fun openStream(stream: StreamUi) {
         activityListener.onOpenStream(
-            bundleOf(OPEN_TOPIC_STREAM_NAME to streamName)
+            bundleOf(
+                OPEN_TOPIC_STREAM_ID to stream.id,
+                OPEN_TOPIC_STREAM_NAME to stream.name
+            )
         )
     }
 
@@ -165,6 +167,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
 
         activityListener.onOpenTopic(
             bundleOf(
+                OPEN_TOPIC_STREAM_ID to stream.id,
                 OPEN_TOPIC_STREAM_NAME to stream.name,
                 OPEN_TOPIC_NAME to topic.name,
                 OPEN_TOPIC_COLOR_TYPE_NAME to topic.colorType.name

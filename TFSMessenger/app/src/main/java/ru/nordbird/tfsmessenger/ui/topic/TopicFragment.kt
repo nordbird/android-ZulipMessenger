@@ -10,8 +10,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.view.*
-import android.widget.TableRow
-import android.widget.TextView
+import android.widget.*
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
@@ -57,6 +56,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     private val compositeDisposable = CompositeDisposable()
 
+    private var streamId: Int = 0
     private var streamName: String = ""
     private var topicName: String = ""
     private var colorType: TopicColorType = TopicColorType.TOPIC1
@@ -64,6 +64,8 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     private var isTextMode = false
     private var needScroll: Boolean = false
     private val currentUserId = ZulipAuth.AUTH_ID
+
+    private lateinit var topicsAdapter: ArrayAdapter<String>
 
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
@@ -107,6 +109,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         } else {
             throw RuntimeException("$context must implement TopicFragmentListener")
         }
+        topicsAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,6 +118,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
         var colorTypeName = ""
         arguments?.let {
+            streamId = it.getInt(OPEN_TOPIC_STREAM_ID)
             streamName = it.getString(OPEN_TOPIC_STREAM_NAME, "")
             topicName = it.getString(OPEN_TOPIC_NAME, "")
             colorTypeName = it.getString(OPEN_TOPIC_COLOR_TYPE_NAME, "")
@@ -155,7 +159,9 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     override fun onDestroyView() {
         compositeDisposable.clear()
-        getPresenter().input.accept(TopicAction.DeleteEventQueue)
+        if (isRemoving || requireActivity().isFinishing) {
+            getPresenter().input.accept(TopicAction.DeleteEventQueue)
+        }
         super.onDestroyView()
     }
 
@@ -183,6 +189,8 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
             isTextMode = !text.isNullOrBlank()
             updateUI()
         }
+        binding.edMessage.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) showTopicSuggestions() }
+        binding.edMessage.setOnClickListener { showTopicSuggestions() }
 
         val disposable = adapter.updateAction.subscribe {
             if (needScroll) {
@@ -190,6 +198,12 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
             }
         }
         compositeDisposable.add(disposable)
+
+        binding.tvTopics.setAdapter(topicsAdapter)
+    }
+
+    private fun showTopicSuggestions() {
+        if (!isSingleTopic()) loadTopics()
     }
 
     override fun render(state: TopicState) {
@@ -201,11 +215,19 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         when (uiEffect) {
             is TopicUiEffect.DownloadFile -> saveFile(uiEffect.stream)
             is TopicUiEffect.ActionError -> showError(uiEffect.error)
+            is TopicUiEffect.TopicsLoaded -> updateTopics(uiEffect.topics)
         }
     }
 
     private fun addMessage(content: String) {
-        getPresenter().input.accept(TopicAction.SendMessage(streamName, topicName, content))
+        val topic = if (isSingleTopic()) {
+            topicName
+        } else if (binding.tvTopics.text.isNotBlank()) {
+            binding.tvTopics.text.toString()
+        } else {
+            getString(R.string.default_topic_name)
+        }
+        getPresenter().input.accept(TopicAction.SendMessage(streamName, topic, content))
     }
 
     private fun initToolbar() {
@@ -237,6 +259,19 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     private fun moreMessages() {
         getPresenter().input.accept(TopicAction.NextLoadMessages(streamName, topicName))
+    }
+
+    private fun loadTopics() {
+        if (binding.flTopics.visibility == View.GONE) {
+            getPresenter().input.accept(TopicAction.LoadTopics(streamId, streamName))
+            binding.flTopics.visibility = View.VISIBLE
+        }
+    }
+
+    private fun updateTopics(topics: List<String>) {
+        topicsAdapter.clear()
+        topicsAdapter.addAll(topics)
+        topicsAdapter.notifyDataSetChanged()
     }
 
     private fun showReactionChooser(message: MessageUi) {
@@ -302,6 +337,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         val topicSeparator = adapter.items[holder.absoluteAdapterPosition] as SeparatorTopicUi
         activityListener.onOpenTopic(
             bundleOf(
+                OPEN_TOPIC_STREAM_ID to streamId,
                 OPEN_TOPIC_STREAM_NAME to streamName,
                 OPEN_TOPIC_NAME to topicSeparator.name,
                 OPEN_TOPIC_COLOR_TYPE_NAME to topicSeparator.colorType.name
@@ -318,6 +354,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
                 if (totalItemCount <= lastVisibleItemPosition + ITEM_THRESHOLD) {
                     moreMessages()
                 }
+                binding.flTopics.visibility = View.GONE
             }
         }
         binding.rvChat.addOnScrollListener(scrollListener)
@@ -387,6 +424,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         private const val ITEM_THRESHOLD = 5
         private const val DEFAULT_FILE_NAME = "NoName"
 
+        const val OPEN_TOPIC_STREAM_ID = "stream_id"
         const val OPEN_TOPIC_STREAM_NAME = "stream_name"
         const val OPEN_TOPIC_NAME = "topic_name"
         const val OPEN_TOPIC_COLOR_TYPE_NAME = "topic_color_type_name"

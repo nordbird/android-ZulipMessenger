@@ -5,7 +5,7 @@ import java.io.InputStream
 
 sealed class TopicAction {
 
-    data class RegisterEventQueue(val streamName: String, val topicName: String): TopicAction()
+    data class RegisterEventQueue(val streamName: String, val topicName: String) : TopicAction()
 
     data class EventQueueRegistered(val queueId: String) : TopicAction()
 
@@ -32,4 +32,9 @@ sealed class TopicAction {
     data class DownloadFile(val url: String) : TopicAction()
 
     data class FileDownloaded(val stream: InputStream) : TopicAction()
+
+    data class LoadTopics(val streamId: Int, val streamName: String) : TopicAction()
+
+    object LoadTopicsStop : TopicAction()
+
 }

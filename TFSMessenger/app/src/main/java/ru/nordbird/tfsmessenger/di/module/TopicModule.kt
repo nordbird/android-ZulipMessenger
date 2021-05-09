@@ -4,12 +4,15 @@ import dagger.Module
 import dagger.Provides
 import ru.nordbird.tfsmessenger.data.api.ZulipService
 import ru.nordbird.tfsmessenger.data.dao.MessageDao
+import ru.nordbird.tfsmessenger.data.dao.TopicDao
 import ru.nordbird.tfsmessenger.data.repository.EventRepositoryImpl
 import ru.nordbird.tfsmessenger.data.repository.MessageRepositoryImpl
 import ru.nordbird.tfsmessenger.data.repository.ReactionRepositoryImpl
+import ru.nordbird.tfsmessenger.data.repository.TopicRepositoryImpl
 import ru.nordbird.tfsmessenger.data.repository.base.EventRepository
 import ru.nordbird.tfsmessenger.data.repository.base.MessageRepository
 import ru.nordbird.tfsmessenger.data.repository.base.ReactionRepository
+import ru.nordbird.tfsmessenger.data.repository.base.TopicRepository
 import ru.nordbird.tfsmessenger.di.scope.TopicScope
 import ru.nordbird.tfsmessenger.domain.TopicInteractorImpl
 import ru.nordbird.tfsmessenger.domain.base.TopicInteractor
@@ -42,6 +45,12 @@ class TopicModule {
 
     @TopicScope
     @Provides
+    fun provideTopicRepository(apiService: ZulipService, topicDao: TopicDao): TopicRepository {
+        return TopicRepositoryImpl(apiService, topicDao)
+    }
+
+    @TopicScope
+    @Provides
     fun provideTopicInteractor(
         messageRepository: MessageRepository,
         reactionRepository: ReactionRepository
@@ -54,9 +63,10 @@ class TopicModule {
     @Named(SINGLE_TOPIC_PRESENTER)
     fun provideTopicPresenter(
         topicInteractor: TopicInteractor,
-        eventRepository: EventRepository
+        eventRepository: EventRepository,
+        topicRepository: TopicRepository
     ): TopicPresenter {
-        return TopicPresenterImpl(topicInteractor, eventRepository)
+        return TopicPresenterImpl(topicInteractor, eventRepository, topicRepository)
     }
 
     @TopicScope
@@ -64,8 +74,9 @@ class TopicModule {
     @Named(STREAM_TOPIC_PRESENTER)
     fun provideStreamPresenter(
         topicInteractor: TopicInteractor,
-        eventRepository: EventRepository
+        eventRepository: EventRepository,
+        topicRepository: TopicRepository
     ): TopicPresenter {
-        return TopicPresenterImpl(topicInteractor, eventRepository)
+        return TopicPresenterImpl(topicInteractor, eventRepository, topicRepository)
     }
 }

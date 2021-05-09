@@ -27,4 +27,6 @@
     <string name="error_stream_exists">Stream already exists</string>
     <string name="error_http_429">Too many requests</string>
     <string name="error_server_unavailable">Server unavailable</string>
+    <string name="hint_topic">topic</string>
+    <string name="default_topic_name">topic</string>
 </resources>

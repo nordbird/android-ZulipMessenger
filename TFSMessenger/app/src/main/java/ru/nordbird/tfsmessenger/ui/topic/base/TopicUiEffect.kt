@@ -7,4 +7,6 @@ sealed class TopicUiEffect{
     class ActionError(val error: Throwable): TopicUiEffect()
 
     class DownloadFile(val stream: InputStream) : TopicUiEffect()
+
+    class TopicsLoaded(val topics: List<String>) : TopicUiEffect()
 }
