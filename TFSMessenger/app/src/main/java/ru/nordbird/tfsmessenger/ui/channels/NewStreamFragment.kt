@@ -12,7 +12,9 @@ import com.google.android.material.snackbar.Snackbar
 import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentNewStreamBinding
+import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.channels.base.*
+import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import javax.inject.Inject
 import javax.inject.Named
@@ -100,7 +102,8 @@ class NewStreamFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPres
     }
 
     private fun showError(throwable: Throwable) {
-        Snackbar.make(binding.root, throwable.message.toString(), Snackbar.LENGTH_SHORT).show()
+        val view = (requireActivity() as MainActivity).rootView
+        Snackbar.make(view, throwable.userMessage(requireContext()), Snackbar.LENGTH_SHORT).show()
     }
 
     private fun createStream() {

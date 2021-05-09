@@ -31,6 +31,7 @@ import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.model.TopicColorType
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
+import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.custom.ReactionView
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
