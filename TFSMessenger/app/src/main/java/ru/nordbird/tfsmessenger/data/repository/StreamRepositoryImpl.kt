@@ -63,6 +63,6 @@ class StreamRepositoryImpl(
     }
 
     private fun saveSubscriptionsToDatabase(streams: List<StreamDb>) {
-        streamDao.insertStreams(streams)
+        streamDao.insertSubscriptions(streams)
     }
 }
