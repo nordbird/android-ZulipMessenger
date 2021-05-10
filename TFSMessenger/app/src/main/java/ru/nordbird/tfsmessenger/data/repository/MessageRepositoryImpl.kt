@@ -81,6 +81,11 @@ class MessageRepositoryImpl(
             if (!result) throw Exception(response.msg)
             result
         }
+            .flatMap { messageDao.getById(messageId) }
+            .map { message ->
+                updateMessage(message, topicName, content)
+                true
+            }
     }
 
     override fun deleteMessage(messageId: Int): Single<Boolean> {
@@ -89,6 +94,7 @@ class MessageRepositoryImpl(
             if (!result) throw Exception(response.msg)
             result
         }
+            .doOnSuccess { messageDao.deleteById(messageId) }
     }
 
     override fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>> {
@@ -136,6 +142,12 @@ class MessageRepositoryImpl(
         val newMessage = message.copy(id = newMessageId, localId = message.localId)
         messageDao.insert(newMessage)
         return newMessage
+    }
+
+    private fun updateMessage(message: MessageDb, topicName: String, content: String) {
+        messageDao.deleteById(message.id)
+        val newMessage = message.copy(topicName = topicName, content = content)
+        messageDao.insert(newMessage)
     }
 
     private fun saveToDatabase(streamName: String, topicName: String, messages: List<MessageDb>) {
