@@ -34,8 +34,17 @@ interface ZulipService {
     @GET("messages")
     fun getMessages(@QueryMap queryMap: Map<String, String>): Single<MessagesResponse>
 
+    @GET("messages/{id}")
+    fun getMessageContent(@Path("id") id: Int): Single<MessageContentResponse>
+
     @POST("messages")
     fun sendMessage(@QueryMap queryMap: Map<String, String>): Single<MessageResponse>
+
+    @PATCH("messages/{id}")
+    fun updateMessage(@Path("id") id: Int, @QueryMap queryMap: Map<String, String>): Single<BaseResponse>
+
+    @DELETE("messages/{id}")
+    fun deleteMessage(@Path("id") id: Int): Single<BaseResponse>
 
     @POST("messages/{id}/reactions")
     fun addMessageReaction(@Path("id") id: Int, @Query("emoji_name") reactionName: String): Single<BaseResponse>

@@ -11,7 +11,13 @@ interface TopicInteractor {
 
     fun loadMessagesByEvent(streamName: String, topicName: String, messageId: Int, queueId: String): Single<List<MessageUi>>
 
-    fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<MessageUi>>
+    fun loadMessageContent(messageId: Int): Single<String>
+
+    fun addMessage(streamName: String, topicName: String, content: String): Flowable<List<MessageUi>>
+
+    fun updateMessage(messageId: Int, topicName: String, content: String): Single<Boolean>
+
+    fun deleteMessage(messageId: Int): Single<Boolean>
 
     fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<MessageUi>>
 

@@ -2,9 +2,7 @@ package ru.nordbird.tfsmessenger.ui.topic
 
 import android.Manifest
 import android.app.Activity
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -16,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,6 +27,7 @@ import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.data.emojiSet.EMOJI_SET
 import ru.nordbird.tfsmessenger.data.model.TopicColorType
+import ru.nordbird.tfsmessenger.databinding.BottomSheetMessageBinding
 import ru.nordbird.tfsmessenger.databinding.BottomSheetReactionBinding
 import ru.nordbird.tfsmessenger.databinding.FragmentTopicBinding
 import ru.nordbird.tfsmessenger.extensions.userMessage
@@ -37,6 +37,10 @@ import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import ru.nordbird.tfsmessenger.ui.topic.EditMessageFragment.Companion.EDIT_MESSAGE_ID
+import ru.nordbird.tfsmessenger.ui.topic.EditMessageFragment.Companion.EDIT_MESSAGE_STREAM_ID
+import ru.nordbird.tfsmessenger.ui.topic.EditMessageFragment.Companion.EDIT_MESSAGE_STREAM_NAME
+import ru.nordbird.tfsmessenger.ui.topic.EditMessageFragment.Companion.EDIT_MESSAGE_TOPIC_NAME
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicAction
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicPresenter
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicUiEffect
@@ -302,6 +306,62 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         bottomSheetDialog.show()
     }
 
+    private fun showMessageActions(message: MessageUi) {
+        val bottomSheetDialog = BottomSheetDialog(requireContext())
+        val sheetBinding = BottomSheetMessageBinding.inflate(layoutInflater)
+
+        val canEdit = message is MessageOutUi
+        sheetBinding.tvEditMessage.visibility = if (canEdit) View.VISIBLE else View.GONE
+        sheetBinding.tvDeleteMessage.visibility = if (canEdit) View.VISIBLE else View.GONE
+
+        sheetBinding.tvAddReaction.setOnClickListener {
+            bottomSheetDialog.dismiss()
+            showReactionChooser(message)
+        }
+        sheetBinding.tvEditMessage.setOnClickListener {
+            bottomSheetDialog.dismiss()
+            editMessage(message)
+        }
+        sheetBinding.tvCopyToClipboard.setOnClickListener {
+            copyToClipboard(message)
+            bottomSheetDialog.dismiss()
+        }
+        sheetBinding.tvDeleteMessage.setOnClickListener {
+            deleteMessage(message)
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.setContentView(sheetBinding.root)
+        bottomSheetDialog.show()
+    }
+
+    private fun deleteMessage(message: MessageUi) {
+        getPresenter().input.accept(TopicAction.DeleteMessage(message.id))
+    }
+
+    private fun editMessage(message: MessageUi) {
+        activityListener.onEditMessage(
+            bundleOf(
+                EDIT_MESSAGE_ID to message.id,
+                EDIT_MESSAGE_STREAM_ID to streamId,
+                EDIT_MESSAGE_STREAM_NAME to streamName,
+                EDIT_MESSAGE_TOPIC_NAME to message.topicName
+            )
+        )
+    }
+
+    private fun copyToClipboard(message: MessageUi) {
+        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val from = if (message is MessageInUi) {
+            message.authorName
+        } else {
+            getString(R.string.message_from_me)
+        }
+        val text = getString(R.string.template_to_clipboard, from, message.text)
+        val clip: ClipData = ClipData.newPlainText("Message", text)
+        clipboard.setPrimaryClip(clip)
+    }
+
     private fun updateReaction(message: MessageUi, reactionCode: String) {
         getPresenter().input.accept(TopicAction.UpdateReaction(message, currentUserId, reactionCode))
     }
@@ -320,7 +380,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     private fun onMessageLongClick(holder: BaseViewHolder<*>): Boolean {
         val message = adapter.items[holder.absoluteAdapterPosition] as MessageUi
-        showReactionChooser(message)
+        showMessageActions(message)
         return true
     }
 
@@ -415,6 +475,8 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     interface TopicFragmentListener {
 
         fun onOpenTopic(bundle: Bundle)
+
+        fun onEditMessage(bundle: Bundle)
 
     }
 

@@ -56,4 +56,10 @@
         android:name="ru.nordbird.tfsmessenger.ui.channels.NewStreamFragment"
         android:label="fragment_new_stream"
         tools:layout="@layout/fragment_new_stream" />
+
+    <fragment
+        android:id="@+id/navigation_edit_message"
+        android:name="ru.nordbird.tfsmessenger.ui.topic.EditMessageFragment"
+        android:label="fragment_edit_message"
+        tools:layout="@layout/fragment_edit_message" />
 </navigation>

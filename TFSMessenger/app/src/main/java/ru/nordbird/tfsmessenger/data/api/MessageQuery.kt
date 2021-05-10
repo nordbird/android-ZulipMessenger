@@ -48,7 +48,7 @@ object MessageQuery {
             MessagesNarrowRequest("stream", streamName)
         )
         if (topicName.isNotEmpty()) narrow.add(MessagesNarrowRequest("topic", topicName))
-        
+
         val anchor = if (lastMessageId > 0) lastMessageId.toString() else MESSAGE_ANCHOR_NEWEST
 
         return mapOf(
@@ -60,12 +60,19 @@ object MessageQuery {
         )
     }
 
-    fun addMessage(streamName: String, topicName: String, text: String): Map<String, String> {
+    fun addMessage(streamName: String, topicName: String, content: String): Map<String, String> {
         return mapOf(
             "type" to MESSAGE_TYPE_STREAM,
             "to" to streamName,
-            "content" to text,
+            "content" to content,
             "topic" to topicName
+        )
+    }
+
+    fun updateMessage(topicName: String, content: String): Map<String, String> {
+        return mapOf(
+            "topic" to topicName,
+            "content" to content,
         )
     }
 }

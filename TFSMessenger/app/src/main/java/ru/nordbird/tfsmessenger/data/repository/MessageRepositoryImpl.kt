@@ -48,13 +48,17 @@ class MessageRepositoryImpl(
             .map { dbMessageMapper.transform(it) }
     }
 
-    override fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {
+    override fun getMessageContent(messageId: Int): Single<String> {
+        return apiService.getMessageContent(messageId).map { it.content }
+    }
+
+    override fun addMessage(streamName: String, topicName: String, senderId: Int, content: String): Flowable<List<Message>> {
         val messageId = ++maxId
-        val message = MessageDb(messageId, streamName, topicName, senderId, "", "", text, Date().time, localId = messageId)
+        val message = MessageDb(messageId, streamName, topicName, senderId, "", "", content, Date().time, localId = messageId)
 
         return Flowable.concat(
             Flowable.fromCallable { listOf(saveToDatabase(message)) },
-            addNetworkMessage(streamName, topicName, text).toFlowable().flatMap { response ->
+            addNetworkMessage(streamName, topicName, content).toFlowable().flatMap { response ->
                 if (response.result == ZulipConst.RESPONSE_RESULT_SUCCESS) {
                     Single.concat(
                         Single.fromCallable { listOf(replaceMessage(message, response.id)) },
@@ -67,6 +71,24 @@ class MessageRepositoryImpl(
         )
             .map { dbMessageMapper.transform(it) }
             .onErrorReturnItem(emptyList())
+    }
+
+    override fun updateMessage(messageId: Int, topicName: String, content: String): Single<Boolean> {
+        val query = MessageQuery.updateMessage(topicName, content)
+
+        return apiService.updateMessage(messageId, query).map { response ->
+            val result = response.result == ZulipConst.RESPONSE_RESULT_SUCCESS
+            if (!result) throw Exception(response.msg)
+            result
+        }
+    }
+
+    override fun deleteMessage(messageId: Int): Single<Boolean> {
+        return apiService.deleteMessage(messageId).map { response ->
+            val result = response.result == ZulipConst.RESPONSE_RESULT_SUCCESS
+            if (!result) throw Exception(response.msg)
+            result
+        }
     }
 
     override fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>> {

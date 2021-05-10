@@ -23,7 +23,15 @@ sealed class TopicAction {
 
     object LoadMessagesStop : TopicAction()
 
+    data class LoadMessage(val messageId: Int) : TopicAction()
+
     data class SendMessage(val streamName: String, val topicName: String, val content: String) : TopicAction()
+
+    data class UpdateMessage(val messageId: Int, val topicName: String, val content: String) : TopicAction()
+    object MessageUpdated : TopicAction()
+
+    data class DeleteMessage(val messageId: Int) : TopicAction()
+    data class MessageDeleted(val messageId: Int) : TopicAction()
 
     data class UpdateReaction(val message: MessageUi, val currentUserId: Int, val reactionCode: String) : TopicAction()
 

@@ -17,7 +17,7 @@ import ru.nordbird.tfsmessenger.ui.topic.base.TopicUiEffect
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicView
 import java.io.InputStream
 
-private typealias TopicSideEffect = SideEffect<TopicState, out TopicAction>
+internal typealias TopicSideEffect = SideEffect<TopicState, out TopicAction>
 
 class TopicPresenterImpl(
     private val topicInteractor: TopicInteractor,
@@ -37,7 +37,7 @@ class TopicPresenterImpl(
             initialState = lastState,
             sideEffects = listOf(
                 firstLoadMessages(), nextLoadMessages(), loadMessagesByEvent(),
-                sendMessage(), updateReaction(),
+                sendMessage(), updateReaction(), deleteMessage(),
                 sendFile(), downloadFile(),
                 registerEventQueue(), deleteEventQueue(),
                 resetLoadAction(), loadTopics()
@@ -142,6 +142,19 @@ class TopicPresenterImpl(
         }
     }
 
+    private fun deleteMessage(): TopicSideEffect {
+        return { actions, _ ->
+            actions.ofType(TopicAction.DeleteMessage::class.java)
+                .switchMap { action ->
+                    deleteMessage(action.messageId)
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
+                            TopicAction.LoadMessagesStop
+                        }
+                }
+        }
+    }
+
     private fun updateReaction(): TopicSideEffect {
         return { actions, _ ->
             actions.ofType(TopicAction.UpdateReaction::class.java)
@@ -227,6 +240,13 @@ class TopicPresenterImpl(
             .subscribeOn(Schedulers.io())
             .toObservable()
             .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
+    }
+
+    private fun deleteMessage(messageId: Int): Observable<TopicAction> {
+        return topicInteractor.deleteMessage(messageId)
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { TopicAction.MessageDeleted(messageId = messageId) }
     }
 
     private fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Observable<TopicAction> {

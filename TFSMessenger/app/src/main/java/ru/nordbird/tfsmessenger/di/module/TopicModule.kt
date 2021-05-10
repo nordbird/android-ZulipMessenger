@@ -16,7 +16,9 @@ import ru.nordbird.tfsmessenger.data.repository.base.TopicRepository
 import ru.nordbird.tfsmessenger.di.scope.TopicScope
 import ru.nordbird.tfsmessenger.domain.TopicInteractorImpl
 import ru.nordbird.tfsmessenger.domain.base.TopicInteractor
+import ru.nordbird.tfsmessenger.ui.topic.EditMessagePresenterImpl
 import ru.nordbird.tfsmessenger.ui.topic.TopicPresenterImpl
+import ru.nordbird.tfsmessenger.ui.topic.base.EDIT_MESSAGE_PRESENTER
 import ru.nordbird.tfsmessenger.ui.topic.base.SINGLE_TOPIC_PRESENTER
 import ru.nordbird.tfsmessenger.ui.topic.base.STREAM_TOPIC_PRESENTER
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicPresenter
@@ -78,5 +80,15 @@ class TopicModule {
         topicRepository: TopicRepository
     ): TopicPresenter {
         return TopicPresenterImpl(topicInteractor, eventRepository, topicRepository)
+    }
+
+    @TopicScope
+    @Provides
+    @Named(EDIT_MESSAGE_PRESENTER)
+    fun provideEditMessagePresenter(
+        topicInteractor: TopicInteractor,
+        topicRepository: TopicRepository
+    ): TopicPresenter {
+        return EditMessagePresenterImpl(topicInteractor, topicRepository)
     }
 }

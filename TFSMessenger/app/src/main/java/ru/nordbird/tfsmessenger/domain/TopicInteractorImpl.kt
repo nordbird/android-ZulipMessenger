@@ -35,9 +35,21 @@ class TopicInteractorImpl(
             .map { messageMapper.transform(it) }
     }
 
-    override fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<MessageUi>> {
-        return messageRepository.addMessage(streamName, topicName, ZulipAuth.AUTH_ID, text)
+    override fun loadMessageContent(messageId: Int): Single<String> {
+        return messageRepository.getMessageContent(messageId)
+    }
+
+    override fun addMessage(streamName: String, topicName: String, content: String): Flowable<List<MessageUi>> {
+        return messageRepository.addMessage(streamName, topicName, ZulipAuth.AUTH_ID, content)
             .map { messageMapper.transform(it) }
+    }
+
+    override fun updateMessage(messageId: Int, topicName: String, content: String): Single<Boolean> {
+        return messageRepository.updateMessage(messageId, topicName, content)
+    }
+
+    override fun deleteMessage(messageId: Int): Single<Boolean> {
+        return messageRepository.deleteMessage(messageId)
     }
 
     override fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<MessageUi>> {

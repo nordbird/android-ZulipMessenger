@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
         <item name="android:textSize">24sp</item>
         <item name="android:textStyle">normal</item>
@@ -52,25 +53,41 @@
     <style name="Topic1Style">
         <item name="topic_main_color">@color/topic1_color</item>
     </style>
+
     <style name="Topic2Style">
         <item name="topic_main_color">@color/topic2_color</item>
     </style>
+
     <style name="Topic3Style">
         <item name="topic_main_color">@color/topic3_color</item>
     </style>
+
     <style name="Topic4Style">
         <item name="topic_main_color">@color/topic4_color</item>
     </style>
+
     <style name="Topic5Style">
         <item name="topic_main_color">@color/topic5_color</item>
     </style>
+
     <style name="Topic6Style">
         <item name="topic_main_color">@color/topic6_color</item>
     </style>
+
     <style name="Topic7Style">
         <item name="topic_main_color">@color/topic7_color</item>
     </style>
+
     <style name="Topic8Style">
         <item name="topic_main_color">@color/topic8_color</item>
+    </style>
+
+    <style name="MessageActionStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/black</item>
     </style>
 </resources>

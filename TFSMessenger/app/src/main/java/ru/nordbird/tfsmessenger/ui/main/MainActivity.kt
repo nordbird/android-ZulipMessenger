@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
 
     private fun updateUI(fragmentId: Int) {
         when (fragmentId) {
-            R.id.navigation_topic, R.id.navigation_stream,
+            R.id.navigation_topic, R.id.navigation_stream, R.id.navigation_edit_message,
             R.id.navigation_profile_another, R.id.navigation_new_stream -> {
                 binding.navView.visibility = View.GONE
             }
@@ -102,6 +102,10 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
 
     override fun onOpenTopic(bundle: Bundle) {
         navController.navigate(R.id.navigation_topic, bundle)
+    }
+
+    override fun onEditMessage(bundle: Bundle) {
+        navController.navigate(R.id.navigation_edit_message, bundle)
     }
 
     override fun onCreateNewStream() {

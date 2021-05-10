@@ -26,7 +26,15 @@
     <string name="button_create_stream">Create</string>
     <string name="error_stream_exists">Stream already exists</string>
     <string name="error_http_429">Too many requests</string>
+    <string name="error_http_400">Bad request</string>
     <string name="error_server_unavailable">Server unavailable</string>
     <string name="hint_topic">topic</string>
     <string name="default_topic_name">topic</string>
+    <string name="action_add_reaction">Add reaction</string>
+    <string name="action_edit_message">Edit message</string>
+    <string name="action_copy_to_clipboard">Copy to clipboard</string>
+    <string name="action_delete_message">Delete message</string>
+    <string name="button_message_update">Update</string>
+    <string name="template_to_clipboard">From: %s\nMessage: %s</string>
+    <string name="message_from_me">Me</string>
 </resources>

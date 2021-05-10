@@ -68,6 +68,18 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         TopicAction.DeleteEventQueue -> copy(queueId = "")
 
         is TopicAction.LoadTopics -> this
+
+        is TopicAction.DeleteMessage -> this
+        is TopicAction.MessageDeleted -> {
+            val mapper = MessageUiToViewTypedMapper(topicName.isNotEmpty())
+            val list = messages.filterNot { it.id == topicAction.messageId }
+            copy(
+                items = mapper.transform(list),
+                messages = list
+            )
+        }
+
+        is TopicAction.LoadMessage, is TopicAction.UpdateMessage, TopicAction.MessageUpdated -> this
     }
 }
 
