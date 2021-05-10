@@ -112,6 +112,7 @@ class TopicPresenterImpl(
     private fun loadMessagesByEvent(): TopicSideEffect {
         return { actions, state ->
             actions.ofType(TopicAction.MessagesLoaded::class.java)
+                .filter { state().queueId.isNotEmpty() }
                 .switchMap {
                     loadMessagesByEvent(state().streamName, state().topicName, state().oldestMessageId, state().queueId)
                         .onErrorReturn { error ->
