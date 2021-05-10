@@ -8,9 +8,6 @@ abstract class RxPresenter<V, Action> protected constructor(viewClass: Class<V>)
 
     override fun detachView(isFinishing: Boolean) {
         disposables.clear()
-//        if (isFinishing) {
-//            disposables.dispose()
-//        }
         super.detachView(isFinishing)
     }
 
