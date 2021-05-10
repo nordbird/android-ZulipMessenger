@@ -21,19 +21,18 @@ class NewStreamPresenterImpl(
     private val inputRelay: PublishRelay<ChannelsAction> = PublishRelay.create()
     private val uiEffectsRelay: PublishRelay<ChannelsUiEffect> = PublishRelay.create()
     private val uiEffectsInput: Observable<ChannelsUiEffect> get() = uiEffectsRelay
-    private var lastState: ChannelsState = ChannelsState()
 
     private val channelsState: Observable<ChannelsState>
         get() = inputRelay.reduxStore(
-            initialState = lastState,
+            initialState = ChannelsState(),
             sideEffects = listOf(loadStreams(), createStream()),
             reducer = ChannelsState::reduce
-        ).doOnNext { lastState = it }
+        )
 
     override fun attachView(view: ChannelsView) {
         super.attachView(view)
 
-        channelsState.observeOn(AndroidSchedulers.mainThread()).startWith(lastState)
+        channelsState.observeOn(AndroidSchedulers.mainThread())
             .subscribe(view::render)
             .disposeOnFinish()
 
@@ -60,11 +59,11 @@ class NewStreamPresenterImpl(
             actions.ofType(ChannelsAction.CreateStream::class.java)
                 .switchMap {
                     createStream(it.streamName)
+                        .doOnNext { uiEffectsRelay.accept(ChannelsUiEffect.StreamCreated) }
                         .onErrorReturn { error ->
                             uiEffectsRelay.accept(ChannelsUiEffect.ActionError(error))
                             ChannelsAction.LoadStreamsStop
                         }
-                        .doOnNext { uiEffectsRelay.accept(ChannelsUiEffect.StreamCreated) }
                 }
         }
     }
@@ -80,6 +79,6 @@ class NewStreamPresenterImpl(
         return channelsInteractor.createStream(streamName)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { ChannelsAction.LoadStreams }
+            .map { ChannelsAction.StreamCreated }
     }
 }
