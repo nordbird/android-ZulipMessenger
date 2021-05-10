@@ -1,9 +1,7 @@
 package ru.nordbird.tfsmessenger.ui.topic
 
-import android.Manifest
 import android.app.Activity
 import android.content.*
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -11,17 +9,18 @@ import android.view.*
 import android.widget.*
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
+import io.reactivex.Completable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
@@ -68,6 +67,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     private var isTextMode = false
     private var needScroll: Boolean = false
     private val currentUserId = ZulipAuth.AUTH_ID
+    private var fileStream: InputStream? = null
 
     private lateinit var topicsAdapter: ArrayAdapter<String>
 
@@ -86,15 +86,15 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         }
     }
 
-    private val requestPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-        if (isGranted) {
-            showFileChooser()
+    private val startForResultSendFile = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            sendFile(result.data?.data)
         }
     }
 
-    private val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+    private val startForResultCreateFile = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
         if (result.resultCode == Activity.RESULT_OK) {
-            sendFile(result.data?.data)
+            saveFile(result.data?.data)
         }
     }
 
@@ -185,7 +185,7 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
                 addMessage(binding.edMessage.text.toString())
                 binding.edMessage.text.clear()
             } else {
-                checkMediaPermission()
+                showFileChooser()
             }
         }
 
@@ -217,20 +217,15 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     override fun handleUiEffect(uiEffect: TopicUiEffect) {
         when (uiEffect) {
-            is TopicUiEffect.DownloadFile -> saveFile(uiEffect.stream)
+            is TopicUiEffect.FileDownloaded -> createFile(uiEffect.fileName, uiEffect.stream)
             is TopicUiEffect.ActionError -> showError(uiEffect.error)
             is TopicUiEffect.TopicsLoaded -> updateTopics(uiEffect.topics)
         }
     }
 
+
     private fun addMessage(content: String) {
-        val topic = if (isSingleTopic()) {
-            topicName
-        } else if (binding.tvTopics.text.isNotBlank()) {
-            binding.tvTopics.text.toString()
-        } else {
-            getString(R.string.default_topic_name)
-        }
+        val topic = getTopicName()
         getPresenter().input.accept(TopicAction.SendMessage(streamName, topic, content))
     }
 
@@ -389,8 +384,9 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
     }
 
     private fun onAttachmentClick(holder: BaseViewHolder<*>) {
+        if (fileStream != null) return
         val attachment = adapter.items[holder.absoluteAdapterPosition] as AttachmentUi
-        getPresenter().input.accept(TopicAction.DownloadFile(attachment.url))
+        getPresenter().input.accept(TopicAction.DownloadFile(attachment.title, attachment.url))
     }
 
     private fun onTopicClick(holder: BaseViewHolder<*>) {
@@ -422,42 +418,44 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
 
     private fun sendFile(data: Uri?) {
         if (data == null) return
+        val topic = getTopicName()
         val contentResolver = requireActivity().contentResolver
         try {
             val stream = contentResolver.openInputStream(data)
-            getPresenter().input.accept(TopicAction.SendFile(streamName, topicName, getFileName(data), stream))
+            getPresenter().input.accept(TopicAction.SendFile(streamName, topic, getFileName(data), stream))
         } catch (ex: FileNotFoundException) {
             Snackbar.make(binding.root, getString(R.string.error_file_not_found), Snackbar.LENGTH_SHORT).show()
         }
     }
 
-    private fun saveFile(it: InputStream) {
-        // тут должно быть сохранение и открытие файла
-        Snackbar.make(binding.root, getString(R.string.info_file_downloaded), Snackbar.LENGTH_SHORT).show()
+    private fun saveFile(data: Uri?) {
+        if (data == null || fileStream == null) {
+            fileStream = null
+            return
+        }
+        val disposable = Completable.fromCallable { downloadFile(data) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnError { fileStream = null }
+            .subscribe(
+                { Toast.makeText(requireContext(), getString(R.string.message_file_downloaded), Toast.LENGTH_SHORT).show() },
+                { showError(it) }
+            )
+        compositeDisposable.add(disposable)
+    }
+
+    private fun downloadFile(data: Uri) {
+        val contentResolver = requireActivity().contentResolver
+        val stream = contentResolver.openOutputStream(data)
+        stream?.use { fileStream!!.copyTo(it) }
+        fileStream = null
     }
 
     private fun showFileChooser() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
         intent.addCategory(Intent.CATEGORY_OPENABLE)
-        try {
-            startForResult.launch(Intent.createChooser(intent, getString(R.string.title_select_file)))
-        } catch (ex: ActivityNotFoundException) {
-            Snackbar.make(binding.root, getString(R.string.error_select_file), Snackbar.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun checkMediaPermission() {
-        val permissionStatus = ContextCompat.checkSelfPermission(
-            requireContext(),
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-
-        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
-            showFileChooser()
-        } else {
-            requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
+        startForResultSendFile.launch(Intent.createChooser(intent, getString(R.string.title_select_file)))
     }
 
     private fun getFileName(uri: Uri): String {
@@ -470,7 +468,26 @@ class TopicFragment : MviFragment<TopicView, TopicAction, TopicPresenter>(), Top
         return result
     }
 
+    private fun createFile(fileName: String, stream: InputStream) {
+        fileStream = stream
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        intent.type = "image/jpeg"
+        intent.putExtra(Intent.EXTRA_TITLE, fileName)
+        startForResultCreateFile.launch(intent)
+    }
+
     private fun isSingleTopic(): Boolean = topicName.isNotEmpty()
+
+    private fun getTopicName(): String {
+        return if (isSingleTopic()) {
+            topicName
+        } else if (binding.tvTopics.text.isNotBlank()) {
+            binding.tvTopics.text.toString()
+        } else {
+            getString(R.string.default_topic_name)
+        }
+    }
 
     interface TopicFragmentListener {
 

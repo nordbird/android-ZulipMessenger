@@ -185,7 +185,7 @@ class TopicPresenterImpl(
         return { actions, _ ->
             actions.ofType(TopicAction.DownloadFile::class.java)
                 .switchMap { action ->
-                    downloadFile(action.url)
+                    downloadFile(action.title, action.url)
                         .onErrorReturn { error ->
                             uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
@@ -263,11 +263,14 @@ class TopicPresenterImpl(
             .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
     }
 
-    private fun downloadFile(url: String): Observable<TopicAction> {
+    private fun downloadFile(fileName: String, url: String): Observable<TopicAction> {
         return topicInteractor.downloadFile(url)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { stream -> TopicAction.FileDownloaded(stream = stream) }
+            .map { stream ->
+                uiEffectsRelay.accept(TopicUiEffect.FileDownloaded(fileName, stream))
+                TopicAction.FileDownloaded
+            }
     }
 
     private fun loadTopics(streamId: Int, streamName: String): Observable<TopicAction> {

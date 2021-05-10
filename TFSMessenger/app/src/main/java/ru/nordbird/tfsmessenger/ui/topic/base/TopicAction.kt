@@ -37,9 +37,8 @@ sealed class TopicAction {
 
     data class SendFile(val streamName: String, val topicName: String, val name: String, val stream: InputStream?) : TopicAction()
 
-    data class DownloadFile(val url: String) : TopicAction()
-
-    data class FileDownloaded(val stream: InputStream) : TopicAction()
+    data class DownloadFile(val title: String, val url: String) : TopicAction()
+    object FileDownloaded : TopicAction()
 
     data class LoadTopics(val streamId: Int, val streamName: String) : TopicAction()
 
