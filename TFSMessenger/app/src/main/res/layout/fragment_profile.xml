@@ -38,7 +38,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:textColor="@color/black"
+                android:textColor="@color/default_bw_color"
                 android:textSize="32sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -57,19 +57,6 @@
                 app:layout_constraintTop_toBottomOf="@id/tv_profile_name"
                 tools:text="online" />
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btn_logout"
-                android:layout_width="185dp"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="65dp"
-                android:background="@drawable/button_default"
-                android:text="@string/profile_button_logout"
-                android:textColor="@color/black"
-                android:textSize="20sp"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </com.facebook.shimmer.ShimmerFrameLayout>

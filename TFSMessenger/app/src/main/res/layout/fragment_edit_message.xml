@@ -17,7 +17,7 @@
         android:layout_marginStart="@dimen/fragment_horizontal_margin"
         android:layout_marginTop="@dimen/fragment_vertical_margin"
         android:layout_marginEnd="@dimen/fragment_horizontal_margin"
-        android:background="@color/default_round_bg"
+        android:background="@color/default_edit_bg_color"
         android:completionThreshold="0"
         android:hint="@string/hint_topic"
         android:padding="16dp"
@@ -32,7 +32,7 @@
         android:layout_marginTop="@dimen/fragment_vertical_margin"
         android:layout_marginEnd="@dimen/fragment_horizontal_margin"
         android:autofillHints="Message"
-        android:background="@color/default_round_bg"
+        android:background="@color/default_edit_bg_color"
         android:hint="@string/input_message_hint"
         android:inputType="textLongMessage|textMultiLine"
         android:padding="16dp"
@@ -48,7 +48,7 @@
         android:background="@drawable/button_default"
         android:gravity="center"
         android:text="@string/button_message_update"
-        android:textColor="@color/black"
+        android:textColor="@color/default_bw_color"
         android:textSize="20sp" />
 
 </LinearLayout>

@@ -42,4 +42,8 @@
     <color name="topic7_color">#EE7AAE</color>
     <color name="topic8_color">#2196F3</color>
 
+    <color name="default_bw_color">#000000</color>
+    <color name="default_bw_bg_color">#FFFFFF</color>
+    <color name="default_edit_bg_color">#DDDDDD</color>
+
 </resources>
