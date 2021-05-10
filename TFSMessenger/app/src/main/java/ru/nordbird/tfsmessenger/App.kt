@@ -1,6 +1,7 @@
 package ru.nordbird.tfsmessenger
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import ru.nordbird.tfsmessenger.di.component.*
 
 class App : Application() {
@@ -52,5 +53,7 @@ class App : Application() {
 
     init {
         instance = this
+
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
     }
 }
