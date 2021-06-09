@@ -13,6 +13,12 @@
         <action
             android:id="@+id/action_navigation_channels_to_topicFragment"
             app:destination="@id/navigation_topic" />
+        <action
+            android:id="@+id/action_navigation_channels_to_streamFragment"
+            app:destination="@id/navigation_stream" />
+        <action
+            android:id="@+id/action_navigation_channels_to_newStreamFragment"
+            app:destination="@id/navigation_new_stream" />
     </fragment>
 
     <fragment
@@ -34,8 +40,26 @@
         tools:layout="@layout/fragment_topic" />
 
     <fragment
+        android:id="@+id/navigation_stream"
+        android:name="ru.nordbird.tfsmessenger.ui.topic.TopicFragment"
+        android:label="fragment_stream"
+        tools:layout="@layout/fragment_topic" />
+
+    <fragment
         android:id="@+id/navigation_profile_another"
         android:name="ru.nordbird.tfsmessenger.ui.profile.ProfileFragment"
         android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_new_stream"
+        android:name="ru.nordbird.tfsmessenger.ui.channels.NewStreamFragment"
+        android:label="fragment_new_stream"
+        tools:layout="@layout/fragment_new_stream" />
+
+    <fragment
+        android:id="@+id/navigation_edit_message"
+        android:name="ru.nordbird.tfsmessenger.ui.topic.EditMessageFragment"
+        android:label="fragment_edit_message"
+        tools:layout="@layout/fragment_edit_message" />
 </navigation>

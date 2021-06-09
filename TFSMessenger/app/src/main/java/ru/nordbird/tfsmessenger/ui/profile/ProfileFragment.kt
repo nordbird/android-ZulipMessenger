@@ -1,5 +1,6 @@
 package ru.nordbird.tfsmessenger.ui.profile
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -10,10 +11,10 @@ import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
+import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.data.api.ZulipAuth
 import ru.nordbird.tfsmessenger.databinding.FragmentProfileBinding
-import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
@@ -22,19 +23,28 @@ import ru.nordbird.tfsmessenger.ui.profile.base.ProfilePresenter
 import ru.nordbird.tfsmessenger.ui.profile.base.ProfileUiEffect
 import ru.nordbird.tfsmessenger.ui.profile.base.ProfileView
 import ru.nordbird.tfsmessenger.ui.recycler.holder.UserPresence
+import javax.inject.Inject
 
 class ProfileFragment : MviFragment<ProfileView, ProfileAction, ProfilePresenter>(), ProfileView {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
-    override fun getPresenter(): ProfilePresenter = GlobalDI.INSTANCE.profilePresenter
+    @Inject
+    lateinit var profilePresenter: ProfilePresenter
+
+    override fun getPresenter(): ProfilePresenter = profilePresenter
 
     override fun getMviView(): ProfileView = this
 
     private val compositeDisposable = CompositeDisposable()
     private var userId: Int = INVALID_USER_ID
     private var isCurrentUser = true
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        App.instance.providePeopleComponent().inject(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

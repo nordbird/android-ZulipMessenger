@@ -12,10 +12,11 @@ object MessageQuery {
     private const val MESSAGE_COUNT_MAX = "5000"
 
     fun getMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Map<String, String> {
-        val narrow = listOf(
-            MessagesNarrowRequest("stream", streamName),
-            MessagesNarrowRequest("topic", topicName)
+        val narrow = mutableListOf(
+            MessagesNarrowRequest("stream", streamName)
         )
+        if (topicName.isNotEmpty()) narrow.add(MessagesNarrowRequest("topic", topicName))
+
         val anchor = if (lastMessageId > 0) lastMessageId.toString() else MESSAGE_ANCHOR_NEWEST
 
         return mapOf(
@@ -43,10 +44,11 @@ object MessageQuery {
     }
 
     fun getNewMessages(streamName: String, topicName: String, lastMessageId: Int): Map<String, String> {
-        val narrow = listOf(
-            MessagesNarrowRequest("stream", streamName),
-            MessagesNarrowRequest("topic", topicName)
+        val narrow = mutableListOf(
+            MessagesNarrowRequest("stream", streamName)
         )
+        if (topicName.isNotEmpty()) narrow.add(MessagesNarrowRequest("topic", topicName))
+
         val anchor = if (lastMessageId > 0) lastMessageId.toString() else MESSAGE_ANCHOR_NEWEST
 
         return mapOf(
@@ -58,12 +60,19 @@ object MessageQuery {
         )
     }
 
-    fun addMessage(streamName: String, topicName: String, text: String): Map<String, String> {
+    fun addMessage(streamName: String, topicName: String, content: String): Map<String, String> {
         return mapOf(
             "type" to MESSAGE_TYPE_STREAM,
             "to" to streamName,
-            "content" to text,
+            "content" to content,
             "topic" to topicName
+        )
+    }
+
+    fun updateMessage(topicName: String, content: String): Map<String, String> {
+        return mapOf(
+            "topic" to topicName,
+            "content" to content,
         )
     }
 }

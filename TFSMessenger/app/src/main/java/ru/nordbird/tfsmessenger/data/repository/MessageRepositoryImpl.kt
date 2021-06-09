@@ -36,25 +36,29 @@ class MessageRepositoryImpl(
             .map { dbMessageMapper.transform(it) }
     }
 
-    override fun getTopicMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>> {
+    override fun getMessagesByEvent(streamName: String, topicName: String, lastMessageId: Int, queueId: String): Single<List<Message>> {
         val query = MessageQuery.getNewMessages(streamName, topicName, lastMessageId)
 
         return apiService.getEvents(queueId).flatMap { apiService.getMessages(query) }.map { response ->
             nwMessageMapper.transform(response.messages)
-                .map { message -> message.copy(streamName = streamName, topicName = topicName) }
+                .map { message -> message.copy(streamName = streamName) }
         }
             .doOnSuccess { messages -> maxId = maxOf(maxId, messages.maxOfOrNull { it.id } ?: 0) }
             .doOnSuccess { saveToDatabase(streamName, topicName, it) }
             .map { dbMessageMapper.transform(it) }
     }
 
-    override fun addMessage(streamName: String, topicName: String, senderId: Int, text: String): Flowable<List<Message>> {
+    override fun getMessageContent(messageId: Int): Single<String> {
+        return apiService.getMessageContent(messageId).map { it.content }
+    }
+
+    override fun addMessage(streamName: String, topicName: String, senderId: Int, content: String): Flowable<List<Message>> {
         val messageId = ++maxId
-        val message = MessageDb(messageId, streamName, topicName, senderId, "", "", text, Date().time, localId = messageId)
+        val message = MessageDb(messageId, streamName, topicName, senderId, "", "", content, Date().time, localId = messageId)
 
         return Flowable.concat(
             Flowable.fromCallable { listOf(saveToDatabase(message)) },
-            addNetworkMessage(streamName, topicName, text).toFlowable().flatMap { response ->
+            addNetworkMessage(streamName, topicName, content).toFlowable().flatMap { response ->
                 if (response.result == ZulipConst.RESPONSE_RESULT_SUCCESS) {
                     Single.concat(
                         Single.fromCallable { listOf(replaceMessage(message, response.id)) },
@@ -67,6 +71,30 @@ class MessageRepositoryImpl(
         )
             .map { dbMessageMapper.transform(it) }
             .onErrorReturnItem(emptyList())
+    }
+
+    override fun updateMessage(messageId: Int, topicName: String, content: String): Single<Boolean> {
+        val query = MessageQuery.updateMessage(topicName, content)
+
+        return apiService.updateMessage(messageId, query).map { response ->
+            val result = response.result == ZulipConst.RESPONSE_RESULT_SUCCESS
+            if (!result) throw Exception(response.msg)
+            result
+        }
+            .flatMap { messageDao.getById(messageId) }
+            .map { message ->
+                updateMessage(message, topicName, content)
+                true
+            }
+    }
+
+    override fun deleteMessage(messageId: Int): Single<Boolean> {
+        return apiService.deleteMessage(messageId).map { response ->
+            val result = response.result == ZulipConst.RESPONSE_RESULT_SUCCESS
+            if (!result) throw Exception(response.msg)
+            result
+        }
+            .doOnSuccess { messageDao.deleteById(messageId) }
     }
 
     override fun sendFile(streamName: String, topicName: String, senderId: Int, name: String, stream: InputStream?): Flowable<List<Message>> {
@@ -90,14 +118,18 @@ class MessageRepositoryImpl(
 
         return apiService.getMessages(query).map { response ->
             nwMessageMapper.transform(response.messages)
-                .map { message -> message.copy(streamName = streamName, topicName = topicName) }
+                .map { message -> message.copy(streamName = streamName) }
         }
             .doOnSuccess { messages -> maxId = maxOf(maxId, messages.maxOfOrNull { it.id } ?: 0) }
             .doOnSuccess { saveToDatabase(streamName, topicName, it) }
     }
 
     private fun getDatabaseMessages(streamName: String, topicName: String, lastMessageId: Int, count: Int): Single<List<MessageDb>> {
-        return messageDao.getTopicMessages(streamName, topicName, lastMessageId, count)
+        return if (topicName.isNotEmpty()) {
+            messageDao.getTopicMessages(streamName, topicName, lastMessageId, count)
+        } else {
+            messageDao.getStreamMessages(streamName, lastMessageId, count)
+        }
     }
 
     private fun addNetworkMessage(streamName: String, topicName: String, text: String): Single<MessageResponse> {
@@ -112,9 +144,17 @@ class MessageRepositoryImpl(
         return newMessage
     }
 
+    private fun updateMessage(message: MessageDb, topicName: String, content: String) {
+        messageDao.deleteById(message.id)
+        val newMessage = message.copy(topicName = topicName, content = content)
+        messageDao.insert(newMessage)
+    }
+
     private fun saveToDatabase(streamName: String, topicName: String, messages: List<MessageDb>) {
         messageDao.insertAll(messages)
-        messageDao.deleteOverLimit(streamName, topicName, MESSAGES_MAX_COUNT)
+        if (topicName.isNotEmpty()) {
+            messageDao.deleteOverLimit(streamName, topicName, MESSAGES_MAX_COUNT)
+        }
     }
 
     private fun saveToDatabase(message: MessageDb): MessageDb {

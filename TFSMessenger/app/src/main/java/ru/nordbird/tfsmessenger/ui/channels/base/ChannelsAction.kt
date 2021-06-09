@@ -29,4 +29,8 @@ sealed class ChannelsAction {
     data class TopicUnreadMessagesLoaded(val unreadMessageCounter: UnreadCounter) : ChannelsAction()
 
     object LoadTopicUnreadMessagesStop : ChannelsAction()
+
+    data class CreateStream(val streamName: String) : ChannelsAction()
+
+    object StreamCreated : ChannelsAction()
 }

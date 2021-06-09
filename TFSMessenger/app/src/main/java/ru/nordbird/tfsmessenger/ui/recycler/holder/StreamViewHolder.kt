@@ -7,6 +7,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.ui.recycler.base.BaseViewHolder
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
+import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickType
 import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 
 class StreamUi(
@@ -33,7 +34,10 @@ class StreamViewHolder(
 
     init {
         streamBox.setOnClickListener { v ->
-            clickListener.onViewHolderClick(this, v)
+            clickListener.onViewHolderClick(this, v, StreamVHClickType.OPEN_STREAM_CLICK)
+        }
+        toggleView.setOnClickListener { v ->
+            clickListener.onViewHolderClick(this, v, StreamVHClickType.TOGGLE_TOPICS_CLICK)
         }
     }
 
@@ -45,4 +49,9 @@ class StreamViewHolder(
         super.bind(item)
     }
 
+}
+
+enum class StreamVHClickType : ViewHolderClickType {
+    OPEN_STREAM_CLICK,
+    TOGGLE_TOPICS_CLICK
 }

@@ -15,6 +15,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewTyped
 open class MessageUi(
     val id: Int,
     val localId: Int = 0,
+    val topicName: String,
     private val authorId: Int,
     val text: String,
     val reactions: List<ReactionGroup>,

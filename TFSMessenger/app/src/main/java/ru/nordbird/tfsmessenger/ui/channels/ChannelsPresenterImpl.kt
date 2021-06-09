@@ -15,7 +15,7 @@ import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsView
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-private typealias ChannelsSideEffect = SideEffect<ChannelsState, out ChannelsAction>
+internal typealias ChannelsSideEffect = SideEffect<ChannelsState, out ChannelsAction>
 
 class ChannelsPresenterImpl(
     private val channelsInteractor: ChannelsInteractor

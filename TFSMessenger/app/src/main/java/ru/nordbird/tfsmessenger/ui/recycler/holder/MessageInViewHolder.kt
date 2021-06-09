@@ -17,6 +17,7 @@ import ru.nordbird.tfsmessenger.ui.recycler.base.ViewHolderClickListener
 class MessageInUi(
     id: Int,
     localId: Int,
+    topicName: String,
     authorId: Int,
     val authorName: String,
     val avatar: String,
@@ -25,7 +26,7 @@ class MessageInUi(
     attachments: List<Attachment>,
     timestamp_ms: Long,
     override val viewType: Int = R.layout.item_message_in
-) : MessageUi(id, localId, authorId, text, reactions, attachments, timestamp_ms)
+) : MessageUi(id, localId, topicName, authorId, text, reactions, attachments, timestamp_ms)
 
 class MessageInViewHolder(
     view: View,

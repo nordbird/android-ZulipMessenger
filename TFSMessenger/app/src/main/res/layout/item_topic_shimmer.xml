@@ -23,7 +23,7 @@
             android:paddingTop="5dp"
             android:paddingEnd="20dp"
             android:paddingBottom="5dp"
-            android:textColor="@color/black"
+            android:textColor="@color/default_bw_color"
             tools:text="16 Декабря" />
 
         <LinearLayout

@@ -2,6 +2,7 @@ package ru.nordbird.tfsmessenger.data.model
 
 data class Message(
     val id: Int,
+    val topicName: String,
     val authorId: Int,
     val authorName: String,
     val avatar_url: String,
@@ -9,5 +10,5 @@ data class Message(
     val timestamp_ms: Long,
     val reactions: List<Reaction> = emptyList(),
     val localId: Int = 0,
-    val attachments: List<Attachment> = emptyList()
+    val attachments: List<Attachment> = emptyList(),
 )

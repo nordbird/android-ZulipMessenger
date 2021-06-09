@@ -18,12 +18,12 @@ class MessageToMessageUiMapper(
 
             if (isIncoming) {
                 MessageInUi(
-                    it.id, it.localId, it.authorId, it.authorName, it.avatar_url,
+                    it.id, it.localId, it.topicName, it.authorId, it.authorName, it.avatar_url,
                     it.content, reactionMapper.transform(it.reactions), it.attachments, it.timestamp_ms
                 )
             } else {
                 MessageOutUi(
-                    it.id, it.localId, it.authorId,
+                    it.id, it.localId, it.topicName, it.authorId,
                     it.content, reactionMapper.transform(it.reactions), it.attachments, it.timestamp_ms
                 )
             }

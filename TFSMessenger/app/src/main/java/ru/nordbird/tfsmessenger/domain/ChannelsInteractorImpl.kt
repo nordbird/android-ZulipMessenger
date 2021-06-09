@@ -47,4 +47,8 @@ class ChannelsInteractorImpl(
             }
     }
 
+    override fun createStream(streamName: String): Single<Boolean> {
+        return streamRepository.createStream(streamName)
+    }
+
 }

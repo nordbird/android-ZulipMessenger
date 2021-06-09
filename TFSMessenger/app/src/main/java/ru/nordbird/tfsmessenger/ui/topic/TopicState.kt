@@ -31,7 +31,7 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         is TopicAction.NextLoadMessages -> copy(needScroll = false)
 
         is TopicAction.MessagesLoaded -> {
-            val mapper = MessageUiToViewTypedMapper()
+            val mapper = MessageUiToViewTypedMapper(topicName.isNotEmpty())
             val list = combineMessages(messages, topicAction.newMessages)
             val minId = minOf(oldestMessageId, topicAction.newMessages.minOfOrNull { it.id } ?: oldestMessageId)
             copy(
@@ -42,7 +42,7 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         }
 
         is TopicAction.MessagesUpdated -> {
-            val mapper = MessageUiToViewTypedMapper()
+            val mapper = MessageUiToViewTypedMapper(topicName.isNotEmpty())
             val list = combineMessages(messages, topicAction.newMessages)
             val minId = minOf(oldestMessageId, topicAction.newMessages.minOfOrNull { it.id } ?: oldestMessageId)
             copy(
@@ -53,7 +53,7 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
             )
         }
 
-        TopicAction.LoadMessagesStop, TopicAction.EventQueueStop -> this
+        TopicAction.LoadMessagesStop, TopicAction.EventQueueStop, TopicAction.LoadTopicsStop -> this
 
         is TopicAction.SendMessage -> copy(needScroll = true)
 
@@ -66,6 +66,20 @@ internal fun TopicState.reduce(topicAction: TopicAction): TopicState {
         is TopicAction.RegisterEventQueue -> this
         is TopicAction.EventQueueRegistered -> copy(queueId = topicAction.queueId)
         TopicAction.DeleteEventQueue -> copy(queueId = "")
+
+        is TopicAction.LoadTopics -> this
+
+        is TopicAction.DeleteMessage -> this
+        is TopicAction.MessageDeleted -> {
+            val mapper = MessageUiToViewTypedMapper(topicName.isNotEmpty())
+            val list = messages.filterNot { it.id == topicAction.messageId }
+            copy(
+                items = mapper.transform(list),
+                messages = list
+            )
+        }
+
+        is TopicAction.LoadMessage, is TopicAction.UpdateMessage, TopicAction.MessageUpdated -> this
     }
 }
 

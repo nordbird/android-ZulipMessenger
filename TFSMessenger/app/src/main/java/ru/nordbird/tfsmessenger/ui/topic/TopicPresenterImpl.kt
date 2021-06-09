@@ -8,6 +8,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import ru.nordbird.tfsmessenger.data.repository.base.EventRepository
+import ru.nordbird.tfsmessenger.data.repository.base.TopicRepository
 import ru.nordbird.tfsmessenger.domain.base.TopicInteractor
 import ru.nordbird.tfsmessenger.ui.recycler.holder.MessageUi
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicAction
@@ -16,11 +17,12 @@ import ru.nordbird.tfsmessenger.ui.topic.base.TopicUiEffect
 import ru.nordbird.tfsmessenger.ui.topic.base.TopicView
 import java.io.InputStream
 
-private typealias TopicSideEffect = SideEffect<TopicState, out TopicAction>
+internal typealias TopicSideEffect = SideEffect<TopicState, out TopicAction>
 
 class TopicPresenterImpl(
     private val topicInteractor: TopicInteractor,
-    private val eventRepository: EventRepository
+    private val eventRepository: EventRepository,
+    private val topicRepository: TopicRepository
 ) : TopicPresenter() {
 
     override val input: Consumer<TopicAction> get() = inputRelay
@@ -34,16 +36,11 @@ class TopicPresenterImpl(
         get() = inputRelay.reduxStore(
             initialState = lastState,
             sideEffects = listOf(
-                firstLoadMessages(),
-                nextLoadMessages(),
-                sendMessage(),
-                updateReaction(),
-                sendFile(),
-                downloadFile(),
-                loadMessagesByEvent(),
-                registerEventQueue(),
-                deleteEventQueue(),
-                resetLoadAction()
+                firstLoadMessages(), nextLoadMessages(), loadMessagesByEvent(),
+                sendMessage(), updateReaction(), deleteMessage(),
+                sendFile(), downloadFile(),
+                registerEventQueue(), deleteEventQueue(),
+                resetLoadAction(), loadTopics()
             ),
             reducer = TopicState::reduce
         ).doOnNext { lastState = it }
@@ -115,6 +112,7 @@ class TopicPresenterImpl(
     private fun loadMessagesByEvent(): TopicSideEffect {
         return { actions, state ->
             actions.ofType(TopicAction.MessagesLoaded::class.java)
+                .filter { state().queueId.isNotEmpty() }
                 .switchMap {
                     loadMessagesByEvent(state().streamName, state().topicName, state().oldestMessageId, state().queueId)
                         .onErrorReturn { error ->
@@ -137,6 +135,19 @@ class TopicPresenterImpl(
             actions.ofType(TopicAction.SendMessage::class.java)
                 .switchMap { action ->
                     sendMessage(action.streamName, action.topicName, action.content)
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
+                            TopicAction.LoadMessagesStop
+                        }
+                }
+        }
+    }
+
+    private fun deleteMessage(): TopicSideEffect {
+        return { actions, _ ->
+            actions.ofType(TopicAction.DeleteMessage::class.java)
+                .switchMap { action ->
+                    deleteMessage(action.messageId)
                         .onErrorReturn { error ->
                             uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
@@ -175,10 +186,23 @@ class TopicPresenterImpl(
         return { actions, _ ->
             actions.ofType(TopicAction.DownloadFile::class.java)
                 .switchMap { action ->
-                    downloadFile(action.url)
+                    downloadFile(action.title, action.url)
                         .onErrorReturn { error ->
                             uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
                             TopicAction.LoadMessagesStop
+                        }
+                }
+        }
+    }
+
+    private fun loadTopics(): TopicSideEffect {
+        return { actions, _ ->
+            actions.ofType(TopicAction.LoadTopics::class.java)
+                .switchMap { action ->
+                    loadTopics(action.streamId, action.streamName)
+                        .onErrorReturn { error ->
+                            uiEffectsRelay.accept(TopicUiEffect.ActionError(error))
+                            TopicAction.LoadTopicsStop
                         }
                 }
         }
@@ -219,6 +243,13 @@ class TopicPresenterImpl(
             .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
     }
 
+    private fun deleteMessage(messageId: Int): Observable<TopicAction> {
+        return topicInteractor.deleteMessage(messageId)
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { TopicAction.MessageDeleted(messageId = messageId) }
+    }
+
     private fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Observable<TopicAction> {
         return topicInteractor.updateReaction(message, currentUserId, reactionCode)
             .subscribeOn(Schedulers.io())
@@ -233,11 +264,23 @@ class TopicPresenterImpl(
             .map { items -> TopicAction.MessagesLoaded(newMessages = items) }
     }
 
-    private fun downloadFile(url: String): Observable<TopicAction> {
+    private fun downloadFile(fileName: String, url: String): Observable<TopicAction> {
         return topicInteractor.downloadFile(url)
             .subscribeOn(Schedulers.io())
             .toObservable()
-            .map { stream -> TopicAction.FileDownloaded(stream = stream) }
+            .map { stream ->
+                uiEffectsRelay.accept(TopicUiEffect.FileDownloaded(fileName, stream))
+                TopicAction.FileDownloaded
+            }
     }
 
+    private fun loadTopics(streamId: Int, streamName: String): Observable<TopicAction> {
+        return topicRepository.getStreamTopics(streamId, streamName)
+            .subscribeOn(Schedulers.io())
+            .toObservable()
+            .map { topics ->
+                uiEffectsRelay.accept(TopicUiEffect.TopicsLoaded(topics.map { it.name }))
+                TopicAction.LoadTopicsStop
+            }
+    }
 }

@@ -8,8 +8,12 @@ import android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET
 import android.net.NetworkRequest
 import com.jakewharton.rxrelay2.BehaviorRelay
 import io.reactivex.Observable
+import ru.nordbird.tfsmessenger.di.scope.AppScope
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class RxConnectionObservable(
+@AppScope
+class RxConnectionObservable @Inject constructor(
     context: Context
 ) {
 

@@ -9,15 +9,19 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import io.reactivex.disposables.CompositeDisposable
+import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.ActivityMainBinding
-import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment
+import ru.nordbird.tfsmessenger.ui.channels.ChannelsTabFragment
 import ru.nordbird.tfsmessenger.ui.people.PeopleFragment
 import ru.nordbird.tfsmessenger.ui.profile.ProfileFragment.Companion.PARAM_USER_ID
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment
 import ru.nordbird.tfsmessenger.utils.network.RxConnectionObservable
+import javax.inject.Inject
 
-class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener {
+class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListener, PeopleFragment.PeopleFragmentListener,
+    ChannelsTabFragment.ChannelsTabFragmentListener, TopicFragment.TopicFragmentListener {
 
     val rootView: View get() = binding.root
 
@@ -25,10 +29,14 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var navController: NavController
     private var statusBarColor: Int = 0
-    private val connectionObservable: RxConnectionObservable = GlobalDI.INSTANCE.connectionState
+
+    @Inject
+    lateinit var connectionObservable: RxConnectionObservable
+
     private val compositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        (application as App).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -53,12 +61,35 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
         compositeDisposable.add(disposable)
     }
 
-    private fun onDestinationChanged(fragmentId: Int) {
+    private fun updateUI(fragmentId: Int) {
         when (fragmentId) {
-            R.id.navigation_topic, R.id.navigation_profile_another -> binding.navView.visibility = View.GONE
+            R.id.navigation_topic, R.id.navigation_stream, R.id.navigation_edit_message,
+            R.id.navigation_profile_another, R.id.navigation_new_stream -> {
+                binding.navView.visibility = View.GONE
+            }
             else -> {
                 binding.navView.visibility = View.VISIBLE
-                window.statusBarColor = statusBarColor
+            }
+        }
+
+        if (fragmentId != R.id.navigation_topic) {
+            window.statusBarColor = statusBarColor
+        }
+    }
+
+    private fun onDestinationChanged(fragmentId: Int) {
+        updateUI(fragmentId)
+        manageDI(fragmentId)
+    }
+
+    private fun manageDI(fragmentId: Int) {
+        when (fragmentId) {
+            R.id.navigation_channels -> {
+                App.instance.clearPeopleComponent()
+                App.instance.clearTopicComponent()
+            }
+            R.id.navigation_people, R.id.navigation_profile_another, R.id.navigation_profile -> {
+                App.instance.clearChannelsComponent()
             }
         }
     }
@@ -73,10 +104,22 @@ class MainActivity : AppCompatActivity(), ChannelsFragment.ChannelsFragmentListe
         navController.navigate(R.id.navigation_topic, bundle)
     }
 
+    override fun onEditMessage(bundle: Bundle) {
+        navController.navigate(R.id.navigation_edit_message, bundle)
+    }
+
+    override fun onCreateNewStream() {
+        navController.navigate(R.id.navigation_new_stream)
+    }
+
     override fun onOpenUserProfile(userId: Int) {
         navController.navigate(
             R.id.navigation_profile_another,
             bundleOf(PARAM_USER_ID to userId)
         )
+    }
+
+    override fun onOpenStream(bundle: Bundle) {
+        navController.navigate(R.id.navigation_stream, bundle)
     }
 }

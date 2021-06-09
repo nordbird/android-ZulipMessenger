@@ -7,25 +7,30 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
+import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentPeopleBinding
-import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.extensions.userMessage
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.people.base.PeopleAction
+import ru.nordbird.tfsmessenger.ui.people.base.PeoplePresenter
 import ru.nordbird.tfsmessenger.ui.people.base.PeopleUiEffect
 import ru.nordbird.tfsmessenger.ui.people.base.PeopleView
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
 import ru.nordbird.tfsmessenger.ui.rx.RxSearchObservable
+import javax.inject.Inject
 
-class PeopleFragment : MviFragment<PeopleView, PeopleAction, PeoplePresenterImpl>(), PeopleView {
+class PeopleFragment : MviFragment<PeopleView, PeopleAction, PeoplePresenter>(), PeopleView {
 
     private var _binding: FragmentPeopleBinding? = null
     private val binding get() = _binding!!
     private lateinit var activityListener: PeopleFragmentListener
+
+    @Inject
+    lateinit var peoplePresenter: PeoplePresenter
 
     private val compositeDisposable = CompositeDisposable()
 
@@ -46,7 +51,7 @@ class PeopleFragment : MviFragment<PeopleView, PeopleAction, PeoplePresenterImpl
 
     private var lastState: PeopleState = PeopleState()
 
-    override fun getPresenter(): PeoplePresenterImpl = GlobalDI.INSTANCE.peoplePresenter
+    override fun getPresenter(): PeoplePresenter = peoplePresenter
 
     override fun getMviView(): PeopleView = this
 
@@ -57,6 +62,7 @@ class PeopleFragment : MviFragment<PeopleView, PeopleAction, PeoplePresenterImpl
         } else {
             throw RuntimeException("$context must implement PeopleFragmentListener")
         }
+        App.instance.providePeopleComponent().inject(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

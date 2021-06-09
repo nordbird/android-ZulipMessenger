@@ -2,6 +2,8 @@ package ru.nordbird.tfsmessenger.data.repository
 
 import io.reactivex.Flowable
 import io.reactivex.Single
+import ru.nordbird.tfsmessenger.data.api.StreamQuery
+import ru.nordbird.tfsmessenger.data.api.ZulipConst
 import ru.nordbird.tfsmessenger.data.api.ZulipService
 import ru.nordbird.tfsmessenger.data.dao.StreamDao
 import ru.nordbird.tfsmessenger.data.mapper.StreamDbToStreamMapper
@@ -31,6 +33,15 @@ class StreamRepositoryImpl(
             getNetworkSubscriptions()
         )
             .map { dbStreamMapper.transform(it) }
+    }
+
+    override fun createStream(streamName: String): Single<Boolean> {
+        val query = StreamQuery.createStream(streamName)
+        return apiService.createStream(query).map { response ->
+            val result = response.result == ZulipConst.RESPONSE_RESULT_SUCCESS
+            if (!result) throw Exception(response.msg)
+            result
+        }
     }
 
     private fun getNetworkStreams(): Single<List<StreamDb>> {

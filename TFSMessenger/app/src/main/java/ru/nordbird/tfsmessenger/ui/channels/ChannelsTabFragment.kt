@@ -1,38 +1,38 @@
 package ru.nordbird.tfsmessenger.ui.channels
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.setFragmentResultListener
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.CompositeDisposable
+import ru.nordbird.tfsmessenger.App
 import ru.nordbird.tfsmessenger.R
 import ru.nordbird.tfsmessenger.databinding.FragmentChannelsTabBinding
-import ru.nordbird.tfsmessenger.di.GlobalDI
 import ru.nordbird.tfsmessenger.extensions.userMessage
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_NAME
-import ru.nordbird.tfsmessenger.ui.channels.ChannelsFragment.Companion.REQUEST_OPEN_TOPIC_STREAM_NAME
-import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsAction
-import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsPresenter
-import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsUiEffect
-import ru.nordbird.tfsmessenger.ui.channels.base.ChannelsView
+import ru.nordbird.tfsmessenger.ui.channels.base.*
 import ru.nordbird.tfsmessenger.ui.main.MainActivity
 import ru.nordbird.tfsmessenger.ui.mvi.base.MviFragment
 import ru.nordbird.tfsmessenger.ui.recycler.adapter.Adapter
 import ru.nordbird.tfsmessenger.ui.recycler.base.*
 import ru.nordbird.tfsmessenger.ui.recycler.holder.*
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_COLOR_TYPE_NAME
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_NAME
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_STREAM_ID
+import ru.nordbird.tfsmessenger.ui.topic.TopicFragment.Companion.OPEN_TOPIC_STREAM_NAME
 
 class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPresenter>(), ChannelsView {
 
     private var _binding: FragmentChannelsTabBinding? = null
     private val binding get() = _binding!!
+    private lateinit var activityListener: ChannelsTabFragmentListener
+
+    lateinit var channelsPresenter: ChannelsPresenter
 
     private var tabType: ChannelsTabType = ChannelsTabType.ALL
     private val compositeDisposable = CompositeDisposable()
@@ -40,7 +40,7 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     private val clickListener: ViewHolderClickListener = object : ViewHolderClickListener {
         override fun onViewHolderClick(holder: BaseViewHolder<*>, view: View, clickType: ViewHolderClickType?) {
             when (holder.itemViewType) {
-                R.layout.item_stream -> onStreamClick(holder)
+                R.layout.item_stream -> onStreamClick(holder, clickType)
                 R.layout.item_topic -> onTopicClick(holder)
                 R.layout.item_error -> onReloadClick()
             }
@@ -54,14 +54,18 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     private val adapter = Adapter(holderFactory, diffUtilCallback)
     private var needScroll: Boolean = false
 
-    override fun getPresenter(): ChannelsPresenterImpl {
-        return when (tabType) {
-            ChannelsTabType.ALL -> GlobalDI.INSTANCE.streamPresenter
-            ChannelsTabType.SUBSCRIBED -> GlobalDI.INSTANCE.subscriptionPresenter
-        }
-    }
+    override fun getPresenter(): ChannelsPresenter = channelsPresenter
 
     override fun getMviView(): ChannelsView = this
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is ChannelsTabFragmentListener) {
+            activityListener = context
+        } else {
+            throw RuntimeException("$context must implement ChannelsTabFragmentListener")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +73,10 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
         when (arguments?.getInt(ARG_TAB_TYPE)) {
             ChannelsTabType.ALL.ordinal -> tabType = ChannelsTabType.ALL
             ChannelsTabType.SUBSCRIBED.ordinal -> tabType = ChannelsTabType.SUBSCRIBED
+        }
+        channelsPresenter = when (tabType) {
+            ChannelsTabType.ALL -> App.instance.provideChannelsComponent().provideStreamsChannelsPresenter()
+            ChannelsTabType.SUBSCRIBED -> App.instance.provideChannelsComponent().provideSubscriptionsChannelsPresenter()
         }
     }
 
@@ -91,8 +99,8 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
         compositeDisposable.clear()
+        super.onDestroyView()
     }
 
     override fun render(state: ChannelsState) {
@@ -129,25 +137,40 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
         compositeDisposable.add(disposable)
     }
 
-    private fun onStreamClick(holder: BaseViewHolder<*>) {
+    private fun onStreamClick(holder: BaseViewHolder<*>, clickType: ViewHolderClickType?) {
         val stream = adapter.items[holder.absoluteAdapterPosition] as StreamUi
-        if (stream.topicExpanded) {
-            getPresenter().input.accept(ChannelsAction.CollapseTopics(stream.name))
-        } else {
-            getPresenter().input.accept(ChannelsAction.ExpandTopics(stream.id, stream.name))
+
+        when (clickType) {
+            StreamVHClickType.TOGGLE_TOPICS_CLICK -> {
+                if (stream.topicExpanded) {
+                    getPresenter().input.accept(ChannelsAction.CollapseTopics(stream.name))
+                } else {
+                    getPresenter().input.accept(ChannelsAction.ExpandTopics(stream.id, stream.name))
+                }
+            }
+            StreamVHClickType.OPEN_STREAM_CLICK -> openStream(stream)
         }
+    }
+
+    private fun openStream(stream: StreamUi) {
+        activityListener.onOpenStream(
+            bundleOf(
+                OPEN_TOPIC_STREAM_ID to stream.id,
+                OPEN_TOPIC_STREAM_NAME to stream.name
+            )
+        )
     }
 
     private fun onTopicClick(holder: BaseViewHolder<*>) {
         val topic = adapter.items[holder.absoluteAdapterPosition] as TopicUi
         val stream = getStream(topic.streamName) ?: return
 
-        setFragmentResult(
-            REQUEST_OPEN_TOPIC,
+        activityListener.onOpenTopic(
             bundleOf(
-                REQUEST_OPEN_TOPIC_STREAM_NAME to stream.name,
-                REQUEST_OPEN_TOPIC_NAME to topic.name,
-                REQUEST_OPEN_TOPIC_COLOR_TYPE_NAME to topic.colorType.name
+                OPEN_TOPIC_STREAM_ID to stream.id,
+                OPEN_TOPIC_STREAM_NAME to stream.name,
+                OPEN_TOPIC_NAME to topic.name,
+                OPEN_TOPIC_COLOR_TYPE_NAME to topic.colorType.name
             )
         )
     }
@@ -169,6 +192,13 @@ class ChannelsTabFragment : MviFragment<ChannelsView, ChannelsAction, ChannelsPr
 
     private fun getStream(streamName: String): StreamUi? {
         return adapter.items.filterIsInstance<StreamUi>().firstOrNull { it.name == streamName }
+    }
+
+    interface ChannelsTabFragmentListener {
+
+        fun onOpenStream(bundle: Bundle)
+
+        fun onOpenTopic(bundle: Bundle)
     }
 
     companion object {

@@ -30,14 +30,25 @@ class TopicInteractorImpl(
     }
 
     override fun loadMessagesByEvent(streamName: String, topicName: String, messageId: Int, queueId: String): Single<List<MessageUi>> {
-        if (queueId.isEmpty()) return Single.just(emptyList())
-        return messageRepository.getTopicMessagesByEvent(streamName, topicName, messageId, queueId)
+        return messageRepository.getMessagesByEvent(streamName, topicName, messageId, queueId)
             .map { messageMapper.transform(it) }
     }
 
-    override fun addMessage(streamName: String, topicName: String, text: String): Flowable<List<MessageUi>> {
-        return messageRepository.addMessage(streamName, topicName, ZulipAuth.AUTH_ID, text)
+    override fun loadMessageContent(messageId: Int): Single<String> {
+        return messageRepository.getMessageContent(messageId)
+    }
+
+    override fun addMessage(streamName: String, topicName: String, content: String): Flowable<List<MessageUi>> {
+        return messageRepository.addMessage(streamName, topicName, ZulipAuth.AUTH_ID, content)
             .map { messageMapper.transform(it) }
+    }
+
+    override fun updateMessage(messageId: Int, topicName: String, content: String): Single<Boolean> {
+        return messageRepository.updateMessage(messageId, topicName, content)
+    }
+
+    override fun deleteMessage(messageId: Int): Single<Boolean> {
+        return messageRepository.deleteMessage(messageId)
     }
 
     override fun updateReaction(message: MessageUi, currentUserId: Int, reactionCode: String): Flowable<List<MessageUi>> {
